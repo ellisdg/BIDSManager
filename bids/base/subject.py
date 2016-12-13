@@ -10,3 +10,6 @@ class Subject(object):
 
     def get_id(self):
         return self.subject_id
+
+    def list_image_paths(self):
+        return self.sessions[0].list_image_paths()

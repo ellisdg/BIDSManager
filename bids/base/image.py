@@ -3,3 +3,6 @@ class Image(object):
         self.file_path = file_path
         self.side_car_path = side_car_path
 
+    def get_file_path(self):
+        return self.file_path
+
