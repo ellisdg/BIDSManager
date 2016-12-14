@@ -49,24 +49,27 @@ class SessionReader(object):
         return self.session
 
 
-class GroupReader(GroupCreator):
-    def __init__(self, path_to_group_folder):
-        group_name = os.path.basename(path_to_group_folder)
-        super(GroupReader, self).__init__(group_name)
-        self.path_to_group_folder = path_to_group_folder
-        self.load_group()
+class GroupReader(object):
+    def __init__(self):
+        self.group_creator = GroupCreator()
 
-    def load_group(self):
-        self.read_images()
+    def load_group(self, path_to_group_folder):
+        return self.group_creator.create_group(self.parse_group_name(path_to_group_folder),
+                                               self.read_images(path_to_group_folder))
 
-    def read_images(self):
-        for image_file in glob.glob(os.path.join(self.path_to_group_folder, "*.nii*")):
-            self.add_image(Image(image_file))
+    def parse_group_name(self, path_to_group_folder):
+        return os.path.basename(path_to_group_folder)
+
+    def read_images(self, path_to_group_folder):
+        images = []
+        for image_file in glob.glob(os.path.join(path_to_group_folder, "*.nii*")):
+            images.append(Image(image_file))
+        return images
 
 
 def read_group(path_to_group_folder):
-    reader = GroupReader(path_to_group_folder)
-    return reader.get_group()
+    reader = GroupReader()
+    return reader.load_group(path_to_group_folder)
 
 
 def read_session(path_to_session_folder):
