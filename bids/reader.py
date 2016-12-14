@@ -22,14 +22,31 @@ class Reader(object):
 
     def load_subject(self, path_to_subject):
         subject = Subject(os.path.basename(path_to_subject).lstrip("sub-"))
-        session = Session()
-        for group in self.load_groups(path_to_subject):
-            session.add_group(group)
-        subject.add_session(session)
+        session_folders = glob.glob(os.path.join(path_to_subject, "*"))
+        contains_sessions = any(["ses-" == os.path.basename(folder)[:4] for folder in session_folders])
+        if contains_sessions:
+            for session_folder in session_folders:
+                session = read_session(session_folder)
+                subject.add_session(session)
+        else:
+            session = read_session(path_to_subject)
+            subject.add_session(session)
         return subject
 
-    def load_groups(self, path_to_folder):
-        return [read_group(group_folder) for group_folder in glob.glob(os.path.join(path_to_folder, "*"))]
+
+class SessionReader(object):
+    def __init__(self, path_to_session_folder):
+        self.path_to_sesion_folder = path_to_session_folder
+        session_name = os.path.basename(self.path_to_sesion_folder).lstrip("ses-")
+        self.session = Session(session_name)
+        for group in self.load_groups():
+            self.session.add_group(group)
+
+    def load_groups(self):
+        return [read_group(group_folder) for group_folder in glob.glob(os.path.join(self.path_to_sesion_folder, "*"))]
+
+    def get_session(self):
+        return self.session
 
 
 class GroupReader(GroupCreator):
@@ -50,3 +67,8 @@ class GroupReader(GroupCreator):
 def read_group(path_to_group_folder):
     reader = GroupReader(path_to_group_folder)
     return reader.get_group()
+
+
+def read_session(path_to_session_folder):
+    reader = SessionReader(path_to_session_folder)
+    return reader.get_session()

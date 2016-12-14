@@ -16,3 +16,6 @@ class Subject(object):
 
     def list_task_names(self):
         return self.sessions[0].get_group("func").get_task_names()
+
+    def list_sessions(self):
+        return [session.get_name() for session in self.sessions]

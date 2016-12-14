@@ -1,8 +1,9 @@
 
 
 class Session(object):
-    def __init__(self):
+    def __init__(self, name=None):
         self._groups = []
+        self._name = name
 
     def add_group(self, group):
         self._groups.append(group)
@@ -18,3 +19,6 @@ class Session(object):
         for group in self._groups:
             if group.get_name() == group_name:
                 return group
+
+    def get_name(self):
+        return self._name

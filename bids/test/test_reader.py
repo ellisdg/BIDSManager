@@ -31,4 +31,12 @@ class TestReaderDataSet001(TestCase):
         self.assertEqual(task_names, test_task_names)
 
 
+class TestReaderDataSet114(TestCase):
+    def setUp(self):
+        self.reader = Reader()
+        self.dataset = self.reader.load_data_set("../../BIDS-examples/ds114")
 
+    def test_list_subject_sessions(self):
+        sessions = set(self.dataset.get_subject("01").list_sessions())
+        test_sessions = {"retest", "test"}
+        self.assertEqual(sessions, test_sessions)
