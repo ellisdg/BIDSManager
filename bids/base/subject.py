@@ -11,5 +11,8 @@ class Subject(object):
     def get_id(self):
         return self.subject_id
 
-    def list_image_paths(self):
-        return self.sessions[0].list_image_paths()
+    def list_image_paths(self, group_name=None):
+        return self.sessions[0].list_image_paths(group_name=group_name)
+
+    def list_task_names(self):
+        return self.sessions[0].get_group("func").get_task_names()

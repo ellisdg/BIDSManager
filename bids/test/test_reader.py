@@ -18,4 +18,17 @@ class TestReaderDataSet001(TestCase):
         test_paths = set(glob.glob("../../BIDS-examples/ds001/sub-01/*/*.nii.gz"))
         self.assertEqual(scan_paths, test_paths)
 
+    def test_list_subject_anat_scans(self):
+        subject = self.dataset.get_subject("01")
+        scan_paths = set(subject.list_image_paths(group_name="anat"))
+        test_paths = set(glob.glob("../../BIDS-examples/ds001/sub-01/anat/*.nii.gz"))
+        self.assertEqual(scan_paths, test_paths)
+
+    def test_list_subject_task_names(self):
+        subject = self.dataset.get_subject("01")
+        task_names = set(subject.list_task_names())
+        test_task_names = {"balloonanalogrisktask"}
+        self.assertEqual(task_names, test_task_names)
+
+
 

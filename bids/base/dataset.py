@@ -14,7 +14,7 @@ class DataSet(object):
             raise(ValueError("Duplicate subject subject_id found."))
 
     def list_subject_ids(self):
-        return [subject_id for subject_id in self.subjects]
+        return sorted([subject_id for subject_id in self.subjects])
 
     def get_number_of_subjects(self):
         return len(self.subjects)
