@@ -1,4 +1,5 @@
 import glob
+import os
 from unittest import TestCase
 
 from ..reader import Reader
@@ -68,3 +69,7 @@ class TestReaderTestDir(TestCase):
     def test_get_session_names(self):
         session_names = self.dataset.get_subject("01").get_session_names()
         self.assertEqual(set(session_names), {"test", "retest"})
+
+    def test_get_session_path(self):
+        session = self.dataset.get_subject("01").get_session("retest")
+        self.assertEqual(session.get_path(), os.path.abspath("./test_dir/sub-01/ses-retest"))

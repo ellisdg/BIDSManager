@@ -1,7 +1,9 @@
+from base import BIDSObject
 
 
-class Session(object):
-    def __init__(self, name=None):
+class Session(BIDSObject):
+    def __init__(self, name=None, *inputs, **kwargs):
+        super(Session, self).__init__(*inputs, **kwargs)
         self._groups = []
         self._name = name
 

@@ -41,7 +41,7 @@ class SubjectReader(object):
 class SessionReader(object):
     def read_session(self, path_to_session_folder):
         session_name = self.parse_session_name(path_to_session_folder)
-        session = Session(session_name)
+        session = Session(name=session_name, path=path_to_session_folder)
         for group in self.load_groups(path_to_session_folder):
             session.add_group(group)
         return session
