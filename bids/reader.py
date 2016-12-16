@@ -2,7 +2,6 @@ from base.dataset import DataSet
 from base.subject import Subject
 from base.image import Image, FunctionalImage
 from base.group import Group, FunctionalGroup
-from creator import GroupCreator
 from base.session import Session
 import glob
 import os
@@ -52,9 +51,6 @@ class SessionReader(object):
 
 
 class GroupReader(object):
-    def __init__(self):
-        self.group_creator = GroupCreator()
-
     def load_group(self, path_to_group_folder):
         group_name = self.parse_group_name(path_to_group_folder)
         images = self.read_images(path_to_group_folder)
