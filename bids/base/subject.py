@@ -3,19 +3,23 @@
 class Subject(object):
     def __init__(self, subject_id=None):
         self.subject_id = subject_id
-        self.sessions = []
+        self.sessions = dict()
 
     def add_session(self, session):
-        self.sessions.append(session)
+        name = session.get_name()
+        self.sessions[name] = session
 
     def get_id(self):
         return self.subject_id
 
+    def get_session(self, session_name):
+        return self.sessions[session_name]
+
     def list_image_paths(self, group_name=None):
-        return self.sessions[0].list_image_paths(group_name=group_name)
+        return self.sessions.values()[0].list_image_paths(group_name=group_name)
 
     def list_task_names(self):
-        return self.sessions[0].get_group("func").get_task_names()
+        return self.sessions.values()[0].get_group("func").get_task_names()
 
     def list_sessions(self):
-        return [session.get_name() for session in self.sessions]
+        return [session.get_name() for session in self.sessions.values()]

@@ -21,3 +21,6 @@ class DataSet(object):
 
     def get_subject(self, subject_id):
         return self.subjects[subject_id]
+
+    def get_subjects(self):
+        return self.subjects.values()
