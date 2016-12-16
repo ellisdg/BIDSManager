@@ -12,7 +12,7 @@ class Group(object):
     def get_name(self):
         return self._name
 
-    def list_image_paths(self):
+    def get_image_paths(self):
         image_paths = []
         for image in self._images:
             image_paths.append(image.get_file_path())
