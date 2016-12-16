@@ -54,4 +54,7 @@ class TestReaderDataSet114(TestCase):
                 group_names = session.get_group_names()
                 self.assertEqual(set(group_names), {"anat", "func", "dwi"})
                 for group in session.get_groups():
-                    print group
+                    modalities = group.get_modalities()
+                    if group.get_name() == "func":
+                        print modalities
+                        self.assertEqual(set(modalities), {"bold"})

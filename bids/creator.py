@@ -19,10 +19,7 @@ class GroupCreator(object):
         return group
 
     def add_image(self, image):
-        if isinstance(self._group, FunctionalGroup) and not isinstance(image, FunctionalImage):
-            self._group.add_image(FunctionalImage(image.get_file_path()))
-        else:
-            self._group.add_image(image)
+        self._group.add_image(image)
 
     def get_group(self):
         return self._group

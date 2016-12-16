@@ -1,10 +1,12 @@
 from base.dataset import DataSet
 from base.subject import Subject
-from base.image import Image
+from base.image import Image, FunctionalImage
+from base.group import Group, FunctionalGroup
 from creator import GroupCreator
 from base.session import Session
 import glob
 import os
+import re
 
 
 class Reader(object):
@@ -54,17 +56,35 @@ class GroupReader(object):
         self.group_creator = GroupCreator()
 
     def load_group(self, path_to_group_folder):
-        return self.group_creator.create_group(self.parse_group_name(path_to_group_folder),
-                                               self.read_images(path_to_group_folder))
+        group_name = self.parse_group_name(path_to_group_folder)
+        images = self.read_images(path_to_group_folder)
+        if group_name == "func":
+            return FunctionalGroup(name=group_name, images=images)
+        else:
+            return Group(name=group_name, images=images)
 
     def parse_group_name(self, path_to_group_folder):
         return os.path.basename(path_to_group_folder)
 
     def read_images(self, path_to_group_folder):
-        images = []
-        for image_file in glob.glob(os.path.join(path_to_group_folder, "*.nii*")):
-            images.append(Image(image_file))
-        return images
+        return [read_image(image_file) for image_file in glob.glob(os.path.join(path_to_group_folder, "*.nii*"))]
+
+
+class ImageReader(object):
+    def read_image(self, path_to_image):
+        modality = self.parse_image_modality(path_to_image)
+        if modality == "bold":
+            return FunctionalImage(modality=modality,
+                                   file_path=path_to_image,
+                                   task_name=self.parse_task_name(path_to_image))
+        else:
+            return Image(modality=modality, file_path=path_to_image)
+
+    def parse_image_modality(self, path_to_image):
+        return os.path.basename(path_to_image).split(".")[0].split("_")[-1]
+
+    def parse_task_name(self, path_to_image):
+        return re.search('(?<=task-)[a-z]*', os.path.basename(path_to_image)).group(0)
 
 
 def read_group(path_to_group_folder):
@@ -75,3 +95,7 @@ def read_group(path_to_group_folder):
 def read_session(path_to_session_folder):
     reader = SessionReader(path_to_session_folder)
     return reader.get_session()
+
+
+def read_image(path_to_image_file):
+    return ImageReader().read_image(path_to_image_file)
