@@ -15,6 +15,9 @@ class Subject(object):
     def get_session(self, session_name):
         return self.sessions[session_name]
 
+    def get_sessions(self):
+        return self.sessions.values()
+
     def list_image_paths(self, group_name=None):
         return self.sessions.values()[0].list_image_paths(group_name=group_name)
 
@@ -22,4 +25,4 @@ class Subject(object):
         return self.sessions.values()[0].get_group("func").get_task_names()
 
     def list_sessions(self):
-        return [session.get_name() for session in self.sessions.values()]
+        return self.sessions.keys()

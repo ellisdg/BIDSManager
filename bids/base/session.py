@@ -20,5 +20,8 @@ class Session(object):
             if group.get_name() == group_name:
                 return group
 
+    def get_group_names(self):
+        return [group.get_name() for group in self._groups]
+
     def get_name(self):
         return self._name
