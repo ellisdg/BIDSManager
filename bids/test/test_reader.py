@@ -58,3 +58,13 @@ class TestReaderDataSet114(TestCase):
                     modalities = group.get_modalities()
                     if group.get_name() == "func":
                         self.assertEqual(set(modalities), {"bold"})
+
+
+class TestReaderTestDir(TestCase):
+    def setUp(self):
+        self.reader = Reader()
+        self.dataset = self.reader.load_data_set("./test_dir")
+
+    def test_get_session_names(self):
+        session_names = self.dataset.get_subject("01").get_session_names()
+        self.assertEqual(set(session_names), {"test", "retest"})

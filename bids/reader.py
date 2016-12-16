@@ -23,7 +23,7 @@ class SubjectReader(object):
     def read_subject(self, path_to_subject):
         subject_id = self.parse_subject_id(path_to_subject)
         subject = Subject(subject_id)
-        session_folders = glob.glob(os.path.join(path_to_subject, "*"))
+        session_folders = glob.glob(os.path.join(path_to_subject, "ses-*"))
         contains_sessions = any(["ses-" == os.path.basename(folder)[:4] for folder in session_folders])
         if contains_sessions:
             for session_folder in session_folders:
