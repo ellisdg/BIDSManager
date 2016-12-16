@@ -1,8 +1,9 @@
 from image import FunctionalImage
+from base import BIDSObject
 
-
-class Group(object):
-    def __init__(self, name=None, images=None):
+class Group(BIDSObject):
+    def __init__(self, name=None, images=None, *inputs, **kwargs):
+        super(Group, self).__init__(*inputs, **kwargs)
         if images:
             self._images = images
         else:

@@ -58,9 +58,9 @@ class GroupReader(object):
         group_name = self.parse_group_name(path_to_group_folder)
         images = self.read_images(path_to_group_folder)
         if group_name == "func":
-            return FunctionalGroup(name=group_name, images=images)
+            return FunctionalGroup(name=group_name, images=images, path=path_to_group_folder)
         else:
-            return Group(name=group_name, images=images)
+            return Group(name=group_name, images=images, path=path_to_group_folder)
 
     def parse_group_name(self, path_to_group_folder):
         return os.path.basename(path_to_group_folder)

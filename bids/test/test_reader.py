@@ -73,3 +73,7 @@ class TestReaderTestDir(TestCase):
     def test_get_session_path(self):
         session = self.dataset.get_subject("01").get_session("retest")
         self.assertEqual(session.get_path(), os.path.abspath("./test_dir/sub-01/ses-retest"))
+
+    def test_get_group_path(self):
+        group = self.dataset.get_subject("01").get_session("retest").get_group("anat")
+        self.assertEqual(group.get_path(), os.path.abspath("./test_dir/sub-01/ses-retest/anat"))
