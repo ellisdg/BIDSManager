@@ -9,20 +9,20 @@ import re
 
 
 class Reader(object):
-    def __init__(self):
-        super(Reader, self).__init__()
-
     def load_data_set(self, path_to_data_set):
         return DataSet(self.get_subject_subjects(path_to_data_set))
 
     def get_subject_subjects(self, path_to_data_set):
-        return [self.load_subject(path_to_subject) for path_to_subject in self.find_subject_folders(path_to_data_set)]
+        return [read_subject(path_to_subject) for path_to_subject in self.find_subject_folders(path_to_data_set)]
 
     def find_subject_folders(self, path_to_data_set):
         return sorted(glob.glob(os.path.join(path_to_data_set, "sub-*")))
 
-    def load_subject(self, path_to_subject):
-        subject = Subject(os.path.basename(path_to_subject).lstrip("sub-"))
+
+class SubjectReader(object):
+    def read_subject(self, path_to_subject):
+        subject_id = self.parse_subject_id(path_to_subject)
+        subject = Subject(subject_id)
         session_folders = glob.glob(os.path.join(path_to_subject, "*"))
         contains_sessions = any(["ses-" == os.path.basename(folder)[:4] for folder in session_folders])
         if contains_sessions:
@@ -34,20 +34,23 @@ class Reader(object):
             subject.add_session(session)
         return subject
 
+    def parse_subject_id(self, path_to_subject):
+        return os.path.basename(path_to_subject).lstrip("sub-")
+
 
 class SessionReader(object):
-    def __init__(self, path_to_session_folder):
-        self.path_to_sesion_folder = path_to_session_folder
-        session_name = os.path.basename(self.path_to_sesion_folder).lstrip("ses-")
-        self.session = Session(session_name)
-        for group in self.load_groups():
-            self.session.add_group(group)
+    def read_session(self, path_to_session_folder):
+        session_name = self.parse_session_name(path_to_session_folder)
+        session = Session(session_name)
+        for group in self.load_groups(path_to_session_folder):
+            session.add_group(group)
+        return session
 
-    def load_groups(self):
-        return [read_group(group_folder) for group_folder in glob.glob(os.path.join(self.path_to_sesion_folder, "*"))]
+    def parse_session_name(self, path_to_session_folder):
+        return os.path.basename(path_to_session_folder).lstrip("ses-")
 
-    def get_session(self):
-        return self.session
+    def load_groups(self, path_to_session_folder):
+        return [read_group(group_folder) for group_folder in glob.glob(os.path.join(path_to_session_folder, "*"))]
 
 
 class GroupReader(object):
@@ -83,14 +86,16 @@ class ImageReader(object):
         return re.search('(?<=task-)[a-z]*', os.path.basename(path_to_image)).group(0)
 
 
+def read_subject(path_to_subject_folder):
+    return SubjectReader().read_subject(path_to_subject_folder)
+
+
 def read_group(path_to_group_folder):
-    reader = GroupReader()
-    return reader.load_group(path_to_group_folder)
+    return GroupReader().load_group(path_to_group_folder)
 
 
 def read_session(path_to_session_folder):
-    reader = SessionReader(path_to_session_folder)
-    return reader.get_session()
+    return SessionReader().read_session(path_to_session_folder)
 
 
 def read_image(path_to_image_file):

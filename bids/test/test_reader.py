@@ -1,6 +1,7 @@
-from unittest import TestCase
-from ..reader import Reader
 import glob
+from unittest import TestCase
+
+from ..reader import Reader
 
 
 class TestReaderDataSet001(TestCase):
@@ -56,5 +57,4 @@ class TestReaderDataSet114(TestCase):
                 for group in session.get_groups():
                     modalities = group.get_modalities()
                     if group.get_name() == "func":
-                        print modalities
                         self.assertEqual(set(modalities), {"bold"})
