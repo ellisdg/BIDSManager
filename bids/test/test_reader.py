@@ -48,5 +48,10 @@ class TestReaderDataSet114(TestCase):
     def test_get_dataset_summary(self):
         subjects = self.dataset.get_subjects()
         for subject in subjects:
-            sessions = subject.get_sessions()
-            self.assertEqual(set([session.get_name() for session in sessions]), {"test", "retest"})
+            session_names = subject.get_session_names()
+            self.assertEqual(set(session_names), {"test", "retest"})
+            for session in subject.get_sessions():
+                group_names = session.get_group_names()
+                self.assertEqual(set(group_names), {"anat", "func", "dwi"})
+                for group in session.get_groups():
+                    print group
