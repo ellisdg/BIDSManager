@@ -4,8 +4,11 @@ class DataSet(object):
     def __init__(self, subjects=None):
         self.subjects = dict()
         if subjects:
-            for subject in subjects:
-                self.add_subject(subject)
+            self.add_subjects(subjects)
+
+    def add_subjects(self, subjects):
+        for subject in subjects:
+            self.add_subject(subject)
 
     def add_subject(self, subject):
         if subject.get_id() not in self.get_subject_ids():
