@@ -10,11 +10,11 @@ class Session(BIDSObject):
     def add_group(self, group):
         self._groups.append(group)
 
-    def get_image_paths(self, group_name=None):
+    def get_image_paths(self, group_name=None, modality=None):
         image_paths = []
         for group in self._groups:
             if (group_name and group_name == group.get_name()) or not group_name:
-                image_paths.extend(group.get_image_paths())
+                image_paths.extend(group.get_image_paths(modality=modality))
         return image_paths
 
     def get_group(self, group_name):

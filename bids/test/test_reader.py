@@ -32,6 +32,11 @@ class TestReaderDataSet001(TestCase):
         test_task_names = {"balloonanalogrisktask"}
         self.assertEqual(task_names, test_task_names)
 
+    def test_list_all_t1_scans(self):
+        t1_images = self.dataset.get_image_paths(modality="T1w")
+        t1_glob_list = glob.glob("../../BIDS-examples/ds001/sub-*/anat/*T1w.nii.gz")
+        self.assertEqual(sorted(t1_images), sorted(t1_glob_list))
+
 
 class TestReaderDataSet114(TestCase):
     def setUp(self):
