@@ -2,7 +2,7 @@ import glob
 import os
 from unittest import TestCase
 
-from ..reader import Reader
+from ..reader import Reader, read_dataset
 
 
 class TestReaderDataSet001(TestCase):
@@ -63,8 +63,7 @@ class TestReaderDataSet114(TestCase):
 
 class TestReaderTestDir(TestCase):
     def setUp(self):
-        self.reader = Reader()
-        self.dataset = self.reader.load_data_set("./test_dir")
+        self.dataset = read_dataset("./test_dir")
 
     def test_get_session_names(self):
         session_names = self.dataset.get_subject("01").get_session_names()
