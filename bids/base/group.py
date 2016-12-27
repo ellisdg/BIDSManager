@@ -1,6 +1,7 @@
 from image import FunctionalImage
 from base import BIDSObject
 
+
 class Group(BIDSObject):
     def __init__(self, name=None, images=None, *inputs, **kwargs):
         super(Group, self).__init__(*inputs, **kwargs)

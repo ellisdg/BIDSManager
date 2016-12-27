@@ -100,3 +100,7 @@ def read_session(path_to_session_folder):
 
 def read_image(path_to_image_file):
     return ImageReader().read_image(path_to_image_file)
+
+
+def read_dataset(path_to_dataset_folder):
+    return Reader().load_data_set(path_to_dataset_folder)
