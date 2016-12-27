@@ -18,10 +18,11 @@ class Subject(object):
     def get_sessions(self):
         return self.sessions.values()
 
-    def get_image_paths(self, group_name=None, modality=None):
+    def get_image_paths(self, group_name=None, modality=None, acquisition=None):
         image_paths = []
         for session in self.sessions.itervalues():
-            image_paths.extend(session.get_image_paths(group_name=group_name, modality=modality))
+            image_paths.extend(session.get_image_paths(group_name=group_name, modality=modality,
+                                                       acquisition=acquisition))
         return image_paths
 
     def get_task_names(self):

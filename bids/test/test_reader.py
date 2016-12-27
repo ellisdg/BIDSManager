@@ -81,3 +81,8 @@ class TestReaderTestDir(TestCase):
     def test_get_group_path(self):
         group = self.dataset.get_subject("01").get_session("retest").get_group("anat")
         self.assertEqual(group.get_path(), os.path.abspath("./test_dir/sub-01/ses-retest/anat"))
+
+    def test_get_t1_contrast_image_paths(self):
+        image_paths_glob = glob.glob("./test_dir/sub-*/ses-*/*/*acq-contrast*.nii.gz")
+        image_paths = self.dataset.get_image_paths(acquisition="contrast", modality="T1w")
+        self.assertEqual(sorted(image_paths_glob), sorted(image_paths))

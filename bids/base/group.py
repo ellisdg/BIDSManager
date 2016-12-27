@@ -17,10 +17,11 @@ class Group(BIDSObject):
     def get_name(self):
         return self._name
 
-    def get_image_paths(self, modality=None):
+    def get_image_paths(self, modality=None, acquisition=None):
         image_paths = []
         for image in self._images:
-            if (modality and modality == image.get_modality()) or not modality:
+            if not (modality and modality != image.get_modality()) \
+                    and not (acquisition and acquisition != image.get_acquisition()):
                 image_paths.append(image.get_file_path())
         return image_paths
 

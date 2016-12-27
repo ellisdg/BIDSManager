@@ -28,8 +28,8 @@ class DataSet(object):
     def get_subjects(self):
         return self.subjects.values()
 
-    def get_image_paths(self, modality=None):
+    def get_image_paths(self, modality=None, acquisition=None):
         image_paths = []
         for subject in self.subjects.itervalues():
-            image_paths.extend(subject.get_image_paths(modality=modality))
+            image_paths.extend(subject.get_image_paths(modality=modality, acquisition=acquisition))
         return image_paths

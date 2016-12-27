@@ -72,18 +72,27 @@ class GroupReader(object):
 class ImageReader(object):
     def read_image(self, path_to_image):
         modality = self.parse_image_modality(path_to_image)
+        acquisition = self.parse_generic_name(path_to_image, name="acq")
         if modality == "bold":
             return FunctionalImage(modality=modality,
                                    file_path=path_to_image,
+                                   acquisition=acquisition,
                                    task_name=self.parse_task_name(path_to_image))
         else:
-            return Image(modality=modality, file_path=path_to_image)
+            return Image(modality=modality, file_path=path_to_image, acquisition=acquisition)
 
-    def parse_image_modality(self, path_to_image):
+    @staticmethod
+    def parse_image_modality(path_to_image):
         return os.path.basename(path_to_image).split(".")[0].split("_")[-1]
 
+    @staticmethod
+    def parse_generic_name(path_to_image, name):
+        result = re.search('(?<={name}-)[a-z0-9]*'.format(name=name), os.path.basename(path_to_image))
+        if result:
+            return result.group(0)
+
     def parse_task_name(self, path_to_image):
-        return re.search('(?<=task-)[a-z]*', os.path.basename(path_to_image)).group(0)
+        return self.parse_generic_name(path_to_image, name="task")
 
 
 def read_subject(path_to_subject_folder):
