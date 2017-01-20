@@ -72,14 +72,19 @@ class GroupReader(object):
 
 
 class ImageReader(object):
-    def read_image(self, path_to_image):
+    def read_image_from_bids_path(self, path_to_image):
         modality = self.parse_image_modality(path_to_image)
         acquisition = self.parse_generic_name(path_to_image, name="acq")
+        task_name = self.parse_task_name(path_to_image)
+        return self.read_image(path_to_image, modality=modality, acquisition=acquisition, task_name=task_name)
+
+    @staticmethod
+    def read_image(path_to_image, modality=None, acquisition=None, task_name=None):
         if modality == "bold":
             return FunctionalImage(modality=modality,
                                    file_path=path_to_image,
                                    acquisition=acquisition,
-                                   task_name=self.parse_task_name(path_to_image))
+                                   task_name=task_name)
         else:
             return Image(modality=modality, file_path=path_to_image, acquisition=acquisition)
 
@@ -110,7 +115,7 @@ def read_session(path_to_session_folder):
 
 
 def read_image(path_to_image_file):
-    return ImageReader().read_image(path_to_image_file)
+    return ImageReader().read_image_from_bids_path(path_to_image_file)
 
 
 def read_dataset(path_to_dataset_folder):
@@ -146,27 +151,35 @@ class CSVReader(object):
                 else:
                     session = subject.get_session(session_name)
 
-                group_name = "anat"
+                image = self.read_image(line["file"], line["modality"], line['task'])
+                group_name = self.modality_to_group_name(image.get_modality())
+
                 if session.has_group(group_name):
                     group = session.get_group(group_name)
                 else:
                     group = Group(name=group_name)
                     session.add_group(group)
 
-                group.add_image(self.read_image(line["file"], line["modality"]))
+                group.add_image(image)
 
         return self.dataset
 
-    def read_image(self, file_path, modality):
+    def read_image(self, file_path, modality, task_name=None):
         modality = self.correct_modality(modality.lower())
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(os.path.join(self._directory, file_path))
-        return Image(file_path=file_path, modality=modality)
+        return ImageReader.read_image(path_to_image=file_path, modality=modality, task_name=task_name)
 
-    def correct_modality(self, modality):
+    @staticmethod
+    def correct_modality(modality):
         if "t1" in modality:
             return 'T1w'
         elif "flair" in modality:
             return 'FLAIR'
         return modality
 
+    @staticmethod
+    def modality_to_group_name(modality):
+        if "bold" in modality.lower():
+            return "func"
+        return "anat"

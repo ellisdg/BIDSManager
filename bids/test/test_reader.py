@@ -100,7 +100,7 @@ class TestReaderCSV(TestCase):
         self.assertEqual(set(self.dataset.get_subject('003').get_session_names()), {'visit1', 'visit2'})
 
     def test_read_groups(self):
-        self.assertEqual(set(self.dataset.get_subject('003').get_session('visit1').get_group_names()), {'anat'})
+        self.assertEqual(set(self.dataset.get_subject('003').get_session('visit1').get_group_names()), {'anat', 'func'})
 
     def test_read_images(self):
         self.assertEqual(set([os.path.abspath(f) for f in glob.glob('./unorganized_example_dir/*.nii.gz')]),
@@ -115,3 +115,7 @@ class TestReaderCSV(TestCase):
     def test_read_flair_modality(self):
         self.assertEqual({os.path.abspath('./unorganized_example_dir/flair.nii.gz')},
                          set(self.dataset.get_image_paths(modality="FLAIR")))
+
+    def test_read_bold_image(self):
+        image = self.dataset.get_subject('003').get_session('visit1').get_group('func').get_images()[0]
+        self.assertEqual(image.get_task_name(), "Finger Tapping")

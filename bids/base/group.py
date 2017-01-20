@@ -28,6 +28,9 @@ class Group(BIDSObject):
     def get_modalities(self):
         return [image.get_modality() for image in self._images]
 
+    def get_images(self):
+        return self._images
+
 
 class FunctionalGroup(Group):
     def __init__(self, *inputs, **kwargs):
