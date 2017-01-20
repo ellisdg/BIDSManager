@@ -120,3 +120,7 @@ class TestReaderCSV(TestCase):
     def test_read_bold_image(self):
         image = self.dataset.get_subject('003').get_session('visit1').get_group('func').get_images()[0]
         self.assertEqual(image.get_task_name(), "Finger Tapping")
+
+    def test_read_bold_group(self):
+        group = self.dataset.get_subject('003').get_session('visit1').get_group('func')
+        self.assertEqual(group.get_task_names(), ['Finger Tapping'])

@@ -6,7 +6,8 @@ from bids.base.dataset import DataSet
 from bids.base.group import Group
 from bids.base.session import Session
 from bids.base.subject import Subject
-from bids.read.image_reader import ImageReader
+from .image_reader import ImageReader
+from .group_reader import GroupReader
 
 
 class CSVReader(object):
@@ -40,7 +41,7 @@ class CSVReader(object):
                 if session.has_group(group_name):
                     group = session.get_group(group_name)
                 else:
-                    group = Group(name=group_name)
+                    group = GroupReader.load_group(group_name=group_name)
                     session.add_group(group)
 
                 group.add_image(image)
