@@ -2,12 +2,13 @@ import glob
 import os
 from unittest import TestCase
 
-from ..reader import Reader, read_dataset, read_csv
+from ..read import DataSetReader, read_dataset
+from bids.read import read_csv
 
 
 class TestReaderDataSet001(TestCase):
     def setUp(self):
-        self.reader = Reader()
+        self.reader = DataSetReader()
         self.dataset = self.reader.load_data_set("../../BIDS-examples/ds001")
 
     def test_read_dataset_subjects(self):
@@ -40,7 +41,7 @@ class TestReaderDataSet001(TestCase):
 
 class TestReaderDataSet114(TestCase):
     def setUp(self):
-        self.reader = Reader()
+        self.reader = DataSetReader()
         self.dataset = self.reader.load_data_set("../../BIDS-examples/ds114")
 
     def test_list_subject_sessions(self):
