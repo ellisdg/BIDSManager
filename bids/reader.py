@@ -118,17 +118,27 @@ def read_dataset(path_to_dataset_folder):
 
 
 def read_csv(path_to_csv_file):
-    return CSVReader.read_csv(path_to_csv_file)
+    return CSVReader(path_to_csv_file).read_csv()
 
 
 class CSVReader(object):
-    @staticmethod
-    def read_csv(path_to_csv_file):
-        dataset = DataSet()
-        with codecs.open(path_to_csv_file, "rU", "utf-16") as csv_file:
+    def __init__(self, path_to_csv_file):
+        self.dataset = DataSet()
+        self.path_to_csv_file = path_to_csv_file
+
+    def read_csv(self):
+        with codecs.open(self.path_to_csv_file, "rU", "utf-16") as csv_file:
             reader = csv.DictReader(csv_file)
             for line in reader:
+                session_id = line["session"]
+                session = Session(name=session_id)
+
                 subject_id = line["subject"]
-                if not dataset.has_subject_id(subject_id):
-                    dataset.add_subject(Subject(subject_id=subject_id))
-        return dataset
+                if not self.dataset.has_subject_id(subject_id):
+                    subject = Subject(subject_id=subject_id)
+                    self.dataset.add_subject(subject)
+                else:
+                    subject = self.dataset.get_subject(subject_id)
+
+                subject.add_session(session)
+        return self.dataset
