@@ -16,6 +16,9 @@ class Session(BIDSFolder):
     def add_groups(self, groups):
         [self.add_group(group) for group in groups]
 
+    def get_basename(self):
+        return "ses-{0}".format(self.get_name())
+
     def get_image_paths(self, group_name=None, modality=None, acquisition=None):
         image_paths = []
         for group in self._groups.itervalues():

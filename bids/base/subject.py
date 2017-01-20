@@ -11,6 +11,9 @@ class Subject(BIDSFolder):
     def add_session(self, session):
         self._add_object(session, session.get_name(), "session")
 
+    def get_basename(self):
+        return "sub-{0}".format(self.get_id())
+
     def get_id(self):
         return self.subject_id
 

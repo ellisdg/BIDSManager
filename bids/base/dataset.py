@@ -36,3 +36,4 @@ class DataSet(BIDSFolder):
 
     def has_subject_id(self, subject_id):
         return subject_id in self.get_subject_ids()
+

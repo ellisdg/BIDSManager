@@ -18,13 +18,13 @@ class TestReaderDataSet001(TestCase):
     def test_list_subject_scans(self):
         subject = self.dataset.get_subject("01")
         scan_paths = set(subject.get_image_paths())
-        test_paths = set(glob.glob("../../BIDS-examples/ds001/sub-01/*/*.nii.gz"))
+        test_paths = set([os.path.abspath(f) for f in glob.glob("../../BIDS-examples/ds001/sub-01/*/*.nii.gz")])
         self.assertEqual(scan_paths, test_paths)
 
     def test_list_subject_anat_scans(self):
         subject = self.dataset.get_subject("01")
         scan_paths = set(subject.get_image_paths(group_name="anat"))
-        test_paths = set(glob.glob("../../BIDS-examples/ds001/sub-01/anat/*.nii.gz"))
+        test_paths = set([os.path.abspath(f) for f in glob.glob("../../BIDS-examples/ds001/sub-01/anat/*.nii.gz")])
         self.assertEqual(scan_paths, test_paths)
 
     def test_list_subject_task_names(self):
@@ -35,7 +35,7 @@ class TestReaderDataSet001(TestCase):
 
     def test_list_all_t1_scans(self):
         t1_images = self.dataset.get_image_paths(modality="T1w")
-        t1_glob_list = glob.glob("../../BIDS-examples/ds001/sub-*/anat/*T1w.nii.gz")
+        t1_glob_list = [os.path.abspath(f) for f in glob.glob("../../BIDS-examples/ds001/sub-*/anat/*T1w.nii.gz")]
         self.assertEqual(sorted(t1_images), sorted(t1_glob_list))
 
 
@@ -84,7 +84,8 @@ class TestReaderTestDir(TestCase):
         self.assertEqual(group.get_path(), os.path.abspath("./example_bids_dir/sub-01/ses-retest/anat"))
 
     def test_get_t1_contrast_image_paths(self):
-        image_paths_glob = glob.glob("./example_bids_dir/sub-*/ses-*/*/*acq-contrast*.nii.gz")
+        image_paths_glob = [os.path.abspath(f) for f in
+                            glob.glob("./example_bids_dir/sub-*/ses-*/*/*acq-contrast*.nii.gz")]
         image_paths = self.dataset.get_image_paths(acquisition="contrast", modality="T1w")
         self.assertEqual(sorted(image_paths_glob), sorted(image_paths))
 
