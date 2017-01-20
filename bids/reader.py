@@ -124,21 +124,41 @@ def read_csv(path_to_csv_file):
 class CSVReader(object):
     def __init__(self, path_to_csv_file):
         self.dataset = DataSet()
-        self.path_to_csv_file = path_to_csv_file
+        self.path_to_csv_file = os.path.abspath(path_to_csv_file)
+        self._directory = os.path.dirname(self.path_to_csv_file)
 
     def read_csv(self):
         with codecs.open(self.path_to_csv_file, "rU", "utf-16") as csv_file:
             reader = csv.DictReader(csv_file)
             for line in reader:
-                session_id = line["session"]
-                session = Session(name=session_id)
-
                 subject_id = line["subject"]
+
                 if not self.dataset.has_subject_id(subject_id):
                     subject = Subject(subject_id=subject_id)
                     self.dataset.add_subject(subject)
                 else:
                     subject = self.dataset.get_subject(subject_id)
 
-                subject.add_session(session)
+
+                image = Image(file_path=os.path.abspath(os.path.join(self._directory, line["file"])))
+
+                modality = line["modality"]
+
+                session_name = line["session"]
+                if not subject.has_session(session_name):
+                    session = Session(name=session_name)
+                    subject.add_session(session)
+                else:
+                    session = subject.get_session(session_name)
+
+                group_name = "anat"
+                if session.has_group(group_name):
+                    group = session.get_group(group_name)
+                else:
+                    group = Group(name=group_name)
+                    session.add_group(group)
+
+                group.add_image(image)
+
+
         return self.dataset

@@ -1,8 +1,11 @@
+from base import BIDSFolder
 
 
-class DataSet(object):
-    def __init__(self, subjects=None):
-        self.subjects = dict()
+class DataSet(BIDSFolder):
+    def __init__(self, subjects=None, *inputs, **kwargs):
+        super(DataSet, self).__init__(*inputs, **kwargs)
+        self.subjects = self._dict
+        self._folder_type = "dataset"
         if subjects:
             self.add_subjects(subjects)
 
@@ -11,11 +14,7 @@ class DataSet(object):
             self.add_subject(subject)
 
     def add_subject(self, subject):
-        subject_id = subject.get_id()
-        if not self.has_subject_id(subject_id):
-            self.subjects[subject_id] = subject
-        else:
-            raise(ValueError("Duplicate subject subject_id found: {0}".format(subject_id)))
+        self._add_object(subject, subject.get_id(), "subject")
 
     def get_subject_ids(self):
         return sorted([subject_id for subject_id in self.subjects])
