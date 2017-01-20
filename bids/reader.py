@@ -139,11 +139,6 @@ class CSVReader(object):
                 else:
                     subject = self.dataset.get_subject(subject_id)
 
-
-                image = Image(file_path=os.path.abspath(os.path.join(self._directory, line["file"])))
-
-                modality = line["modality"]
-
                 session_name = line["session"]
                 if not subject.has_session(session_name):
                     session = Session(name=session_name)
@@ -158,7 +153,20 @@ class CSVReader(object):
                     group = Group(name=group_name)
                     session.add_group(group)
 
-                group.add_image(image)
-
+                group.add_image(self.read_image(line["file"], line["modality"]))
 
         return self.dataset
+
+    def read_image(self, file_path, modality):
+        modality = self.correct_modality(modality.lower())
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(os.path.join(self._directory, file_path))
+        return Image(file_path=file_path, modality=modality)
+
+    def correct_modality(self, modality):
+        if "t1" in modality:
+            return 'T1w'
+        elif "flair" in modality:
+            return 'FLAIR'
+        return modality
+

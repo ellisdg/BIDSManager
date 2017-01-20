@@ -105,3 +105,13 @@ class TestReaderCSV(TestCase):
     def test_read_images(self):
         self.assertEqual(set([os.path.abspath(f) for f in glob.glob('./unorganized_example_dir/*.nii.gz')]),
                          set(self.dataset.get_image_paths()))
+
+    def test_read_t1w_modality(self):
+        self.assertEqual(set([os.path.abspath(os.path.join('./unorganized_example_dir', f)) for f in
+                              {'t1.nii.gz', 'some_t1.nii.gz', 'some_other_t1.nii.gz',
+                               't1_from_different_subject.nii.gz', 'i_dont_know.nii.gz'}]),
+                         set(self.dataset.get_image_paths(modality='T1w')))
+
+    def test_read_flair_modality(self):
+        self.assertEqual({os.path.abspath('./unorganized_example_dir/flair.nii.gz')},
+                         set(self.dataset.get_image_paths(modality="FLAIR")))
