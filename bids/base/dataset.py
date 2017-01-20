@@ -11,10 +11,11 @@ class DataSet(object):
             self.add_subject(subject)
 
     def add_subject(self, subject):
-        if subject.get_id() not in self.get_subject_ids():
-            self.subjects[subject.get_id()] = subject
+        subject_id = subject.get_id()
+        if not self.has_subject_id(subject_id):
+            self.subjects[subject_id] = subject
         else:
-            raise(ValueError("Duplicate subject subject_id found."))
+            raise(ValueError("Duplicate subject subject_id found: {0}".format(subject_id)))
 
     def get_subject_ids(self):
         return sorted([subject_id for subject_id in self.subjects])
@@ -33,3 +34,6 @@ class DataSet(object):
         for subject in self.subjects.itervalues():
             image_paths.extend(subject.get_image_paths(modality=modality, acquisition=acquisition))
         return image_paths
+
+    def has_subject_id(self, subject_id):
+        return subject_id in self.get_subject_ids()

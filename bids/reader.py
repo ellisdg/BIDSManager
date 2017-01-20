@@ -6,6 +6,8 @@ from base.session import Session
 import glob
 import os
 import re
+import csv
+import codecs
 
 
 class Reader(object):
@@ -113,3 +115,20 @@ def read_image(path_to_image_file):
 
 def read_dataset(path_to_dataset_folder):
     return Reader().load_data_set(path_to_dataset_folder)
+
+
+def read_csv(path_to_csv_file):
+    return CSVReader.read_csv(path_to_csv_file)
+
+
+class CSVReader(object):
+    @staticmethod
+    def read_csv(path_to_csv_file):
+        dataset = DataSet()
+        with codecs.open(path_to_csv_file, "rU", "utf-16") as csv_file:
+            reader = csv.DictReader(csv_file)
+            for line in reader:
+                subject_id = line["subject"]
+                if not dataset.has_subject_id(subject_id):
+                    dataset.add_subject(Subject(subject_id=subject_id))
+        return dataset

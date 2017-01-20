@@ -2,7 +2,7 @@ import glob
 import os
 from unittest import TestCase
 
-from ..reader import Reader, read_dataset
+from ..reader import Reader, read_dataset, read_csv
 
 
 class TestReaderDataSet001(TestCase):
@@ -68,7 +68,7 @@ class TestReaderDataSet114(TestCase):
 
 class TestReaderTestDir(TestCase):
     def setUp(self):
-        self.dataset = read_dataset("./test_dir")
+        self.dataset = read_dataset("./example_bids_dir")
 
     def test_get_session_names(self):
         session_names = self.dataset.get_subject("01").get_session_names()
@@ -76,13 +76,22 @@ class TestReaderTestDir(TestCase):
 
     def test_get_session_path(self):
         session = self.dataset.get_subject("01").get_session("retest")
-        self.assertEqual(session.get_path(), os.path.abspath("./test_dir/sub-01/ses-retest"))
+        self.assertEqual(session.get_path(), os.path.abspath("./example_bids_dir/sub-01/ses-retest"))
 
     def test_get_group_path(self):
         group = self.dataset.get_subject("01").get_session("retest").get_group("anat")
-        self.assertEqual(group.get_path(), os.path.abspath("./test_dir/sub-01/ses-retest/anat"))
+        self.assertEqual(group.get_path(), os.path.abspath("./example_bids_dir/sub-01/ses-retest/anat"))
 
     def test_get_t1_contrast_image_paths(self):
-        image_paths_glob = glob.glob("./test_dir/sub-*/ses-*/*/*acq-contrast*.nii.gz")
+        image_paths_glob = glob.glob("./example_bids_dir/sub-*/ses-*/*/*acq-contrast*.nii.gz")
         image_paths = self.dataset.get_image_paths(acquisition="contrast", modality="T1w")
         self.assertEqual(sorted(image_paths_glob), sorted(image_paths))
+
+
+class TestReaderCSV(TestCase):
+    def setUp(self):
+        self.dataset = read_csv("./unorganized_example_dir/data_dict.csv")
+
+    def test_read_subjects(self):
+        subject_ids = self.dataset.get_subject_ids()
+        self.assertEqual(set(subject_ids), {'003', '007', '005'})
