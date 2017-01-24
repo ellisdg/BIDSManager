@@ -18,7 +18,7 @@ class Image(BIDSObject):
         self._run_number = run_number
 
     def get_basename(self):
-        return self.get_image_key() + self.get_extension()
+        return "_".join(self.get_subject_session_keys(keys=self.get_image_keys())) + self.get_extension()
 
     def get_extension(self):
         if self._path:
@@ -33,7 +33,21 @@ class Image(BIDSObject):
     def get_acquisition(self):
         return self._acquisition
 
+    def get_image_keys(self, keys=None):
+        if not keys:
+            keys = []
+        if self._acquisition:
+            keys.append("acq-{0}".format(self._acquisition))
+        if self._run_number:
+            keys.append("run-{0}".format(self._run_number))
+        if self._modality:
+            keys.append(self._modality)
+        return keys
+
     def get_image_key(self, keys=None):
+        return "_".join(self.get_image_keys(keys=keys))
+
+    def get_subject_session_keys(self, keys=None):
         if not keys:
             keys = []
         subject_key = self.get_subject_key()
@@ -42,13 +56,10 @@ class Image(BIDSObject):
         session_key = self.get_session_key()
         if session_key:
             keys.insert(1, session_key)
-        if self._acquisition:
-            keys.append("acq-{0}".format(self._acquisition))
-        if self._run_number:
-            keys.append("run-{0}".format(self._run_number))
-        if self._modality:
-            keys.append(self._modality)
-        return "_".join(keys)
+        return keys
+
+    def get_run_number(self):
+        return self._run_number
 
     def get_session_key(self):
         if self._session:
@@ -91,9 +102,9 @@ class FunctionalImage(Image):
     def get_task_name(self):
         return self._task_name
 
-    def get_image_key(self, keys=None):
+    def get_image_keys(self, keys=None):
         if not keys:
             keys = []
         if self._task_name:
             keys.append("task-{0}".format(self._task_name.lower().replace(" ", "")))
-        return super(FunctionalImage, self).get_image_key(keys)
+        return super(FunctionalImage, self).get_image_keys(keys)

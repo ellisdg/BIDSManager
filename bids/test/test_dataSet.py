@@ -18,7 +18,7 @@ class TestDataSet(TestCase):
         subject_1 = Subject("001")
         dataset.add_subject(subject_1)
         subject_2 = Subject("001")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(KeyError):
             dataset.add_subject(subject_2)
 
 if __name__ == "__main__":

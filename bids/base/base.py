@@ -44,7 +44,7 @@ class BIDSFolder(BIDSObject):
             self._dict[object_name] = object_to_add
             object_to_add.set_parent(self)
         else:
-            raise(ValueError("Duplicate {0} found in {1}: {2}".format(object_title, self._folder_type, object_name)))
+            raise(KeyError("Duplicate {0} found in {1}: {2}".format(object_title, self._folder_type, object_name)))
 
     def update(self, run=False):
         if run:
