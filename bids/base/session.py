@@ -1,4 +1,4 @@
-from base import BIDSFolder
+from .base import BIDSFolder
 
 
 class Session(BIDSFolder):
@@ -21,7 +21,7 @@ class Session(BIDSFolder):
 
     def get_image_paths(self, group_name=None, modality=None, acquisition=None):
         image_paths = []
-        for group in self._groups.itervalues():
+        for group in self._groups.values():
             if (group_name and group_name == group.get_name()) or not group_name:
                 image_paths.extend(group.get_image_paths(modality=modality, acquisition=acquisition))
         return image_paths
@@ -30,7 +30,7 @@ class Session(BIDSFolder):
         return self._groups[group_name]
 
     def get_groups(self):
-        return self._groups.values()
+        return list(self._groups.values())
 
     def get_group_names(self):
         return self._groups.keys()

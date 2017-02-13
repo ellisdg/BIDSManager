@@ -21,5 +21,6 @@ class TestDataSet(TestCase):
         with self.assertRaises(KeyError):
             dataset.add_subject(subject_2)
 
+
 if __name__ == "__main__":
     unittest.main()

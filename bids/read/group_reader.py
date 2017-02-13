@@ -1,8 +1,8 @@
 import glob
 import os
 
-from bids.base.group import FunctionalGroup, Group
-from bids.read.image_reader import read_image
+from ..base.group import FunctionalGroup, Group
+from ..read.image_reader import read_image
 
 
 class GroupReader(object):

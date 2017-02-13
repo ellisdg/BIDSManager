@@ -1,8 +1,8 @@
 import glob
 import os
 
-from bids.base.session import Session
-from bids.read.group_reader import read_group
+from ..base.session import Session
+from ..read.group_reader import read_group
 
 
 class SessionReader(object):

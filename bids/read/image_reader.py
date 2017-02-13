@@ -1,7 +1,7 @@
 import os
 import re
 
-from bids.base.image import FunctionalImage, Image
+from ..base.image import FunctionalImage, Image
 
 
 class ImageReader(object):

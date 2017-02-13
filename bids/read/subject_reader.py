@@ -1,8 +1,8 @@
 import glob
 import os
 
-from bids.base.subject import Subject
-from bids.read.session_reader import read_session
+from ..base.subject import Subject
+from ..read.session_reader import read_session
 
 
 class SubjectReader(object):

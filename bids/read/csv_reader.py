@@ -2,10 +2,9 @@ import codecs
 import csv
 import os
 
-from bids.base.dataset import DataSet
-from bids.base.group import Group
-from bids.base.session import Session
-from bids.base.subject import Subject
+from ..base.dataset import DataSet
+from ..base.session import Session
+from ..base.subject import Subject
 from .image_reader import ImageReader
 from .group_reader import GroupReader
 

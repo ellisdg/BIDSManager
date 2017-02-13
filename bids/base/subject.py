@@ -1,4 +1,4 @@
-from base import BIDSFolder
+from .base import BIDSFolder
 
 
 class Subject(BIDSFolder):
@@ -21,17 +21,17 @@ class Subject(BIDSFolder):
         return self._sessions[session_name]
 
     def get_sessions(self):
-        return self._sessions.values()
+        return list(self._sessions.values())
 
     def get_image_paths(self, group_name=None, modality=None, acquisition=None):
         image_paths = []
-        for session in self._sessions.itervalues():
+        for session in self._sessions.values():
             image_paths.extend(session.get_image_paths(group_name=group_name, modality=modality,
                                                        acquisition=acquisition))
         return image_paths
 
     def get_task_names(self):
-        return self._sessions.values()[0].get_group("func").get_task_names()
+        return self.get_sessions()[0].get_group("func").get_task_names()
 
     def get_session_names(self):
         return self._sessions.keys()

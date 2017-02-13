@@ -1,4 +1,4 @@
-from base import BIDSFolder
+from .base import BIDSFolder
 
 
 class DataSet(BIDSFolder):
@@ -26,11 +26,11 @@ class DataSet(BIDSFolder):
         return self.subjects[subject_id]
 
     def get_subjects(self):
-        return self.subjects.values()
+        return list(self.subjects.values())
 
     def get_image_paths(self, modality=None, acquisition=None):
         image_paths = []
-        for subject in self.subjects.itervalues():
+        for subject in self.subjects.values():
             image_paths.extend(subject.get_image_paths(modality=modality, acquisition=acquisition))
         return image_paths
 

@@ -15,7 +15,7 @@ class BIDSObject(object):
         return self._parent
 
     def get_path(self):
-        return self._path
+        return os.path.abspath(self._path)
 
     def set_path(self, path):
         if self._path and os.path.exists(self._path):
@@ -51,7 +51,7 @@ class BIDSFolder(BIDSObject):
             if self._path and not os.path.exists(self._path):
                 os.makedirs(self._path)
 
-            for child in self._dict.itervalues():
+            for child in self._dict.values():
                 if isinstance(child, BIDSObject):
                     basename = child.get_basename()
                 else:

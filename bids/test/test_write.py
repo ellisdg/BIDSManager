@@ -6,12 +6,13 @@ from unittest import TestCase
 
 from ..write.dataset_writer import write_dataset
 from ..read import read_csv
+from .test_reader import get_unorganized_example_directory
 
 
 class TestWrite(TestCase):
     def setUp(self):
-        self.dataset = read_csv("./unorganized_example_dir/data_dict.csv")
-        self._dir = os.path.abspath("./temp_dir")
+        self.dataset = read_csv(os.path.join(get_unorganized_example_directory(), "data_dict.csv"))
+        self._dir = os.path.abspath("temp_dir")
 
     def tearDown(self):
         shutil.rmtree(self._dir)
