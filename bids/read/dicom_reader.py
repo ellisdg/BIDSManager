@@ -17,15 +17,21 @@ class DicomFile(BIDSObject):
             self._info = None
 
     def get_modality(self):
-        if "FLAIR" in self.get_series_name():
+        if "FLAIR" in self.get_series_description():
             return "FLAIR"
-        else:
+        elif "T2" in self.get_series_description():
+            return "T2"
+        elif "T1" in self.get_series_description():
             return "T1"
 
-    def get_series_name(self):
+    def get_acquisition(self):
+        if "GAD" in self.get_series_description():
+            return "contrast"
+
+    def get_series_description(self):
         if "SeriesDescription" in self._info:
             return self._info.SeriesDescription
 
     def get_image(self):
-        return Image(modality=self.get_modality())
+        return Image(modality=self.get_modality(), acquisition=self.get_acquisition())
 
