@@ -17,7 +17,7 @@ def read_dicom_directory(input_directory):
 def group_dicoms(dicom_files):
     keys = set()
     for dicom_file in dicom_files:
-        key = dicom_file.get("PatientName")
+        key = dicom_file.get_field("PatientName")
         keys.add(key)
     return keys
 
@@ -46,10 +46,12 @@ def read_dicom_file(in_file):
 class DicomFile(BIDSObject):
     def __init__(self, *inputs, **kwargs):
         super(DicomFile, self).__init__(*inputs, **kwargs)
+        self._info = None
+        self.update()
+
+    def update(self):
         if self._path:
             self._info = dicom.read_file(self._path)
-        else:
-            self._info = None
 
     def get_modality(self):
         if "FLAIR" in self.get_series_description():
@@ -70,5 +72,5 @@ class DicomFile(BIDSObject):
     def get_image(self):
         return Image(modality=self.get_modality(), acquisition=self.get_acquisition())
 
-    def get(self, key):
+    def get_field(self, key):
         return self._info.get(key)
