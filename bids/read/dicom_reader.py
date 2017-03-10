@@ -1,7 +1,42 @@
+import os
+import glob
+
 import dicom
 
+from ..base.subject import Subject
+from ..base.dataset import DataSet
 from ..base.image import Image
 from ..base.base import BIDSObject
+
+
+def read_dicom_directory(input_directory):
+    dicom_files = get_dicom_files(input_directory)
+    return DataSet([Subject(name) for name in group_dicoms(dicom_files)])
+
+
+def group_dicoms(dicom_files):
+    keys = set()
+    for dicom_file in dicom_files:
+        key = dicom_file.get("PatientName")
+        keys.add(key)
+    return keys
+
+
+def get_dicom_files(input_directory):
+    dicom_files = []
+    for f in get_files_in_directory(input_directory):
+        dicom_files.append(DicomFile(f))
+    return dicom_files
+
+
+def get_files_in_directory(input_directory):
+    files = []
+    for item in glob.glob(os.path.join(input_directory, "*")):
+        if os.path.isdir(item):
+            files.extend(get_files_in_directory(item))
+        elif os.path.isfile(item):
+            files.append(item)
+    return files
 
 
 def read_dicom_file(in_file):
@@ -35,3 +70,5 @@ class DicomFile(BIDSObject):
     def get_image(self):
         return Image(modality=self.get_modality(), acquisition=self.get_acquisition())
 
+    def get(self, key):
+        return self._info.get(key)

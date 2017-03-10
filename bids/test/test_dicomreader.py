@@ -8,7 +8,7 @@ try:
 except ImportError:
     from urllib import urlretrieve
 
-from ..read.dicom_reader import read_dicom_file
+from ..read.dicom_reader import read_dicom_file, read_dicom_directory
 
 
 def extract_tarball_files(in_file, output_dir):
@@ -81,3 +81,8 @@ class TestDicomReader(TestCase):
     def test_read_t2(self):
         image = read_dicom_file(self.dicom_files["BRTUM014"])
         self._test_image_modality(image, "T2")
+
+    def test_convert_dir_to_bids(self):
+        dicom_directory = os.path.join("..", "..", "TestDicoms")
+        dataset = read_dicom_directory(dicom_directory)
+        self.assertEqual(dataset.get_number_of_subjects(), 2)
