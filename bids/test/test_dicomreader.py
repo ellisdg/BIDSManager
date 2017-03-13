@@ -8,7 +8,9 @@ try:
 except ImportError:
     from urllib import urlretrieve
 
-from ..read.dicom_reader import read_dicom_file, read_dicom_directory
+import nibabel as nib
+
+from ..read.dicom_reader import read_dicom_file, read_dicom_directory, dcm2niix
 
 
 def extract_tarball_files(in_file, output_dir):
@@ -83,6 +85,22 @@ class TestDicomReader(TestCase):
         self._test_image_modality(image, "T2")
 
     def test_convert_dir_to_bids(self):
-        dicom_directory = os.path.join("..", "..", "TestDicoms")
+        dicom_directory = os.path.join("..", "..", "TEST", "TestDicoms")
         dataset = read_dicom_directory(dicom_directory)
         self.assertEqual(dataset.get_number_of_subjects(), 2)
+        self.assertEqual(len(dataset.get_image_paths()), 3)
+        for subject in dataset.get_subjects():
+            for session in subject.get_sessions():
+                for group in session.get_groups():
+                    for image in group.get_images():
+                        self.assertEqual(image.get_modality(), "FLAIR")
+                        self.assertEqual(image.get_extension(), ".nii.gz")
+
+
+class TestDcm2Niix(TestCase):
+    def test_convert(self):
+        in_dicom_file = os.path.join("..", "..", "TEST", "TestDicoms", "brain_001.dcm")
+        nifti_file = dcm2niix(in_dicom_file)
+        image = nib.load(nifti_file)
+        test_image = nib.load(os.path.join("..", "..", "TEST", "TestNiftis", "brain0.nii.gz"))
+        self.assertTrue(image.header == test_image.header)
