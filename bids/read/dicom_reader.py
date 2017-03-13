@@ -15,9 +15,9 @@ from ..base.session import Session
 from ..base.group import Group
 
 
-def read_dicom_directory(input_directory):
+def read_dicom_directory(input_directory, anonymize=False, length=2):
     dicom_files = get_dicom_files(input_directory)
-    return dicoms_to_dataset(dicom_files)
+    return dicoms_to_dataset(dicom_files, anonymize=anonymize, length=length)
 
 
 def random_hash():
@@ -32,16 +32,29 @@ def random_tmp_directory():
     return directory
 
 
-def dicoms_to_dataset(dicom_files):
+def dicoms_to_dataset(dicom_files, anonymize=False, length=2):
     dataset = DataSet()
     sorted_dicoms = sort_dicoms(dicom_files, field="PatientName")
+    subject_count = 0
     for subject_name in sorted_dicoms:
-        subject = Subject(subject_name)
+        session_count = 0
+        if anonymize:
+            subject_count += 1
+            subject = Subject("{0:0{1}d}".format(subject_count, length))
+        else:
+            subject = Subject(subject_name)
         subject_dicoms = sort_dicoms(sorted_dicoms[subject_name], field="StudyDate")
         for date in subject_dicoms:
-            session = Session(date)
-            session.add_group(Group(images=[subject_dicoms[date][0].get_image()]))
+            if anonymize:
+                session_count += 1
+                session = Session("{0:0{1}d}".format(session_count, length))
+            else:
+                session = Session(date)
+            image = subject_dicoms[date][0].get_image()
+            group = Group(name="anat")
+            session.add_group(group)
             subject.add_session(session)
+            group.add_image(image)
         dataset.add_subject(subject)
     return dataset
 

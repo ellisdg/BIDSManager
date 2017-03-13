@@ -3,6 +3,7 @@ import gzip
 import tarfile
 import os
 import glob
+import shutil
 try:
     from urllib.request import urlretrieve
 except ImportError:
@@ -11,6 +12,7 @@ except ImportError:
 import nibabel as nib
 
 from ..read.dicom_reader import read_dicom_file, read_dicom_directory, dcm2niix
+from ..write.dataset_writer import write_dataset
 
 
 def extract_tarball_files(in_file, output_dir):
@@ -105,3 +107,13 @@ class TestDcm2Niix(TestCase):
         image = nib.load(nifti_file)
         test_image = nib.load(os.path.join("..", "..", "TEST", "TestNiftis", "brain0.nii.gz"))
         self.assertEqual(image.header, test_image.header)
+
+    def test_convert_to_bids(self):
+        in_dicom_directory = os.path.join("..", "..", "TEST", "TestDicoms")
+        dataset = read_dicom_directory(in_dicom_directory, anonymize=True)
+        out_bids_dataset = os.path.join("..", "..", "TEST", "TestWriteBIDS")
+        write_dataset(dataset, out_bids_dataset)
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-02", "ses-02", "anat",
+                                                    "sub-02_ses-02_FLAIR.nii.gz")))
+        shutil.rmtree(out_bids_dataset)
