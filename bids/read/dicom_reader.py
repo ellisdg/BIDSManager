@@ -86,15 +86,17 @@ def convert_dicom(dicom_file):
                  acquisition=dicom_file.get_acquisition())
 
 
-def dcm2niix(in_file):
+def dcm2niix(in_file, out_file=None):
     working_dir = random_tmp_directory()
     dicom_set = get_dicom_set(in_file)
     for dicom_file in dicom_set:
         shutil.copy(dicom_file.get_path(), working_dir)
-    base_path, _ = os.path.splitext(in_file)
-    out_file = base_path + ".nii.gz"
     tmp_file = run_dcm2niix(working_dir, working_dir)
-    return tmp_file
+    if out_file:
+        shutil.move(tmp_file, out_file)
+    else:
+        out_file = tmp_file
+    return out_file
 
 
 def get_dicom_set(in_file):
