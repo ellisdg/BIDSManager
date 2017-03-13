@@ -93,7 +93,7 @@ def dcm2niix(in_file):
         shutil.copy(dicom_file.get_path(), working_dir)
     base_path, _ = os.path.splitext(in_file)
     out_file = base_path + ".nii.gz"
-    tmp_file = run_dcm2niix(in_file, working_dir)
+    tmp_file = run_dcm2niix(working_dir, working_dir)
     return tmp_file
 
 
@@ -103,7 +103,8 @@ def get_dicom_set(in_file):
     dicom_files = get_dicom_files(dicom_directory)
     subject_dicoms = sort_dicoms(dicom_files, "PatientName")[dicom_file.get_field("PatientName")]
     session_dicoms = sort_dicoms(subject_dicoms, "StudyDate")[dicom_file.get_field("StudyDate")]
-    return session_dicoms
+    series_dicoms = sort_dicoms(session_dicoms, "SeriesTime")[dicom_file.get_field("SeriesTime")]
+    return series_dicoms
 
 
 def run_dcm2niix(in_file, out_dir="/tmp/dcm2niix"):

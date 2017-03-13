@@ -72,8 +72,9 @@ class TestDicomReader(TestCase):
         self.assertEqual(image.get_modality(), modality)
 
     def test_read_flair(self):
-        image = read_dicom_file(self.dicom_files["MR-MONO2-16-head"])
-        self._test_image_modality(image, "FLAIR")
+        image_file = read_dicom_file(self.dicom_files["MR-MONO2-16-head"]).get_path()
+        test_image_file = os.path.join("..", "..", "TEST", "TestNiftis", "MR-MONO2-16-head.nii.gz")
+        self.assertEqual(nib.load(image_file).header, nib.load(test_image_file).header)
 
     def test_read_t1(self):
         image = read_dicom_file(self.dicom_files["BRTUM008"])
@@ -103,4 +104,4 @@ class TestDcm2Niix(TestCase):
         nifti_file = dcm2niix(in_dicom_file)
         image = nib.load(nifti_file)
         test_image = nib.load(os.path.join("..", "..", "TEST", "TestNiftis", "brain0.nii.gz"))
-        self.assertTrue(image.header == test_image.header)
+        self.assertEqual(image.header, test_image.header)
