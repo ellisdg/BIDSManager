@@ -108,3 +108,26 @@ class FunctionalImage(Image):
         if self._task_name:
             keys.append("task-{0}".format(self._task_name.lower().replace(" ", "")))
         return super(FunctionalImage, self).get_image_keys(keys)
+
+
+class DiffusionImage(Image):
+    def __init__(self, bval_path, bvec_path, *inputs, **kwargs):
+        super(DiffusionImage, self).__init__(*inputs, **kwargs)
+        self._bval_path = bval_path
+        self._bvec_path = bvec_path
+        self._modality = "dwi"
+
+    def update_bval(self):
+        tmp_bval_file = self.get_path().replace(self.get_extension(), ".bval")
+        shutil.copy(self._bval_path, tmp_bval_file)
+        self._bval_path = tmp_bval_file
+
+    def update_bvec(self):
+        tmp_bvec_file = self.get_path().replace(self.get_extension(), ".bvec")
+        shutil.copy(self._bvec_path, tmp_bvec_file)
+        self._bvec_path = tmp_bvec_file
+
+    def update(self, run=False):
+        super(DiffusionImage, self).update(run=run)
+        self.update_bval()
+        self.update_bvec()

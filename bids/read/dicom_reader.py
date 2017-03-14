@@ -9,7 +9,7 @@ from dicom.errors import InvalidDicomError
 
 from ..base.subject import Subject
 from ..base.dataset import DataSet
-from ..base.image import Image
+from ..base.image import Image, DiffusionImage
 from ..base.base import BIDSObject
 from ..base.session import Session
 from ..base.group import Group
@@ -51,7 +51,13 @@ def dicoms_to_dataset(dicom_files, anonymize=False, length=2):
             else:
                 session = Session(date)
             image = subject_dicoms[date][0].get_image()
-            group = Group(name="anat")
+            if image.get_modality() in ["FLAIR"]:
+                group = Group(name="anat")
+            elif image.get_modality() in ["dwi"]:
+                group = Group(name="dwi")
+            else:
+                print(image.get_modality())
+                print(image.get_path())
             session.add_group(group)
             subject.add_session(session)
             group.add_image(image)
@@ -95,16 +101,25 @@ def read_dicom_file(in_file):
 
 
 def convert_dicom(dicom_file):
-    return Image(path=dcm2niix(dicom_file.get_path()), modality=dicom_file.get_modality(),
-                 acquisition=dicom_file.get_acquisition())
+    file_path = dicom_file.get_path()
+    if dicom_file.get_modality() == "dwi":
+        return convert_dwi_dicom(file_path)
+    else:
+        return Image(path=dcm2niix(file_path), modality=dicom_file.get_modality(),
+                     acquisition=dicom_file.get_acquisition())
 
 
-def dcm2niix(in_file, out_file=None):
+def convert_dwi_dicom(in_file):
+    nifti_file, bval_file, bvec_file = dcm2niix(in_file, dwi=True)
+    return DiffusionImage(path=nifti_file, bval_path=bval_file, bvec_path=bvec_file)
+
+
+def dcm2niix(in_file, out_file=None, dwi=False):
     working_dir = random_tmp_directory()
     dicom_set = get_dicom_set(in_file)
     for dicom_file in dicom_set:
         shutil.copy(dicom_file.get_path(), working_dir)
-    tmp_file = run_dcm2niix(working_dir, working_dir)
+    tmp_file = run_dcm2niix(working_dir, working_dir, dwi=dwi)
     if out_file:
         shutil.move(tmp_file, out_file)
     else:
@@ -122,12 +137,16 @@ def get_dicom_set(in_file):
     return series_dicoms
 
 
-def run_dcm2niix(in_file, out_dir="/tmp/dcm2niix"):
+def run_dcm2niix(in_file, out_dir="/tmp/dcm2niix", dwi=False):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     subprocess.call(['dcm2niix', "-o", out_dir, in_file])
-    tmp_file = glob.glob(os.path.join(out_dir, "*.nii.gz"))[0]
-    return tmp_file
+    if dwi:
+        bval_file = glob.glob(os.path.join(out_dir, "*.bval"))[0]
+        bvec_file = glob.glob(os.path.join(out_dir, "*.bvec"))[0]
+        nifti_file = glob.glob(os.path.join(out_dir, "*.nii.gz"))[0]
+        return nifti_file, bval_file, bvec_file
+    return glob.glob(os.path.join(out_dir, "*.nii.gz"))[0]
 
 
 class DicomFile(BIDSObject):
@@ -147,6 +166,8 @@ class DicomFile(BIDSObject):
             return "T2"
         elif "T1" in self.get_series_description():
             return "T1"
+        elif "DTI" in self.get_series_description():
+            return "dwi"
 
     def get_acquisition(self):
         if "GAD" in self.get_series_description():

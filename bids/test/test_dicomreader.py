@@ -87,20 +87,12 @@ class TestDicomReader(TestCase):
         image = read_dicom_file(self.dicom_files["BRTUM014"])
         self._test_image_modality(image, "T2")
 
-    def test_convert_dir_to_bids(self):
-        dicom_directory = os.path.join("..", "..", "TEST", "TestDicoms")
-        dataset = read_dicom_directory(dicom_directory)
-        self.assertEqual(dataset.get_number_of_subjects(), 2)
-        self.assertEqual(len(dataset.get_image_paths()), 3)
-        for subject in dataset.get_subjects():
-            for session in subject.get_sessions():
-                for group in session.get_groups():
-                    for image in group.get_images():
-                        self.assertEqual(image.get_modality(), "FLAIR")
-                        self.assertEqual(image.get_extension(), ".nii.gz")
-
 
 class TestDcm2Niix(TestCase):
+    def setUp(self):
+        dicom_directory = os.path.join("..", "..", "TEST", "TestDicoms")
+        self.dataset = read_dicom_directory(dicom_directory, anonymize=True)
+
     def test_convert(self):
         in_dicom_file = os.path.join("..", "..", "TEST", "TestDicoms", "brain_001.dcm")
         nifti_file = dcm2niix(in_dicom_file)
@@ -108,12 +100,24 @@ class TestDcm2Niix(TestCase):
         test_image = nib.load(os.path.join("..", "..", "TEST", "TestNiftis", "brain0.nii.gz"))
         self.assertEqual(image.header, test_image.header)
 
+    def test_convert_dir_to_bids(self):
+        self.assertEqual(self.dataset.get_number_of_subjects(), 3)
+        self.assertEqual(len(self.dataset.get_image_paths()), 4)
+        for subject in self.dataset.get_subjects():
+            for session in subject.get_sessions():
+                for group in session.get_groups():
+                    for image in group.get_images():
+                        self.assertEqual(image.get_extension(), ".nii.gz")
+
     def test_convert_to_bids(self):
-        in_dicom_directory = os.path.join("..", "..", "TEST", "TestDicoms")
-        dataset = read_dicom_directory(in_dicom_directory, anonymize=True)
         out_bids_dataset = os.path.join("..", "..", "TEST", "TestWriteBIDS")
-        write_dataset(dataset, out_bids_dataset)
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-02", "ses-02", "anat",
-                                                    "sub-02_ses-02_FLAIR.nii.gz")))
+        write_dataset(self.dataset, out_bids_dataset)
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01", "dwi",
+                                       "sub-01_ses-01_dwi.nii.gz")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01", "dwi",
+                                       "sub-01_ses-01_dwi.bval")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01", "dwi",
+                                       "sub-01_ses-01_dwi.bvec")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-02", "anat",
+                                                    "sub-03_ses-02_FLAIR.nii.gz")))
         shutil.rmtree(out_bids_dataset)
