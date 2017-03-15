@@ -1,7 +1,7 @@
 import unittest
 from unittest import TestCase
-from ..base.session import Session
-from ..base.group import Group
+from bids.base.session import Session
+from bids.base.group import Group
 
 
 class TestSession(TestCase):

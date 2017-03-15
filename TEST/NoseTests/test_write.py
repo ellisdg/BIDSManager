@@ -4,9 +4,9 @@ import shutil
 from unittest import TestCase
 
 
-from ..write.dataset_writer import write_dataset
-from ..read import read_csv
-from .test_reader import get_unorganized_example_directory
+from bids.write.dataset_writer import write_dataset
+from bids.read import read_csv
+from test_reader import get_unorganized_example_directory
 
 
 class TestWrite(TestCase):

@@ -11,8 +11,8 @@ except ImportError:
 
 import nibabel as nib
 
-from ..read.dicom_reader import read_dicom_file, read_dicom_directory, dcm2niix
-from ..write.dataset_writer import write_dataset
+from bids.read.dicom_reader import read_dicom_file, read_dicom_directory, dcm2niix
+from bids.write.dataset_writer import write_dataset
 
 
 def extract_tarball_files(in_file, output_dir):
@@ -75,7 +75,7 @@ class TestDicomReader(TestCase):
 
     def test_read_flair(self):
         image_file = read_dicom_file(self.dicom_files["MR-MONO2-16-head"]).get_path()
-        test_image_file = os.path.join("..", "..", "TEST", "TestNiftis", "MR-MONO2-16-head.nii.gz")
+        test_image_file = os.path.join("TestNiftis", "MR-MONO2-16-head.nii.gz")
         self.assertEqual(nib.load(image_file).header, nib.load(test_image_file).header)
 
     def test_read_t1(self):
@@ -90,14 +90,14 @@ class TestDicomReader(TestCase):
 
 class TestDcm2Niix(TestCase):
     def setUp(self):
-        dicom_directory = os.path.join("..", "..", "TEST", "TestDicoms")
+        dicom_directory = os.path.abspath("TestDicoms")
         self.dataset = read_dicom_directory(dicom_directory, anonymize=True)
 
     def test_convert(self):
-        in_dicom_file = os.path.join("..", "..", "TEST", "TestDicoms", "brain_001.dcm")
+        in_dicom_file = os.path.join("TestDicoms", "brain_001.dcm")
         nifti_file, sidecar_file = dcm2niix(in_dicom_file)
         image = nib.load(nifti_file)
-        test_image = nib.load(os.path.join("..", "..", "TEST", "TestNiftis", "brain0.nii.gz"))
+        test_image = nib.load(os.path.join("TestNiftis", "brain0.nii.gz"))
         self.assertEqual(image.header, test_image.header)
 
     def test_convert_dir_to_bids(self):
@@ -110,7 +110,7 @@ class TestDcm2Niix(TestCase):
                         self.assertEqual(image.get_extension(), ".nii.gz")
 
     def test_convert_to_bids(self):
-        out_bids_dataset = os.path.join("..", "..", "TEST", "TestWriteBIDS")
+        out_bids_dataset = os.path.abspath("TestWriteBIDS")
         write_dataset(self.dataset, out_bids_dataset)
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01", "dwi",
                                        "sub-01_ses-01_dwi.nii.gz")))
