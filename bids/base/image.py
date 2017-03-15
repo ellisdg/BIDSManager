@@ -7,12 +7,12 @@ from .subject import Subject
 
 
 class Image(BIDSObject):
-    def __init__(self, side_car_path=None, modality=None, acquisition=None, run_number=None, *inputs, **kwargs):
+    def __init__(self, sidecar_path=None, modality=None, acquisition=None, run_number=None, *inputs, **kwargs):
         self._session = None
         self._subject = None
         self._group = None
         super(Image, self).__init__(*inputs, **kwargs)
-        self.side_car_path = side_car_path
+        self.sidecar_path = sidecar_path
         self._modality = modality
         self._acquisition = acquisition
         self._run_number = run_number
@@ -90,8 +90,17 @@ class Image(BIDSObject):
                 self._subject = session
 
     def update(self, run=False):
-        if run and self._path and not os.path.exists(self._path) and self._previous_path:
-            shutil.copy(self._previous_path, self._path)
+        if run:
+            if self._path and not os.path.exists(self._path) and self._previous_path:
+                shutil.copy(self._previous_path, self._path)
+            self.update_sidecar()
+
+    def update_sidecar(self):
+        if self.sidecar_path:
+            tmp_sidecar_file = self._path.replace(self.get_extension(), ".json")
+            if not os.path.exists(tmp_sidecar_file):
+                shutil.copy(self.sidecar_path, tmp_sidecar_file)
+                self.sidecar_path = tmp_sidecar_file
 
 
 class FunctionalImage(Image):

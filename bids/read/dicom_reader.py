@@ -105,26 +105,41 @@ def convert_dicom(dicom_file):
     if dicom_file.get_modality() == "dwi":
         return convert_dwi_dicom(file_path)
     else:
-        return Image(path=dcm2niix(file_path), modality=dicom_file.get_modality(),
+        nifti_file, sidecar_file = dcm2niix(file_path)
+        return Image(path=nifti_file, modality=dicom_file.get_modality(), sidecar_path=sidecar_file,
                      acquisition=dicom_file.get_acquisition())
 
 
 def convert_dwi_dicom(in_file):
-    nifti_file, bval_file, bvec_file = dcm2niix(in_file, dwi=True)
-    return DiffusionImage(path=nifti_file, bval_path=bval_file, bvec_path=bvec_file)
+    nifti_file, bval_file, bvec_file, sidecar_file = dcm2niix_dwi(in_file)
+    return DiffusionImage(path=nifti_file, bval_path=bval_file, bvec_path=bvec_file, sidecar_path=sidecar_file)
 
 
-def dcm2niix(in_file, out_file=None, dwi=False):
+def dcm2niix_dwi(in_file):
+    working_dir = setup_dcm2niix(in_file)
+    return run_dcm2niix(working_dir, working_dir, dwi=True)
+
+
+def setup_dcm2niix(in_file):
     working_dir = random_tmp_directory()
     dicom_set = get_dicom_set(in_file)
     for dicom_file in dicom_set:
         shutil.copy(dicom_file.get_path(), working_dir)
-    tmp_file = run_dcm2niix(working_dir, working_dir, dwi=dwi)
+    return working_dir
+
+
+def dcm2niix(in_file, out_file=None):
+    working_dir = setup_dcm2niix(in_file)
+    tmp_file, tmp_sidecar = run_dcm2niix(working_dir, working_dir)
+
     if out_file:
         shutil.move(tmp_file, out_file)
+        sidecar = out_file.replace(".nii.gz", ".json")
+        shutil.move(tmp_sidecar, sidecar)
     else:
         out_file = tmp_file
-    return out_file
+        sidecar = tmp_sidecar
+    return out_file, sidecar
 
 
 def get_dicom_set(in_file):
@@ -140,13 +155,14 @@ def get_dicom_set(in_file):
 def run_dcm2niix(in_file, out_dir="/tmp/dcm2niix", dwi=False):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    subprocess.call(['dcm2niix', "-o", out_dir, in_file])
+    subprocess.call(['dcm2niix', "-b", "y", "-o", out_dir, in_file])
+    sidecar = glob.glob(os.path.join(out_dir, "*.json"))[0]
     if dwi:
         bval_file = glob.glob(os.path.join(out_dir, "*.bval"))[0]
         bvec_file = glob.glob(os.path.join(out_dir, "*.bvec"))[0]
         nifti_file = glob.glob(os.path.join(out_dir, "*.nii.gz"))[0]
-        return nifti_file, bval_file, bvec_file
-    return glob.glob(os.path.join(out_dir, "*.nii.gz"))[0]
+        return nifti_file, bval_file, bvec_file, sidecar
+    return glob.glob(os.path.join(out_dir, "*.nii.gz"))[0], sidecar
 
 
 class DicomFile(BIDSObject):

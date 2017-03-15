@@ -63,7 +63,7 @@ class TestDicomReader(TestCase):
             self.dicom_files[os.path.basename(f).split(".")[0]] = f
 
     def setUpFlair(self):
-        temp_dicom = os.path.join("tmp", "MR-MONO2-16-head" + ".dcm")
+        temp_dicom = os.path.join("tmp", "MR-MONO2-16-head.dcm")
         if not os.path.exists(temp_dicom):
             file_url = "http://www.barre.nom.fr/medical/samples/files/MR-MONO2-16-head.gz"
             temp_file = download_file(file_url)
@@ -95,7 +95,7 @@ class TestDcm2Niix(TestCase):
 
     def test_convert(self):
         in_dicom_file = os.path.join("..", "..", "TEST", "TestDicoms", "brain_001.dcm")
-        nifti_file = dcm2niix(in_dicom_file)
+        nifti_file, sidecar_file = dcm2niix(in_dicom_file)
         image = nib.load(nifti_file)
         test_image = nib.load(os.path.join("..", "..", "TEST", "TestNiftis", "brain0.nii.gz"))
         self.assertEqual(image.header, test_image.header)
@@ -118,6 +118,10 @@ class TestDcm2Niix(TestCase):
                                        "sub-01_ses-01_dwi.bval")))
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01", "dwi",
                                        "sub-01_ses-01_dwi.bvec")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01", "dwi",
+                                       "sub-01_ses-01_dwi.json")))
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-02", "anat",
                                                     "sub-03_ses-02_FLAIR.nii.gz")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-02", "anat",
+                                                    "sub-03_ses-02_FLAIR.json")))
         shutil.rmtree(out_bids_dataset)
