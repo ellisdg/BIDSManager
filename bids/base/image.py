@@ -2,8 +2,6 @@ import os
 import shutil
 
 from .base import BIDSObject
-from .session import Session
-from .subject import Subject
 
 
 class Image(BIDSObject):
@@ -39,7 +37,7 @@ class Image(BIDSObject):
         if self._acquisition:
             keys.append("acq-{0}".format(self._acquisition))
         if self._run_number:
-            keys.append("run-{0}".format(self._run_number))
+            keys.append("run-{0:02d}".format(int(self._run_number)))
         if self._modality:
             keys.append(self._modality)
         return keys
@@ -79,6 +77,7 @@ class Image(BIDSObject):
         return self._group
 
     def set_parent(self, parent):
+        from bids.base import Subject, Session
         super(Image, self).set_parent(parent)
         self._group = self._parent
         if self._group:

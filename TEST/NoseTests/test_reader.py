@@ -2,7 +2,8 @@ import glob
 import os
 from unittest import TestCase
 
-from bids.read import DataSetReader, read_dataset, read_csv
+from bids.read import read_dataset, read_csv
+from bids.read.dataset_reader import DataSetReader
 
 
 def get_script_directory():

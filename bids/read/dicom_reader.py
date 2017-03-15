@@ -12,7 +12,6 @@ from ..base.dataset import DataSet
 from ..base.image import Image, DiffusionImage
 from ..base.base import BIDSObject
 from ..base.session import Session
-from ..base.group import Group
 
 
 def read_dicom_directory(input_directory, anonymize=False, length=2):
@@ -43,25 +42,21 @@ def dicoms_to_dataset(dicom_files, anonymize=False, length=2):
             subject = Subject("{0:0{1}d}".format(subject_count, length))
         else:
             subject = Subject(subject_name)
+        dataset.add_subject(subject)
         subject_dicoms = sort_dicoms(sorted_dicoms[subject_name], field="StudyDate")
-        for date in subject_dicoms:
+        for date in sorted(subject_dicoms.keys()):
             if anonymize:
                 session_count += 1
                 session = Session("{0:0{1}d}".format(session_count, length))
             else:
                 session = Session(date)
-            image = subject_dicoms[date][0].get_image()
-            if image.get_modality() in ["FLAIR"]:
-                group = Group(name="anat")
-            elif image.get_modality() in ["dwi"]:
-                group = Group(name="dwi")
-            else:
-                print(image.get_modality())
-                print(image.get_path())
-            session.add_group(group)
             subject.add_session(session)
-            group.add_image(image)
-        dataset.add_subject(subject)
+            session_dicoms = sort_dicoms(subject_dicoms[date], field="SeriesDescription")
+            for modality in session_dicoms:
+                series_dicoms = sort_dicoms(session_dicoms[modality], field="SeriesTime")
+                for i, time in enumerate(sorted(series_dicoms.keys())):
+                    image = series_dicoms[time][0].get_image()
+                    session.add_image(image)
     return dataset
 
 
@@ -179,14 +174,14 @@ class DicomFile(BIDSObject):
         if "FLAIR" in self.get_series_description():
             return "FLAIR"
         elif "T2" in self.get_series_description():
-            return "T2"
+            return "T2w"
         elif "T1" in self.get_series_description():
-            return "T1"
+            return "T1w"
         elif "DTI" in self.get_series_description():
             return "dwi"
 
     def get_acquisition(self):
-        if "GAD" in self.get_series_description():
+        if "GAD" in self.get_series_description() or "+C" in self.get_series_description():
             return "contrast"
 
     def get_series_description(self):

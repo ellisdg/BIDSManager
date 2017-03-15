@@ -9,6 +9,7 @@ try:
 except ImportError:
     from urllib import urlretrieve
 
+import numpy as np
 import nibabel as nib
 
 from bids.read.dicom_reader import read_dicom_file, read_dicom_directory, dcm2niix
@@ -48,27 +49,31 @@ def write_data_to_file(data, out_file):
 
 
 class TestDicomReader(TestCase):
-    def setUp(self):
-        self.dicom_files = dict()
-        self.setUpDicomFiles()
-        self.setUpFlair()
+    @classmethod
+    def setUpClass(cls):
+        super(TestDicomReader, cls).setUpClass()
+        cls.dicom_files = dict()
+        TestDicomReader.setUpDicomFiles(cls.dicom_files)
+        TestDicomReader.setUpFlair(cls.dicom_files)
 
-    def setUpDicomFiles(self):
+    @staticmethod
+    def setUpDicomFiles(dicom_files):
         dicom_dir = os.path.join("tmp", "DICOMDIR")
         if not os.path.exists(dicom_dir):
             file_url = "ftp://medical.nema.org/medical/dicom/Multiframe/MR/nemamfmr.imagesAB.tar.bz2"
             temp_file = download_file(file_url)
             extract_tarball_files(temp_file, dicom_dir)
         for f in glob.glob(os.path.join(dicom_dir, "DISCIMG", "IMAGES", "*")):
-            self.dicom_files[os.path.basename(f).split(".")[0]] = f
+            dicom_files[os.path.basename(f).split(".")[0]] = f
 
-    def setUpFlair(self):
+    @staticmethod
+    def setUpFlair(dicom_files):
         temp_dicom = os.path.join("tmp", "MR-MONO2-16-head.dcm")
         if not os.path.exists(temp_dicom):
             file_url = "http://www.barre.nom.fr/medical/samples/files/MR-MONO2-16-head.gz"
             temp_file = download_file(file_url)
             unzip_file(temp_file, temp_dicom)
-        self.dicom_files["MR-MONO2-16-head"] = temp_dicom
+        dicom_files["MR-MONO2-16-head"] = temp_dicom
 
     def _test_image_modality(self, image, modality):
         self.assertEqual(image.get_modality(), modality)
@@ -80,18 +85,20 @@ class TestDicomReader(TestCase):
 
     def test_read_t1(self):
         image = read_dicom_file(self.dicom_files["BRTUM008"])
-        self._test_image_modality(image, "T1")
+        self._test_image_modality(image, "T1w")
         self.assertEqual(image.get_acquisition(), 'contrast')
 
     def test_read_t2(self):
         image = read_dicom_file(self.dicom_files["BRTUM014"])
-        self._test_image_modality(image, "T2")
+        self._test_image_modality(image, "T2w")
 
 
 class TestDcm2Niix(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        super(TestDcm2Niix, cls).setUpClass()
         dicom_directory = os.path.abspath("TestDicoms")
-        self.dataset = read_dicom_directory(dicom_directory, anonymize=True)
+        cls.dataset = read_dicom_directory(dicom_directory, anonymize=True)
 
     def test_convert(self):
         in_dicom_file = os.path.join("TestDicoms", "brain_001.dcm")
@@ -102,7 +109,7 @@ class TestDcm2Niix(TestCase):
 
     def test_convert_dir_to_bids(self):
         self.assertEqual(self.dataset.get_number_of_subjects(), 3)
-        self.assertEqual(len(self.dataset.get_image_paths()), 4)
+        self.assertEqual(len(self.dataset.get_image_paths()), 6)
         for subject in self.dataset.get_subjects():
             for session in subject.get_sessions():
                 for group in session.get_groups():
@@ -120,8 +127,17 @@ class TestDcm2Niix(TestCase):
                                        "sub-01_ses-01_dwi.bvec")))
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01", "dwi",
                                        "sub-01_ses-01_dwi.json")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-02", "anat",
-                                                    "sub-03_ses-02_FLAIR.nii.gz")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-02", "anat",
-                                                    "sub-03_ses-02_FLAIR.json")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-02", "ses-02", "anat",
+                                                    "sub-02_ses-02_FLAIR.nii.gz")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-02", "ses-02", "anat",
+                                                    "sub-02_ses-02_FLAIR.json")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "anat",
+                                                    "sub-03_ses-01_acq-contrast_run-02_T1w.json")))
+        test_dicom = os.path.abspath("TestDicoms/brain_401.dcm")
+        test_nifti = os.path.abspath("TestNiftis/brain_401.nii.gz")
+        dcm2niix(test_dicom, test_nifti)
+        test_image = nib.load(test_nifti)
+        bids_image = nib.load(
+            self.dataset.get_image_paths(subject="03", session="01", acquisition="contrast", run=2)[0])
+        self.assertTrue(np.all(test_image.get_data() == bids_image.get_data()))
         shutil.rmtree(out_bids_dataset)
