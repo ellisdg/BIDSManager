@@ -4,6 +4,7 @@ import tarfile
 import os
 import glob
 import shutil
+import warnings
 try:
     from urllib.request import urlretrieve
 except ImportError:
@@ -12,7 +13,7 @@ except ImportError:
 import numpy as np
 import nibabel as nib
 
-from bids.read.dicom_reader import read_dicom_file, read_dicom_directory, dcm2niix
+from bids.read.dicom_reader import read_dicom_file, read_dicom_directory, dcm2niix, dcm2niix_dwi
 from bids.write.dataset_writer import write_dataset
 
 
@@ -106,6 +107,15 @@ class TestDcm2Niix(TestCase):
         image = nib.load(nifti_file)
         test_image = nib.load(os.path.join("TestNiftis", "brain0.nii.gz"))
         self.assertEqual(image.header, test_image.header)
+
+    def test_convert_dwi(self):
+        warnings.simplefilter("error")
+        dwi_dicom_file = os.path.join("TestDicoms", "DTI_0544")
+        self.assertRaises(RuntimeWarning, dcm2niix, in_file=dwi_dicom_file)
+        dwi_files = dcm2niix_dwi(dwi_dicom_file)
+        for dwi_file in dwi_files:
+            self.assertFalse("ADC" in dwi_file)
+        warnings.simplefilter("default")
 
     def test_convert_dir_to_bids(self):
         self.assertEqual(self.dataset.get_number_of_subjects(), 3)

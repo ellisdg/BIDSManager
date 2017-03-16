@@ -3,6 +3,7 @@ import glob
 import subprocess
 import shutil
 import random
+from warnings import warn
 
 import dicom
 from dicom.errors import InvalidDicomError
@@ -151,13 +152,32 @@ def run_dcm2niix(in_file, out_dir="/tmp/dcm2niix", dwi=False):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     subprocess.call(['dcm2niix', "-b", "y", "-o", out_dir, in_file])
-    sidecar = glob.glob(os.path.join(out_dir, "*.json"))[0]
+    return get_dcm2niix_outputs(out_dir=out_dir, dwi=dwi)
+
+
+def get_dcm2niix_outputs(out_dir, dwi=False):
+    sidecar_file = get_output_file(out_dir, ".json")
     if dwi:
-        bval_file = glob.glob(os.path.join(out_dir, "*.bval"))[0]
-        bvec_file = glob.glob(os.path.join(out_dir, "*.bvec"))[0]
-        nifti_file = glob.glob(os.path.join(out_dir, "*.nii.gz"))[0]
-        return nifti_file, bval_file, bvec_file, sidecar
-    return glob.glob(os.path.join(out_dir, "*.nii.gz"))[0], sidecar
+        return get_dcm2niix_dwi_outputs(out_dir=out_dir, sidecar_file=sidecar_file)
+    nifti_file = get_output_file(out_dir, ".nii.gz")
+    return nifti_file, sidecar_file
+
+
+def get_dcm2niix_dwi_outputs(out_dir, sidecar_file):
+    nifti_files = glob.glob(os.path.join(out_dir, "*.nii.gz"))
+    for nifti_file in nifti_files:
+        if "ADC" not in nifti_file:
+            break
+    bval_file = get_output_file(out_dir, ".bval")
+    bvec_file = get_output_file(out_dir, ".bvec")
+    return nifti_file, bval_file, bvec_file, sidecar_file
+
+
+def get_output_file(output_directory, extension):
+    output_files = glob.glob(os.path.join(output_directory, "*" + extension))
+    if len(output_files) > 1:
+        warn("Multiple output files found:\n\t{0}".format("\n\t".join(output_files)), RuntimeWarning)
+    return output_files[0]
 
 
 class DicomFile(BIDSObject):
