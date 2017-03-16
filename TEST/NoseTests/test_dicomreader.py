@@ -119,7 +119,7 @@ class TestDcm2Niix(TestCase):
 
     def test_convert_dir_to_bids(self):
         self.assertEqual(self.dataset.get_number_of_subjects(), 3)
-        self.assertEqual(len(self.dataset.get_image_paths()), 6)
+        self.assertEqual(len(self.dataset.get_image_paths()), 7)
         for subject in self.dataset.get_subjects():
             for session in subject.get_sessions():
                 for group in session.get_groups():
@@ -137,6 +137,8 @@ class TestDcm2Niix(TestCase):
                                        "sub-01_ses-01_dwi.bvec")))
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01", "dwi",
                                        "sub-01_ses-01_dwi.json")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01", "func",
+                                                    "sub-01_ses-01_task-footmovement_bold.nii.gz")))
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-02", "ses-02", "anat",
                                                     "sub-02_ses-02_FLAIR.nii.gz")))
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-02", "ses-02", "anat",

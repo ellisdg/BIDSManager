@@ -13,6 +13,7 @@ from ..base.dataset import DataSet
 from ..base.image import Image, DiffusionImage
 from ..base.base import BIDSObject
 from ..base.session import Session
+from ..utils.image_utils import load_image
 
 
 def read_dicom_directory(input_directory, anonymize=False, length=2):
@@ -98,12 +99,14 @@ def read_dicom_file(in_file):
 
 def convert_dicom(dicom_file):
     file_path = dicom_file.get_path()
-    if dicom_file.get_modality() == "dwi":
+    modality = dicom_file.get_modality()
+    if modality == "dwi":
         return convert_dwi_dicom(file_path)
     else:
         nifti_file, sidecar_file = dcm2niix(file_path)
-        return Image(path=nifti_file, modality=dicom_file.get_modality(), sidecar_path=sidecar_file,
-                     acquisition=dicom_file.get_acquisition())
+        return load_image(path_to_image=nifti_file, modality=modality, path_to_sidecar=sidecar_file,
+                          task_name=dicom_file.get_series_description().lower().replace(" ", ""),
+                          acquisition=dicom_file.get_acquisition())
 
 
 def convert_dwi_dicom(in_file):
@@ -199,6 +202,8 @@ class DicomFile(BIDSObject):
             return "T1w"
         elif "DTI" in self.get_series_description():
             return "dwi"
+        elif int(self.get_field("NumberOfTemporalPositions")) > 1:
+            return "bold"
 
     def get_acquisition(self):
         if "GAD" in self.get_series_description() or "+C" in self.get_series_description():

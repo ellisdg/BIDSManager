@@ -5,7 +5,7 @@ import os
 from ..base.dataset import DataSet
 from ..base.session import Session
 from ..base.subject import Subject
-from .image_reader import ImageReader
+from ..utils.image_utils import load_image
 from ..utils.session_utils import load_group, modality_to_group_name
 
 
@@ -51,7 +51,7 @@ class CSVReader(object):
         modality = self.correct_modality(modality.lower())
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(os.path.join(self._directory, file_path))
-        return ImageReader.read_image(path_to_image=file_path, modality=modality, task_name=task_name)
+        return load_image(path_to_image=file_path, modality=modality, task_name=task_name)
 
     @staticmethod
     def correct_modality(modality):
