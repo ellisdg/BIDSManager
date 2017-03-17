@@ -99,7 +99,7 @@ class TestDcm2Niix(TestCase):
     def setUpClass(cls):
         super(TestDcm2Niix, cls).setUpClass()
         dicom_directory = os.path.abspath("TestDicoms")
-        cls.dataset = read_dicom_directory(dicom_directory, anonymize=True)
+        cls.dataset = read_dicom_directory(dicom_directory, anonymize=True, skip_image_descriptions=["SENSE", "FS"])
 
     def test_convert(self):
         in_dicom_file = os.path.join("TestDicoms", "brain_001.dcm")
@@ -110,16 +110,18 @@ class TestDcm2Niix(TestCase):
 
     def test_convert_dwi(self):
         warnings.simplefilter("error")
-        dwi_dicom_file = os.path.join("TestDicoms", "DTI_0544")
-        self.assertRaises(RuntimeWarning, dcm2niix, in_file=dwi_dicom_file)
-        dwi_files = dcm2niix_dwi(dwi_dicom_file)
+        from bids.read.dicom_reader import get_dicom_set
+        dwi_dicoms = get_dicom_set(os.path.join("TestDicoms", "DTI_0544"))
+        dwi_dicom_files = [dwi_dicom.get_path() for dwi_dicom in dwi_dicoms]
+        self.assertRaises(RuntimeWarning, dcm2niix, in_file=dwi_dicom_files)
+        dwi_files = dcm2niix_dwi(dwi_dicom_files)
         for dwi_file in dwi_files:
             self.assertFalse("ADC" in dwi_file)
         warnings.simplefilter("default")
 
     def test_convert_dir_to_bids(self):
         self.assertEqual(self.dataset.get_number_of_subjects(), 3)
-        self.assertEqual(len(self.dataset.get_image_paths()), 7)
+        self.assertEqual(len(self.dataset.get_image_paths()), 9)
         for subject in self.dataset.get_subjects():
             for session in subject.get_sessions():
                 for group in session.get_groups():

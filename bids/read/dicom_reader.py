@@ -16,9 +16,10 @@ from ..base.session import Session
 from ..utils.image_utils import load_image
 
 
-def read_dicom_directory(input_directory, anonymize=False, length=2):
+def read_dicom_directory(input_directory, anonymize=False, id_length=2, skip_image_descriptions=None):
     dicom_files = get_dicom_files(input_directory)
-    return dicoms_to_dataset(dicom_files, anonymize=anonymize, length=length)
+    return dicoms_to_dataset(dicom_files, anonymize=anonymize, id_length=id_length,
+                             skip_image_descriptions=skip_image_descriptions)
 
 
 def random_hash():
@@ -33,7 +34,7 @@ def random_tmp_directory():
     return directory
 
 
-def dicoms_to_dataset(dicom_files, anonymize=False, length=2):
+def dicoms_to_dataset(dicom_files, anonymize=False, id_length=2, skip_image_descriptions=None):
     dataset = DataSet()
     sorted_dicoms = sort_dicoms(dicom_files, field="PatientName")
     subject_count = 0
@@ -41,7 +42,7 @@ def dicoms_to_dataset(dicom_files, anonymize=False, length=2):
         session_count = 0
         if anonymize:
             subject_count += 1
-            subject = Subject("{0:0{1}d}".format(subject_count, length))
+            subject = Subject("{0:0{1}d}".format(subject_count, id_length))
         else:
             subject = Subject(subject_name)
         dataset.add_subject(subject)
@@ -49,17 +50,24 @@ def dicoms_to_dataset(dicom_files, anonymize=False, length=2):
         for date in sorted(subject_dicoms.keys()):
             if anonymize:
                 session_count += 1
-                session = Session("{0:0{1}d}".format(session_count, length))
+                session = Session("{0:0{1}d}".format(session_count, id_length))
             else:
                 session = Session(date)
             subject.add_session(session)
             session_dicoms = sort_dicoms(subject_dicoms[date], field="SeriesDescription")
-            for modality in session_dicoms:
-                series_dicoms = sort_dicoms(session_dicoms[modality], field="SeriesTime")
-                for i, time in enumerate(sorted(series_dicoms.keys())):
-                    image = series_dicoms[time][0].get_image()
-                    session.add_image(image)
+            for description in session_dicoms:
+                if not skip_series(description=description, skip_image_descriptions=skip_image_descriptions):
+                    series_dicoms = sort_dicoms(session_dicoms[description], field="SeriesTime")
+                    for i, time in enumerate(sorted(series_dicoms.keys())):
+                        session.add_image(convert_dicoms(series_dicoms[time]))
     return dataset
+
+
+def skip_series(description, skip_image_descriptions):
+    for image_description in skip_image_descriptions:
+        if image_description in description:
+            return True
+    return False
 
 
 def sort_dicoms(dicom_files, field="PatientName"):
@@ -100,13 +108,27 @@ def read_dicom_file(in_file):
 def convert_dicom(dicom_file):
     file_path = dicom_file.get_path()
     modality = dicom_file.get_modality()
+    task_name = dicom_file.get_series_description().lower().replace(" ", "")
+    acquisition = dicom_file.get_acquisition()
+    return convert_dicom_file_path(file_path=file_path, modality=modality, task_name=task_name, acquisition=acquisition)
+
+
+def convert_dicom_file_path(file_path, modality, acquisition, task_name):
     if modality == "dwi":
         return convert_dwi_dicom(file_path)
     else:
         nifti_file, sidecar_file = dcm2niix(file_path)
         return load_image(path_to_image=nifti_file, modality=modality, path_to_sidecar=sidecar_file,
-                          task_name=dicom_file.get_series_description().lower().replace(" ", ""),
-                          acquisition=dicom_file.get_acquisition())
+                          task_name=task_name, acquisition=acquisition)
+
+
+def convert_dicoms(dicom_objects):
+    file_paths = [dicom_object.get_path() for dicom_object in dicom_objects]
+    modality = dicom_objects[0].get_modality()
+    task_name = dicom_objects[0].get_series_description().lower().replace(" ", "")
+    acquisition = dicom_objects[0].get_acquisition()
+    return convert_dicom_file_path(file_path=file_paths, modality=modality, task_name=task_name,
+                                   acquisition=acquisition)
 
 
 def convert_dwi_dicom(in_file):
@@ -121,9 +143,12 @@ def dcm2niix_dwi(in_file):
 
 def setup_dcm2niix(in_file):
     working_dir = random_tmp_directory()
-    dicom_set = get_dicom_set(in_file)
-    for dicom_file in dicom_set:
-        shutil.copy(dicom_file.get_path(), working_dir)
+    if isinstance(in_file, list):
+        dicom_files = in_file
+    else:
+        dicom_files = [dicom_file.get_path() for dicom_file in get_dicom_set(in_file)]
+    for dicom_file in dicom_files:
+        shutil.copy(dicom_file, working_dir)
     return working_dir
 
 
