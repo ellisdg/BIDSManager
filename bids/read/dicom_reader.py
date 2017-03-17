@@ -102,7 +102,7 @@ def get_files_in_directory(input_directory):
 
 
 def read_dicom_file(in_file):
-    return DicomFile(in_file).get_image()
+    return convert_dicoms([DicomFile(in_file)])
 
 
 def convert_dicom(dicom_file):
@@ -209,14 +209,15 @@ def get_output_file(output_directory, extension):
 
 
 class DicomFile(BIDSObject):
-    def __init__(self, *inputs, **kwargs):
-        super(DicomFile, self).__init__(*inputs, **kwargs)
-        self._info = None
-        self.update()
+    def __init__(self, path, tags_to_save=("PatientName", "StudyDate", "SeriesTime", "SeriesDescription",
+                                           "NumberOfTemporalPositions"), *inputs, **kwargs):
+        super(DicomFile, self).__init__(path=path, *inputs, **kwargs)
+        self._info = dict()
+        self.save_tags(tags_to_save)
 
-    def update(self):
+    def get_data(self):
         if self._path:
-            self._info = dicom.read_file(self._path)
+            return dicom.read_file(self._path)
 
     def get_modality(self):
         if "FLAIR" in self.get_series_description():
@@ -235,11 +236,20 @@ class DicomFile(BIDSObject):
             return "contrast"
 
     def get_series_description(self):
-        if "SeriesDescription" in self._info:
-            return self._info.SeriesDescription
+        return self.get_field("SeriesDescription")
 
     def get_image(self):
         return convert_dicom(self)
 
     def get_field(self, key):
-        return self._info.get(key)
+        try:
+            return self._info[key]
+        except KeyError:
+            dicom_data = self.get_data()
+            if key in dicom_data:
+                return dicom_data.get(key)
+
+    def save_tags(self, tags_to_save):
+        dicom_data = self.get_data()
+        for tag in tags_to_save:
+            self._info[tag] = dicom_data.get(tag)

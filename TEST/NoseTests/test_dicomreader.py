@@ -99,7 +99,8 @@ class TestDcm2Niix(TestCase):
     def setUpClass(cls):
         super(TestDcm2Niix, cls).setUpClass()
         dicom_directory = os.path.abspath("TestDicoms")
-        cls.dataset = read_dicom_directory(dicom_directory, anonymize=True, skip_image_descriptions=["SENSE", "FS"])
+        cls.dataset = read_dicom_directory(dicom_directory, anonymize=True,
+                                           skip_image_descriptions=["SENSE", "FS", "Ax", "MC"])
 
     def test_convert(self):
         in_dicom_file = os.path.join("TestDicoms", "brain_001.dcm")
