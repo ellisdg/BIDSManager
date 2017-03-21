@@ -1,6 +1,6 @@
 import os
 import glob
-import subprocess
+from subprocess import Popen, PIPE
 import shutil
 import random
 from warnings import warn
@@ -59,13 +59,16 @@ def dicoms_to_dataset(dicom_files, anonymize=False, id_length=2, skip_image_desc
                 if not skip_series(description=description, skip_image_descriptions=skip_image_descriptions):
                     series_dicoms = sort_dicoms(session_dicoms[description], field="SeriesTime")
                     for i, time in enumerate(sorted(series_dicoms.keys())):
-                        session.add_image(convert_dicoms(series_dicoms[time]))
+                        try:
+                            session.add_image(convert_dicoms(series_dicoms[time]))
+                        except RuntimeError:
+                            continue
     return dataset
 
 
 def skip_series(description, skip_image_descriptions):
     for image_description in skip_image_descriptions:
-        if image_description in description:
+        if not description or image_description in description:
             return True
     return False
 
@@ -179,7 +182,11 @@ def get_dicom_set(in_file):
 def run_dcm2niix(in_file, out_dir="/tmp/dcm2niix", dwi=False):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    subprocess.call(['dcm2niix', "-b", "y", "-o", out_dir, in_file])
+    command = ['dcm2niix', "-b", "y", "-z", "y", "-o", out_dir, in_file]
+    process = Popen(command, stdout=PIPE, stderr=PIPE)
+    output, err = process.communicate()
+    if "No valid DICOM files were found" in output:
+        raise RuntimeError("No valid DICOM files were found")
     return get_dcm2niix_outputs(out_dir=out_dir, dwi=dwi)
 
 
@@ -228,7 +235,7 @@ class DicomFile(BIDSObject):
             return "T1w"
         elif "DTI" in self.get_series_description():
             return "dwi"
-        elif int(self.get_field("NumberOfTemporalPositions")) > 1:
+        elif self.get_field("NumberOfTemporalPositions") and int(self.get_field("NumberOfTemporalPositions")) > 1:
             return "bold"
 
     def get_acquisition(self):
