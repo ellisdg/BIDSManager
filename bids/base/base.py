@@ -10,6 +10,7 @@ class BIDSObject(object):
             self._path = os.path.abspath(path)
         else:
             self._path = path
+        self._name = None
 
     def get_parent(self):
         return self._parent
@@ -29,6 +30,11 @@ class BIDSObject(object):
     def set_parent(self, parent):
         self._parent = parent
 
+    def set_name(self, name):
+        if self._parent:
+            self._parent.modify_key(self._name, name)
+        self._name = name
+
 
 class BIDSFolder(BIDSObject):
     def __init__(self, input_dict=None, *inputs, **kwargs):
@@ -45,6 +51,9 @@ class BIDSFolder(BIDSObject):
             object_to_add.set_parent(self)
         else:
             raise(KeyError("Duplicate {0} found in {1}: {2}".format(object_title, self._folder_type, object_name)))
+
+    def modify_key(self, key, new_key):
+        self._dict[new_key] = self._dict.pop(key)
 
     def update(self, run=False):
         if run:

@@ -7,19 +7,100 @@ from warnings import warn
 
 import dicom
 from dicom.errors import InvalidDicomError
+import nibabel as nib
 
 from ..base.subject import Subject
 from ..base.dataset import DataSet
-from ..base.image import Image, DiffusionImage
+from ..base.image import DiffusionImage
 from ..base.base import BIDSObject
 from ..base.session import Session
 from ..utils.image_utils import load_image
+from ..utils.dataset_utils import anonymize_dataset
 
 
 def read_dicom_directory(input_directory, anonymize=False, id_length=2, skip_image_descriptions=None):
-    dicom_files = get_dicom_files(input_directory)
-    return dicoms_to_dataset(dicom_files, anonymize=anonymize, id_length=id_length,
-                             skip_image_descriptions=skip_image_descriptions)
+    return convert_directory(input_directory, skip_image_descriptions=skip_image_descriptions, anonymize=anonymize)
+
+
+def get_acquisition(description):
+    if is_contrast(description):
+        return "contrast"
+
+
+def get_image_modality(in_file, description):
+    modality = description_to_modality(description)
+    if not modality and is_4d(in_file):
+        return "bold"
+    return modality
+
+
+def is_4d(in_file):
+    n_dims = len(nib.load(in_file).header.get_data_shape())
+    return n_dims == 4
+
+
+def is_contrast(description):
+    return "gad" in description.lower() or "+c" in description.lower()
+
+
+def manipulate_path_extension(in_file, in_ext, out_ext):
+    return in_file.replace(in_ext, out_ext)
+
+
+def get_secondary_output(primary_file, primary_ext, secondary_ext):
+    secondary_file = manipulate_path_extension(primary_file, primary_ext, secondary_ext)
+    if os.path.exists(secondary_file):
+        return secondary_file
+
+
+def parse_output(in_file, separator):
+    return os.path.basename(in_file).split(separator)
+
+
+def get_image(in_file, separator, skip_image_descriptions):
+    subject_name, time, description, protocol, run = parse_output(in_file, separator)
+    if not skip_series(description, skip_image_descriptions) and "ADC" not in run:
+        modality = get_image_modality(in_file, description)
+        bval_path = get_secondary_output(in_file, ".nii.gz", ".bval")
+        bvec_path = get_secondary_output(in_file, ".nii.gz", ".bvec")
+        sidecar_path = get_secondary_output(in_file, ".nii.gz", ".json")
+        task_name = "".join(description.lower().split("_"))
+        acquisition = get_acquisition(description)
+        return load_image(path_to_image=in_file, modality=modality, bval_path=bval_path, bvec_path=bvec_path,
+                          path_to_sidecar=sidecar_path, acquisition=acquisition, task_name=task_name)
+
+
+def convert_directory(input_directory, skip_image_descriptions=None, anonymize=False):
+    separator = "---"
+    output_directory = random_tmp_directory()
+    run_dcm2niix_on_directory(input_directory, output_directory, filename="%n{0}%t{0}%d{0}%p{0}".format(separator))
+    output_niftis = sorted(glob.glob(os.path.join(output_directory, "*.nii.gz")))
+    dataset = DataSet()
+    for f in output_niftis:
+        subject_name, time, description, protocol, run = parse_output(f, separator)
+        # what subject
+        if dataset.has_subject_id(subject_name):
+            subject = dataset.get_subject(subject_name)
+        else:
+            subject = Subject(subject_name)
+            dataset.add_subject(subject)
+
+        # what session
+        if subject.has_session(time):
+            session = subject.get_session(time)
+        else:
+            session = Session(time)
+            subject.add_session(session)
+
+        # add image
+        image = get_image(f, separator, skip_image_descriptions)
+        # todo: test for duplicates
+        if image:
+            session.add_image(image)
+
+    if anonymize:
+        return anonymize_dataset(dataset)
+    return dataset
 
 
 def random_hash():
@@ -179,6 +260,14 @@ def get_dicom_set(in_file):
     return series_dicoms
 
 
+def run_dcm2niix_on_directory(input_directory, output_directory, filename="%t%d%n%p"):
+    command = ['dcm2niix', "-b", "y", "-z", "y", "-o", output_directory, "-f", filename, input_directory]
+    process = Popen(command, stdout=PIPE, stderr=PIPE)
+    output, err = process.communicate()
+    if "No valid DICOM files were found" in output:
+        raise RuntimeError("No valid DICOM files were found")
+
+
 def run_dcm2niix(in_file, out_dir="/tmp/dcm2niix", dwi=False):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -213,6 +302,16 @@ def get_output_file(output_directory, extension):
     if len(output_files) > 1:
         warn("Multiple output files found:\n\t{0}".format("\n\t".join(output_files)), RuntimeWarning)
     return output_files[0]
+
+def description_to_modality(description):
+    if "FLAIR" in description:
+        return "FLAIR"
+    elif "T2" in description:
+        return "T2w"
+    elif "T1" in description:
+        return "T1w"
+    elif "DTI" in description:
+        return "dwi"
 
 
 class DicomFile(BIDSObject):
