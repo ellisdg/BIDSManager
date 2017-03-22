@@ -16,19 +16,23 @@ Read a data set that is already in BIDS format:
 from bids.read import read_dataset
 dataset = read_dataset("/path/to/dataset")
 ```
-Now that you have a Python interface to the data set, you can also get the interfaces for specific subjects, sessions or
+Now that you have a Python interface to the data set, you can also get_field the interfaces for specific subjects, sessions or
 groups:
 ```
 subject_01 = dataset.get_subject("01")
-session_retest = subject_01.get_sessoin("retest")
+session_retest = subject_01.get_session("retest")
 group_func = session.get_group("func")
 ```
-You can also get the image paths for the entire data set:
+You can also get_field the image paths for the entire data set:
 ```
 all_t1w_file_paths = dataset.get_image_paths(modality="T1w")
 ```
 ...or for a particular subject:
 ```
 t1w_01_file_paths = subject_01.get_image_paths(modality="T1w")
+```
+A single line equivelant would be as follows:
+```
+t1w_01_file_paths = dataset.get_subject("01").get_image_paths(modality="T1w")
 ```
 ## Write BIDS Data Set
