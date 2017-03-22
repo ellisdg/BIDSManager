@@ -121,8 +121,8 @@ class TestDcm2Niix(TestCase):
         warnings.simplefilter("default")
 
     def test_convert_dir_to_bids(self):
-        self.assertEqual(self.dataset.get_number_of_subjects(), 3)
-        self.assertEqual(len(self.dataset.get_image_paths()), 9)
+        self.assertEqual(self.dataset.get_number_of_subjects(), 4)
+        self.assertEqual(len(self.dataset.get_image_paths()), 10)
         for subject in self.dataset.get_subjects():
             for session in subject.get_sessions():
                 for group in session.get_groups():
@@ -142,17 +142,17 @@ class TestDcm2Niix(TestCase):
                                        "sub-01_ses-01_dwi.json")))
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-01", "func",
                                                     "sub-01_ses-01_task-footmovement_bold.nii.gz")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-02", "ses-02", "anat",
-                                                    "sub-02_ses-02_FLAIR.nii.gz")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-02", "ses-02", "anat",
-                                                    "sub-02_ses-02_FLAIR.json")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "anat",
-                                                    "sub-03_ses-01_acq-contrast_run-02_T1w.json")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-02", "anat",
+                                                    "sub-03_ses-02_FLAIR.nii.gz")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-02", "anat",
+                                                    "sub-03_ses-02_FLAIR.json")))
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-04", "ses-01", "anat",
+                                                    "sub-04_ses-01_acq-contrast_run-02_T1w.json")))
         test_dicom = os.path.abspath("TestDicoms/brain_401.dcm")
         test_nifti = os.path.abspath("TestNiftis/brain_401.nii.gz")
         dcm2niix(test_dicom, test_nifti)
         test_image = nib.load(test_nifti)
         bids_image = nib.load(
-            self.dataset.get_image_paths(subject="03", session="01", acquisition="contrast", run=2)[0])
+            self.dataset.get_image_paths(subject="04", session="01", acquisition="contrast", run=2)[0])
         self.assertTrue(np.all(test_image.get_data() == bids_image.get_data()))
         shutil.rmtree(out_bids_dataset)
