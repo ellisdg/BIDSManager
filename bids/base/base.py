@@ -1,4 +1,5 @@
 import os
+import abc
 
 
 class BIDSObject(object):
@@ -37,6 +38,8 @@ class BIDSObject(object):
 
 
 class BIDSFolder(BIDSObject):
+    __metaclass__ = abc.ABCMeta
+
     def __init__(self, input_dict=None, *inputs, **kwargs):
         super(BIDSFolder, self).__init__(*inputs, **kwargs)
         if input_dict:
@@ -54,6 +57,13 @@ class BIDSFolder(BIDSObject):
 
     def modify_key(self, key, new_key):
         self._dict[new_key] = self._dict.pop(key)
+
+    def get_image_paths(self, **kwargs):
+        return [image.get_path() for image in self.get_images(**kwargs)]
+
+    @abc.abstractmethod
+    def get_images(self, **kwargs):
+        return []
 
     def update(self, run=False, move=False):
         if run:

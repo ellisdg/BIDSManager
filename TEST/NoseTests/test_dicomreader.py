@@ -155,6 +155,6 @@ class TestDcm2Niix(TestCase):
         dcm2niix(test_dicom, test_nifti)
         test_image = nib.load(test_nifti)
         bids_image = nib.load(
-            self.dataset.get_image_paths(subject="02", session="01", acquisition="contrast")[0])
+            self.dataset.get_image_paths(subject_id="02", session="01", acquisition="contrast")[0])
         self.assertTrue(np.all(test_image.get_data() == bids_image.get_data()))
         shutil.rmtree(out_bids_dataset)

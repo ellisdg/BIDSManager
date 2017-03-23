@@ -109,7 +109,9 @@ class TestReaderTestDir(TestCase):
                             glob.glob(os.path.join(get_example_directory(),
                                                    "sub-*", "ses-*", "*", "*acq-contrast*.nii.gz"))]
         image_paths = self.dataset.get_image_paths(acquisition="contrast", modality="T1w")
+        image_paths_from_images = [image.get_path() for image in self.dataset.get_images()]
         self.assertEqual(sorted(image_paths_glob), sorted(image_paths))
+        self.assertEqual(sorted(image_paths), sorted(image_paths_from_images))
 
 
 class TestReaderCSV(TestCase):

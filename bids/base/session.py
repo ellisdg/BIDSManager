@@ -30,12 +30,12 @@ class Session(BIDSFolder):
     def get_basename(self):
         return "ses-{0}".format(self.get_name())
 
-    def get_image_paths(self, group_name=None, modality=None, acquisition=None, run=None):
-        image_paths = []
+    def get_images(self, group_name=None, modality=None, acquisition=None, run_number=None):
+        images = []
         for group in self._groups.values():
             if (group_name and group_name == group.get_name()) or not group_name:
-                image_paths.extend(group.get_image_paths(modality=modality, acquisition=acquisition, run_number=run))
-        return image_paths
+                images.extend(group.get_images(modality=modality, acquisition=acquisition, run_number=run_number))
+        return images
 
     def get_group(self, group_name):
         return self._groups[group_name]

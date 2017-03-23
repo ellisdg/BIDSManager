@@ -28,16 +28,16 @@ class DataSet(BIDSFolder):
     def get_subjects(self):
         return list(self.subjects.values())
 
-    def get_image_paths(self, modality=None, acquisition=None, subject=None, session=None, run=None):
-        if subject:
-            return self.get_subject(subject_id=subject).get_image_paths(modality=modality, acquisition=acquisition,
-                                                                        session=session, run=run)
+    def get_images(self, modality=None, acquisition=None, subject_id=None, session=None, run_number=None):
+        if subject_id:
+            return self.get_subject(subject_id=subject_id).get_images(modality=modality, acquisition=acquisition,
+                                                                      session_name=session, run_number=run_number)
         else:
-            image_paths = []
+            images = []
             for bids_subject in self.subjects.values():
-                image_paths.extend(bids_subject.get_image_paths(modality=modality, acquisition=acquisition,
-                                                                session=session, run=run))
-            return image_paths
+                images.extend(bids_subject.get_images(modality=modality, acquisition=acquisition, session_name=session,
+                                                      run_number=run_number))
+            return images
 
     def has_subject_id(self, subject_id):
         return subject_id in self.get_subject_ids()
