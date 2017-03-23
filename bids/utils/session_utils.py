@@ -9,7 +9,7 @@ def load_group(path_to_group_folder=None, group_name=None, images=None):
 
 
 def modality_to_group_name(modality):
-    if modality in ["FLAIR", "T1w"]:
+    if modality in ["FLAIR", "T1w", "T2w"]:
         return "anat"
     elif modality in ["dwi"]:
         return "dwi"
