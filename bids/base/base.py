@@ -67,7 +67,7 @@ class BIDSFolder(BIDSObject):
                     basename = None
                 if basename:
                     child.set_path(os.path.join(self._path, basename))
-                    child.update(run=True, move=True)
+                    child.update(run=True, move=move)
 
             if self._previous_path and not os.listdir(self._previous_path):
                 os.rmdir(self._previous_path)
