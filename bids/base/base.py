@@ -55,7 +55,7 @@ class BIDSFolder(BIDSObject):
     def modify_key(self, key, new_key):
         self._dict[new_key] = self._dict.pop(key)
 
-    def update(self, run=False):
+    def update(self, run=False, move=False):
         if run:
             if self._path and not os.path.exists(self._path):
                 os.makedirs(self._path)
@@ -67,7 +67,7 @@ class BIDSFolder(BIDSObject):
                     basename = None
                 if basename:
                     child.set_path(os.path.join(self._path, basename))
-                    child.update(run=True)
+                    child.update(run=True, move=True)
 
             if self._previous_path and not os.listdir(self._previous_path):
                 os.rmdir(self._previous_path)

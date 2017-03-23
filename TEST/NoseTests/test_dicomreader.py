@@ -131,7 +131,9 @@ class TestDcm2Niix(TestCase):
 
     def test_convert_to_bids(self):
         out_bids_dataset = os.path.abspath("TestWriteBIDS")
-        write_dataset(self.dataset, out_bids_dataset)
+        orig_file = self.dataset.get_image_paths(modality="T1w")[0]
+        write_dataset(self.dataset, out_bids_dataset, move=True)
+        self.assertFalse(os.path.exists(orig_file))
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-04", "ses-01", "dwi",
                                        "sub-04_ses-01_dwi.nii.gz")))
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-04", "ses-01", "dwi",
