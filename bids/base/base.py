@@ -56,7 +56,7 @@ class BIDSFolder(BIDSObject):
             raise(KeyError("Duplicate {0} found in {1}: {2}".format(object_title, self._folder_type, object_name)))
 
     def modify_key(self, key, new_key):
-        self._dict[new_key] = self._dict.pop(key)
+        self._add_object(self._dict.pop(key), new_key, "object")
 
     def get_image_paths(self, **kwargs):
         return [image.get_path() for image in self.get_images(**kwargs)]
@@ -67,8 +67,8 @@ class BIDSFolder(BIDSObject):
 
     def update(self, run=False, move=False):
         if run:
-            if self._path and not os.path.exists(self._path):
-                os.makedirs(self._path)
+            if self.get_path() and not os.path.exists(self.get_path()):
+                os.makedirs(self.get_path())
 
             for child in self._dict.values():
                 if isinstance(child, BIDSObject):
@@ -76,7 +76,7 @@ class BIDSFolder(BIDSObject):
                 else:
                     basename = None
                 if basename:
-                    child.set_path(os.path.join(self._path, basename))
+                    child.set_path(os.path.join(self.get_path(), basename))
                     child.update(run=True, move=move)
 
             if self._previous_path and not os.listdir(self._previous_path):

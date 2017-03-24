@@ -167,3 +167,6 @@ class TestDcm2Niix(TestCase):
             self.dataset.get_image_paths(subject_id="02", session="01", acquisition="contrast")[0])
         self.assertTrue(np.all(test_image.get_data() == bids_image.get_data()))
         shutil.rmtree(out_bids_dataset)
+
+    def test_invalid_key_modification(self):
+        self.assertRaises(KeyError, self.dataset.modify_key, "01", "02")
