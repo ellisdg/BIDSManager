@@ -62,6 +62,9 @@ class TestReaderDataSet001(TestCase):
                                                                            "ds001", "sub-*", "anat", "*T1w.nii.gz"))]
         self.assertEqual(sorted(t1_images), sorted(t1_glob_list))
 
+    def test_dataset_path(self):
+        self.assertEqual(os.path.join(get_examples_directory(), "ds001"), self.dataset.get_path())
+
 
 class TestReaderDataSet114(TestCase):
     def setUp(self):

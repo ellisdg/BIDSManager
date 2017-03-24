@@ -8,7 +8,7 @@ from ..base.dataset import DataSet
 class DataSetReader(object):
     @staticmethod
     def load_data_set(path_to_data_set):
-        return DataSet(DataSetReader.get_subject_subjects(path_to_data_set))
+        return DataSet(DataSetReader.get_subject_subjects(path_to_data_set), path=path_to_data_set)
 
     @staticmethod
     def get_subject_subjects(path_to_data_set):
