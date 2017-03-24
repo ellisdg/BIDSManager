@@ -1,5 +1,6 @@
 from bids.utils.session_utils import modality_to_group_name
 from .base import BIDSFolder
+from .group import FunctionalGroup
 from ..utils.session_utils import load_group
 
 
@@ -30,11 +31,15 @@ class Session(BIDSFolder):
     def get_basename(self):
         return "ses-{0}".format(self.get_name())
 
-    def get_images(self, group_name=None, modality=None, acquisition=None, run_number=None):
+    def get_images(self, group_name=None, modality=None, acquisition=None, run_number=None, task_name=None):
         images = []
         for group in self._groups.values():
-            if (group_name and group_name == group.get_name()) or not group_name:
-                images.extend(group.get_images(modality=modality, acquisition=acquisition, run_number=run_number))
+            if not group_name or group_name == group.get_name():
+                if isinstance(group, FunctionalGroup):
+                    images.extend(group.get_images(modality=modality, acquisition=acquisition, run_number=run_number,
+                                                   task_name=task_name))
+                elif not task_name:
+                    images.extend(group.get_images(modality=modality, acquisition=acquisition, run_number=run_number))
         return images
 
     def get_group(self, group_name):

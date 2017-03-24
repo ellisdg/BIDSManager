@@ -76,6 +76,11 @@ class Image(BIDSObject):
     def get_group(self):
         return self._group
 
+    def is_match(self, modality=None, acquisition=None, run_number=None):
+        return (not modality or modality == self.get_modality()) \
+               and (not acquisition or acquisition == self.get_acquisition()) \
+               and (not run_number or int(run_number) == int(self.get_run_number()))
+
     def set_parent(self, parent):
         from bids.base import Subject, Session
         super(Image, self).set_parent(parent)
@@ -122,6 +127,9 @@ class FunctionalImage(Image):
         if self._task_name:
             keys.append("task-{0}".format(self._task_name.lower().replace(" ", "")))
         return super(FunctionalImage, self).get_image_keys(keys)
+
+    def is_match(self, task_name=None, **kwargs):
+        return (not task_name or task_name == self.get_task_name()) and super(FunctionalImage, self).is_match(**kwargs)
 
 
 class DiffusionImage(Image):

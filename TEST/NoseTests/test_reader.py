@@ -51,6 +51,11 @@ class TestReaderDataSet001(TestCase):
         test_task_names = {"balloonanalogrisktask"}
         self.assertEqual(task_names, test_task_names)
 
+    def test_get_images_with_task_name(self):
+        self.assertEqual(os.path.basename(self.dataset.get_image_paths(task_name="balloonanalogrisktask",
+                                                                       subject_id="01", run_number="01")[0]),
+                         "sub-01_task-balloonanalogrisktask_run-01_bold.nii.gz")
+
     def test_list_all_t1_scans(self):
         t1_images = self.dataset.get_image_paths(modality="T1w")
         t1_glob_list = [os.path.abspath(f) for f in glob.glob(os.path.join(get_examples_directory(),
@@ -137,7 +142,7 @@ class TestReaderCSV(TestCase):
         self.assertEqual(set([os.path.abspath(os.path.join(get_unorganized_example_directory(), f)) for f in
                               {"t1.nii.gz", "some_t1.nii.gz", "some_other_t1.nii.gz", "third_t1.nii.gz",
                                "t1_from_different_subject.nii.gz", "i_dont_know.nii.gz", "second_t1.nii.gz"}]),
-                         set(self.dataset.get_image_paths(modality="T1w")))
+                         set(self.dataset.get_image_paths(group_name="anat", modality="T1w")))
 
     def test_read_flair_modality(self):
         self.assertEqual({os.path.abspath(os.path.join(get_unorganized_example_directory(), "flair.nii.gz"))},
