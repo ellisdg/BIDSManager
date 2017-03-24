@@ -121,6 +121,11 @@ class FunctionalImage(Image):
     def get_task_name(self):
         return self._task_name
 
+    def set_task_name(self, task_name):
+        current_key = self.get_image_key()
+        self._task_name = task_name
+        self.get_parent().modify_key(current_key, self.get_image_key())
+
     def get_image_keys(self, keys=None):
         if not keys:
             keys = []

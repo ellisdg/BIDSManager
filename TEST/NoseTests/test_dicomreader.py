@@ -144,6 +144,15 @@ class TestDcm2Niix(TestCase):
                                        "sub-04_ses-01_dwi.json")))
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "func",
                                                     "sub-03_ses-01_task-lefthandft_bold.nii.gz")))
+        # test moving an image
+        image = self.dataset.get_images(subject_id="03", session="01", task_name="lefthandft")[0]
+        image.set_task_name("lefthandfingertapping")
+        self.assertFalse(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "func",
+                                                     "sub-03_ses-01_task-lefthandfingertapping_bold.nii.gz")))
+        self.dataset.update(run=True, move=True)
+        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "func",
+                                                    "sub-03_ses-01_task-lefthandfingertapping_bold.nii.gz")))
+
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-02", "anat",
                                                     "sub-01_ses-02_FLAIR.nii.gz")))
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-02", "anat",
