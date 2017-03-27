@@ -173,6 +173,12 @@ class TestDcm2Niix(TestCase):
         self.assertEqual(final_bids_dataset.get_images(subject_id="01", session="01",
                                                        modality="FLAIR")[0].get_basename(),
                          "sub-01_ses-01_FLAIR.nii.gz")
+        self.assertEqual(os.path.basename(final_bids_dataset.get_images(subject_id="04", session="01",
+                                                                        modality="dwi")[0]._bval_path),
+                         "sub-04_ses-01_dwi.bval")
+        self.assertEqual(os.path.basename(final_bids_dataset.get_images(subject_id="04", session="01",
+                                                                        modality="dwi")[0].sidecar_path),
+                         "sub-04_ses-01_dwi.json")
 
         shutil.rmtree(out_bids_dataset)
 
