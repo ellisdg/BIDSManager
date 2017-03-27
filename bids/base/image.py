@@ -1,7 +1,7 @@
 import os
-import shutil
 
 from .base import BIDSObject
+from ..utils.utils import update_file
 
 
 class Image(BIDSObject):
@@ -98,22 +98,15 @@ class Image(BIDSObject):
 
     def update(self, run=False, move=False):
         if run:
-            if self._path and not os.path.exists(self._path) and self._previous_path:
-                if move:
-                    shutil.move(self._previous_path, self._path)
-                else:
-                    shutil.copy(self._previous_path, self._path)
+            if self._path and self._previous_path:
+                update_file(self._previous_path, self._path, move=move)
             self.update_sidecar(move=move)
 
     def update_sidecar(self, move=False):
         if self.sidecar_path:
             tmp_sidecar_file = self._path.replace(self.get_extension(), ".json")
-            if not os.path.exists(tmp_sidecar_file):
-                if move:
-                    shutil.move(self.sidecar_path, tmp_sidecar_file)
-                else:
-                    shutil.copy(self.sidecar_path, tmp_sidecar_file)
-                self.sidecar_path = tmp_sidecar_file
+            update_file(self.sidecar_path, tmp_sidecar_file, move=move)
+            self.sidecar_path = tmp_sidecar_file
 
 
 class FunctionalImage(Image):
@@ -149,18 +142,12 @@ class DiffusionImage(Image):
 
     def update_bval(self, move=False):
         tmp_bval_file = self.get_path().replace(self.get_extension(), ".bval")
-        if move:
-            shutil.move(self._bval_path, tmp_bval_file)
-        else:
-            shutil.copy(self._bval_path, tmp_bval_file)
+        update_file(self._bval_path, tmp_bval_file, move=move)
         self._bval_path = tmp_bval_file
 
     def update_bvec(self, move=False):
         tmp_bvec_file = self.get_path().replace(self.get_extension(), ".bvec")
-        if move:
-            shutil.move(self._bvec_path, tmp_bvec_file)
-        else:
-            shutil.copy(self._bvec_path, tmp_bvec_file)
+        update_file(self._bvec_path, tmp_bvec_file, move=move)
         self._bvec_path = tmp_bvec_file
 
     def update(self, run=False, move=False):

@@ -179,7 +179,7 @@ class TestDcm2Niix(TestCase):
         self.assertEqual(os.path.basename(final_bids_dataset.get_images(subject_id="04", session="01",
                                                                         modality="dwi")[0].sidecar_path),
                          "sub-04_ses-01_dwi.json")
-
+        final_bids_dataset.update(run=True)
         shutil.rmtree(out_bids_dataset)
 
     def test_invalid_key_modification(self):
