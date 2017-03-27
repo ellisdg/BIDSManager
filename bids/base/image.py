@@ -82,16 +82,19 @@ class Image(BIDSObject):
                and (not run_number or int(run_number) == int(self.get_run_number()))
 
     def set_parent(self, parent):
-        from bids.base import Subject, Session
         super(Image, self).set_parent(parent)
         self._group = self._parent
         if self._group:
             session = self._group.get_parent()
-            if isinstance(session, Session):
-                self._session = session
-                self._subject = session.get_parent()
-            elif isinstance(session, Subject):
-                self._subject = session
+            self.set_session(session)
+
+    def set_session(self, session):
+        from bids.base import Session, Subject
+        if isinstance(session, Session):
+            self._session = session
+            self._subject = session.get_parent()
+        elif isinstance(session, Subject):
+            self._subject = session
 
     def update(self, run=False, move=False):
         if run:

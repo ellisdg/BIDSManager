@@ -14,6 +14,7 @@ import numpy as np
 import nibabel as nib
 
 from bids.read.dicom_reader import read_dicom_file, read_dicom_directory, dcm2niix, dcm2niix_dwi
+from bids.read.dataset_reader import read_dataset
 from bids.write.dataset_writer import write_dataset
 
 
@@ -166,6 +167,13 @@ class TestDcm2Niix(TestCase):
         bids_image = nib.load(
             self.dataset.get_image_paths(subject_id="02", session="01", acquisition="contrast")[0])
         self.assertTrue(np.all(test_image.get_data() == bids_image.get_data()))
+
+        # test that the dataset can then be read
+        final_bids_dataset = read_dataset(out_bids_dataset)
+        self.assertEqual(final_bids_dataset.get_images(subject_id="01", session="01",
+                                                       modality="FLAIR")[0].get_basename(),
+                         "sub-01_ses-01_FLAIR.nii.gz")
+
         shutil.rmtree(out_bids_dataset)
 
     def test_invalid_key_modification(self):

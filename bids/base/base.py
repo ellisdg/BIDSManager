@@ -41,11 +41,11 @@ class BIDSFolder(BIDSObject):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, input_dict=None, *inputs, **kwargs):
-        super(BIDSFolder, self).__init__(*inputs, **kwargs)
         if input_dict:
             self._dict = input_dict
         else:
             self._dict = dict()
+        super(BIDSFolder, self).__init__(*inputs, **kwargs)
         self._folder_type = "BIDSFolder"
 
     def _add_object(self, object_to_add, object_name, object_title):
@@ -58,12 +58,23 @@ class BIDSFolder(BIDSObject):
     def modify_key(self, key, new_key):
         self._add_object(self._dict.pop(key), new_key, "object")
 
+    def get_children(self):
+        return self._dict.values()
+
     def get_image_paths(self, **kwargs):
         return [image.get_path() for image in self.get_images(**kwargs)]
 
     @abc.abstractmethod
     def get_images(self, **kwargs):
         return []
+
+    def set_parent(self, parent):
+        super(BIDSFolder, self).set_parent(parent)
+        self.update_parent_of_children()
+
+    def update_parent_of_children(self):
+        for child in self.get_children():
+            child.set_parent(self)
 
     def update(self, run=False, move=False):
         if run:
