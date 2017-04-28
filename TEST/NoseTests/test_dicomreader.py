@@ -184,6 +184,20 @@ class TestDcm2Niix(TestCase):
                                                                         modality="dwi")[0].sidecar_path),
                          "sub-04_ses-01_dwi.json")
         final_bids_dataset.update(run=True)
+
+        # test moving an image
+        image = final_bids_dataset.get_images(acquisition="contrast")[1]
+        # rename an image task name
+        image.set_acquisition("postcontrast")
+        # test that the image does not yet exist
+        self.assertEqual(len(glob.glob(os.path.join(out_bids_dataset, "*", "*", "anat", "*acq-postcontrast*.nii.gz"))),
+                         0)
+        # update the data set
+        final_bids_dataset.update(run=True, move=True)
+        # test that the image now exists with the acquisition
+        self.assertTrue(os.path.exists(glob.glob(os.path.join(out_bids_dataset, "*", "*", "anat",
+                                                              "*acq-postcontrast*.nii.gz"))[0]))
+
         shutil.rmtree(out_bids_dataset)
 
     def test_invalid_key_modification(self):

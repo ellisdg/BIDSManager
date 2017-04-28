@@ -81,6 +81,11 @@ class Image(BIDSObject):
                and (not acquisition or acquisition == self.get_acquisition()) \
                and (not run_number or int(run_number) == int(self.get_run_number()))
 
+    def set_acquisition(self, acquisition):
+        current_key = self.get_image_key()
+        self._acquisition = acquisition
+        self.update_key(current_key)
+
     def set_parent(self, parent):
         super(Image, self).set_parent(parent)
         self._group = self._parent
@@ -108,6 +113,10 @@ class Image(BIDSObject):
             update_file(self.sidecar_path, tmp_sidecar_file, move=move)
             self.sidecar_path = tmp_sidecar_file
 
+    def update_key(self, prev_key):
+        new_key = self.get_image_key()
+        self.get_parent().modify_key(prev_key, new_key)
+
 
 class FunctionalImage(Image):
     def __init__(self, task_name=None, *inputs, **kwargs):
@@ -120,7 +129,7 @@ class FunctionalImage(Image):
     def set_task_name(self, task_name):
         current_key = self.get_image_key()
         self._task_name = task_name
-        self.get_parent().modify_key(current_key, self.get_image_key())
+        self.update_key(current_key)
 
     def get_image_keys(self, keys=None):
         if not keys:
