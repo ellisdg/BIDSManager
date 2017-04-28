@@ -147,10 +147,14 @@ class TestDcm2Niix(TestCase):
                                                     "sub-03_ses-01_task-lefthandft_bold.nii.gz")))
         # test moving an image
         image = self.dataset.get_images(subject_id="03", session="01", task_name="lefthandft")[0]
+        # rename an image task name
         image.set_task_name("lefthandfingertapping")
+        # test that the image does not yet exist
         self.assertFalse(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "func",
                                                      "sub-03_ses-01_task-lefthandfingertapping_bold.nii.gz")))
+        # update the data set
         self.dataset.update(run=True, move=True)
+        # test that the image now exists with the new task name
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "func",
                                                     "sub-03_ses-01_task-lefthandfingertapping_bold.nii.gz")))
 
