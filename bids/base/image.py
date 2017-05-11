@@ -114,8 +114,9 @@ class Image(BIDSObject):
             self.sidecar_path = tmp_sidecar_file
 
     def update_key(self, prev_key):
-        new_key = self.get_image_key()
-        self.get_parent().modify_key(prev_key, new_key)
+        if self.get_parent():
+            new_key = self.get_image_key()
+            self.get_parent().modify_key(prev_key, new_key)
 
 
 class FunctionalImage(Image):
