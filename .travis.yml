@@ -5,5 +5,5 @@ python:
   - "3.6"
 install:
   - "pip install nibabel"
-  - "pip install -r requirement.txt"
+  - "pip install -r requirements.txt"
 script: "bash ./.travis.sh"
