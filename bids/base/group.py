@@ -34,19 +34,17 @@ class Group(BIDSFolder):
     def get_basename(self):
         return self.get_name()
 
-    def get_image_paths(self, modality=None, acquisition=None, run_number=None):
-        image_paths = []
+    def get_images(self, **kwargs):
+        images = []
         for image in self._images.values():
-            if not (modality and modality != image.get_modality()) \
-                    and not (acquisition and acquisition != image.get_acquisition())\
-                    and not (run_number and run_number != image.get_run_number()):
-                image_paths.append(image.get_path())
-        return image_paths
+            if image.is_match(**kwargs):
+                images.append(image)
+        return images
 
     def get_modalities(self):
         return [image.get_modality() for image in self._images.values()]
 
-    def get_images(self):
+    def get_all_images(self):
         return list(self._images.values())
 
 

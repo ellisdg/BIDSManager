@@ -5,8 +5,8 @@ import os
 from ..base.dataset import DataSet
 from ..base.session import Session
 from ..base.subject import Subject
-from .image_reader import ImageReader
-from .group_reader import GroupReader
+from ..utils.image_utils import load_image
+from ..utils.session_utils import load_group, modality_to_group_name
 
 
 class CSVReader(object):
@@ -35,12 +35,12 @@ class CSVReader(object):
                     session = subject.get_session(session_name)
 
                 image = self.read_image(line["file"], line["modality"], line['task'])
-                group_name = self.modality_to_group_name(image.get_modality())
+                group_name = modality_to_group_name(image.get_modality())
 
                 if session.has_group(group_name):
                     group = session.get_group(group_name)
                 else:
-                    group = GroupReader.load_group(group_name=group_name)
+                    group = load_group(group_name=group_name)
                     session.add_group(group)
 
                 group.add_image(image)
@@ -51,7 +51,9 @@ class CSVReader(object):
         modality = self.correct_modality(modality.lower())
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(os.path.join(self._directory, file_path))
-        return ImageReader.read_image(path_to_image=file_path, modality=modality, task_name=task_name)
+        if task_name:
+            task_name = task_name.lower().replace(" ", "")
+        return load_image(path_to_image=file_path, modality=modality, task_name=task_name)
 
     @staticmethod
     def correct_modality(modality):
@@ -60,12 +62,6 @@ class CSVReader(object):
         elif "flair" in modality:
             return 'FLAIR'
         return modality
-
-    @staticmethod
-    def modality_to_group_name(modality):
-        if "bold" in modality.lower():
-            return "func"
-        return "anat"
 
 
 def read_csv(path_to_csv_file):

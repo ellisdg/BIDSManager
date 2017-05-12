@@ -1,4 +1,7 @@
+from bids.utils.session_utils import modality_to_group_name
 from .base import BIDSFolder
+from .group import FunctionalGroup
+from ..utils.session_utils import load_group
 
 
 class Session(BIDSFolder):
@@ -16,15 +19,28 @@ class Session(BIDSFolder):
     def add_groups(self, groups):
         [self.add_group(group) for group in groups]
 
+    def add_image(self, image):
+        group_name = modality_to_group_name(image.get_modality())
+        try:
+            group = self.get_group(group_name)
+        except KeyError:
+            group = load_group(group_name=group_name)
+            self.add_group(group)
+        group.add_image(image)
+
     def get_basename(self):
         return "ses-{0}".format(self.get_name())
 
-    def get_image_paths(self, group_name=None, modality=None, acquisition=None):
-        image_paths = []
+    def get_images(self, group_name=None, modality=None, acquisition=None, run_number=None, task_name=None):
+        images = []
         for group in self._groups.values():
-            if (group_name and group_name == group.get_name()) or not group_name:
-                image_paths.extend(group.get_image_paths(modality=modality, acquisition=acquisition))
-        return image_paths
+            if not group_name or group_name == group.get_name():
+                if isinstance(group, FunctionalGroup):
+                    images.extend(group.get_images(modality=modality, acquisition=acquisition, run_number=run_number,
+                                                   task_name=task_name))
+                elif not task_name:
+                    images.extend(group.get_images(modality=modality, acquisition=acquisition, run_number=run_number))
+        return images
 
     def get_group(self, group_name):
         return self._groups[group_name]

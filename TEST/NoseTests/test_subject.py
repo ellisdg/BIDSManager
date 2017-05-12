@@ -1,7 +1,7 @@
 import unittest
 from unittest import TestCase
-from ..base.session import Session
-from ..base.subject import Subject
+from bids.base.session import Session
+from bids.base.subject import Subject
 
 
 class TestSubject(TestCase):

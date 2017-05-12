@@ -4,9 +4,9 @@ import shutil
 from unittest import TestCase
 
 
-from ..write.dataset_writer import write_dataset
-from ..read import read_csv
-from .test_reader import get_unorganized_example_directory
+from bids.write.dataset_writer import write_dataset
+from bids.read import read_csv, read_dataset
+from test_reader import get_unorganized_example_directory
 
 
 class TestWrite(TestCase):
@@ -30,3 +30,12 @@ class TestWrite(TestCase):
                                                                                   "*", "*.nii.gz"))]),
                          {"sub-003_ses-visit1_task-fingertapping_bold.nii.gz", "sub-003_ses-visit1_FLAIR.nii.gz",
                           "sub-003_ses-visit1_T1w.nii.gz"})
+
+        fingertapping_images = self.dataset.get_images(task_name="fingertapping")
+        for image in fingertapping_images:
+            image.set_task_name("ft")
+        self.dataset.update(run=True, move=True)
+
+        reread_dataset = read_dataset(self._dir)
+        self.assertEqual(len(reread_dataset.get_images(task_name="fingertapping")), 0)
+        self.assertEqual(len(reread_dataset.get_images(task_name="ft")), len(fingertapping_images))

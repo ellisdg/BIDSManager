@@ -2,7 +2,8 @@ import glob
 import os
 from unittest import TestCase
 
-from ..read import DataSetReader, read_dataset, read_csv
+from bids.read import read_dataset, read_csv
+from bids.read.dataset_reader import DataSetReader
 
 
 def get_script_directory():
@@ -50,11 +51,19 @@ class TestReaderDataSet001(TestCase):
         test_task_names = {"balloonanalogrisktask"}
         self.assertEqual(task_names, test_task_names)
 
+    def test_get_images_with_task_name(self):
+        self.assertEqual(os.path.basename(self.dataset.get_image_paths(task_name="balloonanalogrisktask",
+                                                                       subject_id="01", run_number="01")[0]),
+                         "sub-01_task-balloonanalogrisktask_run-01_bold.nii.gz")
+
     def test_list_all_t1_scans(self):
         t1_images = self.dataset.get_image_paths(modality="T1w")
         t1_glob_list = [os.path.abspath(f) for f in glob.glob(os.path.join(get_examples_directory(),
                                                                            "ds001", "sub-*", "anat", "*T1w.nii.gz"))]
         self.assertEqual(sorted(t1_images), sorted(t1_glob_list))
+
+    def test_dataset_path(self):
+        self.assertEqual(os.path.join(get_examples_directory(), "ds001"), self.dataset.get_path())
 
 
 class TestReaderDataSet114(TestCase):
@@ -108,7 +117,9 @@ class TestReaderTestDir(TestCase):
                             glob.glob(os.path.join(get_example_directory(),
                                                    "sub-*", "ses-*", "*", "*acq-contrast*.nii.gz"))]
         image_paths = self.dataset.get_image_paths(acquisition="contrast", modality="T1w")
+        image_paths_from_images = [image.get_path() for image in self.dataset.get_images()]
         self.assertEqual(sorted(image_paths_glob), sorted(image_paths))
+        self.assertEqual(sorted(image_paths), sorted(image_paths_from_images))
 
 
 class TestReaderCSV(TestCase):
@@ -134,7 +145,7 @@ class TestReaderCSV(TestCase):
         self.assertEqual(set([os.path.abspath(os.path.join(get_unorganized_example_directory(), f)) for f in
                               {"t1.nii.gz", "some_t1.nii.gz", "some_other_t1.nii.gz", "third_t1.nii.gz",
                                "t1_from_different_subject.nii.gz", "i_dont_know.nii.gz", "second_t1.nii.gz"}]),
-                         set(self.dataset.get_image_paths(modality="T1w")))
+                         set(self.dataset.get_image_paths(group_name="anat", modality="T1w")))
 
     def test_read_flair_modality(self):
         self.assertEqual({os.path.abspath(os.path.join(get_unorganized_example_directory(), "flair.nii.gz"))},
@@ -142,11 +153,11 @@ class TestReaderCSV(TestCase):
 
     def test_read_bold_image(self):
         image = self.dataset.get_subject("003").get_session("visit1").get_group("func").get_images()[0]
-        self.assertEqual(image.get_task_name(), "Finger Tapping")
+        self.assertEqual(image.get_task_name(), "fingertapping")
 
     def test_read_bold_group(self):
         group = self.dataset.get_subject("003").get_session("visit1").get_group("func")
-        self.assertEqual(group.get_task_names(), ["Finger Tapping"])
+        self.assertEqual(group.get_task_names(), ["fingertapping"])
 
     def test_read_multiple_runs(self):
         group = self.dataset.get_subject("003").get_session("visit2").get_group("anat")
