@@ -13,7 +13,7 @@ Yet no tool has been proposed that allows users to actively organize and manage 
 
 BIDSManager serves as an all-in-one tool that allows users looking to quickly access, manage, change, and update their
 neuroimaging data sets. Users can quickly add new data to an existing BIDS data set. 
-A directory containing DICOMS can be easily sorted by subject and session and then converted to a format that complies 
+A directory containing DICOMs can be easily sorted by subject and session and then converted to a format that complies 
 with BIDS.
 
 ## Read BIDS Data Set
