@@ -1,14 +1,20 @@
 # BIDSManager
 [![Build Status](https://travis-ci.org/ellisdg/bids.svg?branch=master)](https://travis-ci.org/ellisdg/bids)
 
-Access, write and modify BIDS data sets with ease!
+Allows users to easily convert, organize, and manage neuroimaging data in Python.
 
-The [Brain Imaging Data Structure (BIDS)](http://bids.neuroimaging.io/) is a "simple and inuitive way to organize and 
-describe your neruoimaging and behavioral data." The BIDS format creates a standardized way to store and share data 
-sets.
-However, formatting existing neuroimaging data sets into the BIDS structure can be time consuming.
+Motivated by issues that have sprung from researchers wanting to store and share neuroimaging data, 
+[Gorgolewski, et al.](https://www.nature.com/articles/sdata201644)
+proposed a standard organization for storing, sharing, and describing brain imaging datasets, known as the 
+[brain imaging data structure (BIDS)](http://bids.neuroimaging.io/). 
+Since then, the standard has been gaining traction across neuroimaging researchers. 
+Several software tools have been developed to access, process, and convert to and from BIDS data sets. 
+Yet no tool has been proposed that allows users to actively organize and manage sets of data for ongoing studies.
 
-This project is designed to allow users to quickly read, write and modify BIDS data sets in Python.
+BIDSManager serves as an all-in-one tool that allows users looking to quickly access, manage, change, and update their
+neuroimaging data sets. Users can quickly add new data to an existing BIDS data set. 
+A directory containing DICOMS can be easily sorted by subject and session and then converted to a format that complies 
+with BIDS.
 
 ## Read BIDS Data Set
 Read a data set that is already in BIDS format:
