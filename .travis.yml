@@ -3,5 +3,7 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
-install: "pip install nibabel"
+install:
+  - "pip install nibabel"
+  - "pip install -r requirement.txt"
 script: "bash ./.travis.sh"
