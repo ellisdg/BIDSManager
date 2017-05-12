@@ -94,7 +94,7 @@ class Image(BIDSObject):
             self.set_session(session)
 
     def set_session(self, session):
-        from bids.base import Session, Subject
+        from bidsmanager.base import Session, Subject
         if isinstance(session, Session):
             self._session = session
             self._subject = session.get_parent()

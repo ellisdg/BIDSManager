@@ -2,7 +2,7 @@ import os
 import re
 import glob
 
-from bids.utils.image_utils import load_image
+from bidsmanager.utils.image_utils import load_image
 
 
 def parse_task_name(path_to_image):

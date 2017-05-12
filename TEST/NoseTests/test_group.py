@@ -1,7 +1,7 @@
 import unittest
 from unittest import TestCase
-from bids.base.group import Group
-from bids.base.image import Image
+from bidsmanager.base.group import Group
+from bidsmanager.base.image import Image
 
 
 class TestGroup(TestCase):

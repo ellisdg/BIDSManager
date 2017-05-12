@@ -1,4 +1,4 @@
-from bids.base.image import FunctionalImage, Image, DiffusionImage
+from bidsmanager.base.image import FunctionalImage, Image, DiffusionImage
 
 
 def load_image(path_to_image, modality=None, acquisition=None, task_name=None, run_number=None, path_to_sidecar=None,

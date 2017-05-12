@@ -1,4 +1,4 @@
-from bids.base.group import FunctionalGroup, Group
+from bidsmanager.base.group import FunctionalGroup, Group
 
 
 def load_group(path_to_group_folder=None, group_name=None, images=None):

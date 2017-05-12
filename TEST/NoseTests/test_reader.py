@@ -2,8 +2,8 @@ import glob
 import os
 from unittest import TestCase
 
-from bids.read import read_dataset, read_csv
-from bids.read.dataset_reader import DataSetReader
+from bidsmanager.read import read_dataset, read_csv
+from bidsmanager.read.dataset_reader import DataSetReader
 
 
 def get_script_directory():
@@ -11,7 +11,7 @@ def get_script_directory():
 
 
 def get_examples_directory():
-    return os.path.join(os.path.dirname(os.path.dirname(get_script_directory())), "BIDS-examples")
+    return os.path.join(os.path.dirname(os.path.dirname(get_script_directory())), "BIDSManager-examples")
 
 
 def get_example_directory():

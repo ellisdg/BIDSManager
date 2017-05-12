@@ -13,9 +13,9 @@ except ImportError:
 import numpy as np
 import nibabel as nib
 
-from bids.read.dicom_reader import read_dicom_file, read_dicom_directory, dcm2niix, dcm2niix_dwi
-from bids.read.dataset_reader import read_dataset
-from bids.write.dataset_writer import write_dataset
+from bidsmanager.read.dicom_reader import read_dicom_file, read_dicom_directory, dcm2niix, dcm2niix_dwi
+from bidsmanager.read.dataset_reader import read_dataset
+from bidsmanager.write.dataset_writer import write_dataset
 
 
 def extract_tarball_files(in_file, output_dir):
@@ -112,7 +112,7 @@ class TestDcm2Niix(TestCase):
 
     def test_convert_dwi(self):
         warnings.simplefilter("error")
-        from bids.read.dicom_reader import get_dicom_set
+        from bidsmanager.read.dicom_reader import get_dicom_set
         dwi_dicoms = get_dicom_set(os.path.join("TestDicoms", "DTI_0544"))
         dwi_dicom_files = [dwi_dicom.get_path() for dwi_dicom in dwi_dicoms]
         self.assertRaises(RuntimeWarning, dcm2niix, in_file=dwi_dicom_files)

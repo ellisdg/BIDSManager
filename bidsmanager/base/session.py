@@ -1,4 +1,4 @@
-from bids.utils.session_utils import modality_to_group_name
+from bidsmanager.utils.session_utils import modality_to_group_name
 from .base import BIDSFolder
 from .group import FunctionalGroup
 from ..utils.session_utils import load_group

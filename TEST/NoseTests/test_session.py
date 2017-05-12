@@ -1,8 +1,8 @@
 import unittest
 from unittest import TestCase
-from bids.base.session import Session
-from bids.base.group import Group
-from bids.utils.session_utils import modality_to_group_name
+from bidsmanager.base.session import Session
+from bidsmanager.base.group import Group
+from bidsmanager.utils.session_utils import modality_to_group_name
 
 
 class TestSession(TestCase):

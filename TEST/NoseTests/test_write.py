@@ -4,8 +4,8 @@ import shutil
 from unittest import TestCase
 
 
-from bids.write.dataset_writer import write_dataset
-from bids.read import read_csv, read_dataset
+from bidsmanager.write.dataset_writer import write_dataset
+from bidsmanager.read import read_csv, read_dataset
 from test_reader import get_unorganized_example_directory
 
 

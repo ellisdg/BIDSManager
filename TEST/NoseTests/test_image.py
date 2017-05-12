@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from bids.base.image import Image, FunctionalImage
+from bidsmanager.base.image import Image, FunctionalImage
 
 
 class TestImage(TestCase):

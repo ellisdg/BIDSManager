@@ -1,4 +1,4 @@
-# BIDS
+# BIDSManager
 [![Build Status](https://travis-ci.org/ellisdg/bids.svg?branch=master)](https://travis-ci.org/ellisdg/bids)
 
 Access, write and modify BIDS data sets with ease!
@@ -13,7 +13,7 @@ This project is designed to allow users to quickly read, write and modify BIDS d
 ## Read BIDS Data Set
 Read a data set that is already in BIDS format:
 ```
-from bids.read import read_dataset
+from bidsmanager.read import read_dataset
 dataset = read_dataset("/path/to/dataset")
 ```
 Now that you have a Python interface to the data set, you can also get_field the interfaces for specific subjects, sessions or
