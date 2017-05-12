@@ -1,8 +1,10 @@
+PackageDir=${PWD}
+export PYTHONPATH=${PackageDir}:${PYTHONPATH}
 cd TEST
-nosetests test_dataSet.py
-nosetests test_group.py
-nosetests test_image.py
-nosetests test_reader.py
-nosetests test_session.py
-nosetests test_subject.py
-nosetests test_write.py
+nosetests NoseTests/test_dataSet.py
+nosetests NoseTests/test_group.py
+nosetests NoseTests/test_image.py
+nosetests NoseTests/test_reader.py
+nosetests NoseTests/test_session.py
+nosetests NoseTests/test_subject.py
+nosetests NoseTests/test_write.py
