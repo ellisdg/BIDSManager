@@ -16,29 +16,49 @@ neuroimaging data sets. Users can quickly add new data to an existing BIDS data 
 A directory containing DICOMs can be easily sorted by subject and session and then converted to a format that complies 
 with BIDS.
 
-## Read BIDS Data Set
-Read a data set that is already in BIDS format:
+## Access an existing BIDS data set
+BIDSManager makes it easy to acces data from an existing data set saved to file:
 ```
 from bidsmanager.read import read_dataset
 dataset = read_dataset("/path/to/dataset")
 ```
-Now that you have a Python interface to the data set, you can also get_field the interfaces for specific subjects, sessions or
-groups:
+Image file paths from the data set can then be obtained:
 ```
-subject_01 = dataset.get_subject("01")
-session_retest = subject_01.get_session("retest")
-group_func = session.get_group("func")
+t1_image_files = dataset.get_image_paths(modality=“T1w”)
 ```
-You can also get_field the image paths for the entire data set:
+
+## Modify a task name
+Here we iterate through all the images in the dataset that had the task name “finger”, change the task name to 
+“fingertapping”, and then update the image file paths on file.
 ```
-all_t1w_file_paths = dataset.get_image_paths(modality="T1w")
+for image in dataset.get_images(task_name=“finger”):
+    image.set_task_name(“fingertapping”)
+dataset.update(run=True, move=True)
 ```
-...or for a particular subject:
+
+## Convert DICOM data
+BIDSManager can read in a dicom directory and convert it to a bids directory:
 ```
-t1w_01_file_paths = subject_01.get_image_paths(modality="T1w")
+from bidsmanager.read.dicom_reader import read_dicom_directory
+from bidsmanager.write.dataset_writer import write_dataset
+dataset = read_dicom_directory(“/path/to/dicom/directory”)
+dataset.set_path(“/path/to/write/bids/directory”)
+dataset.update(run=True, move=True)
 ```
-A single line equivelant would be as follows:
+
+## Read CSV File
+BIDSManager can also read in a CSV file that contains information on a list of NIFTI file names. BIDS Manager will then
+sort those files into a BIDS formatted directory. Take the below information that could be encoded in a CSV file:
+
+| subject | session | modality | file | task |
+| ------- | ------- | -------- | ---- | -------- |
+| 003 | Visit1 | T1w | /path/to/t1.nii.gz |  |
+| 005 | Visit1 | T1w | /path/to/fmri.nii.gz | Finger Tapping |
+
+We can read this CSV file as a data set using BIDSManager and then write the data into BIDS format:
 ```
-t1w_01_file_paths = dataset.get_subject("01").get_image_paths(modality="T1w")
+from bidsmanager.read import read_csv
+dataset = read_csv(“/path/to/csv_file.csv”)
+dataset.set_path(“/path/to/write/bids/directory”)
+dataset.update(run=True)
 ```
-## Write BIDS Data Set
