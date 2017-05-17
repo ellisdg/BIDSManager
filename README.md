@@ -1,5 +1,5 @@
 # BIDSManager
-[![Build Status](https://travis-ci.org/ellisdg/bids.svg?branch=master)](https://travis-ci.org/ellisdg/bids)
+[![Build Status](https://travis-ci.org/ellisdg/BIDSManager.svg?branch=master)](https://travis-ci.org/ellisdg/bids)
 
 Allows users to easily convert, organize, and manage neuroimaging data in Python.
 
