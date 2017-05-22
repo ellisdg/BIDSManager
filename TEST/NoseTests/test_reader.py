@@ -10,8 +10,12 @@ def get_script_directory():
     return os.path.dirname(os.path.abspath(__file__))
 
 
-def get_examples_directory():
-    return os.path.join(os.path.dirname(os.path.dirname(get_script_directory())), "BIDSManager-examples")
+def get_test_directory():
+    return os.path.dirname(get_script_directory())
+
+
+def get_bids_examples_directory():
+    return os.path.join(get_test_directory(), "BIDS-examples")
 
 
 def get_example_directory():
@@ -25,7 +29,7 @@ def get_unorganized_example_directory():
 class TestReaderDataSet001(TestCase):
     def setUp(self):
         self.reader = DataSetReader()
-        self.dataset = self.reader.load_data_set(os.path.join(get_examples_directory(), "ds001"))
+        self.dataset = self.reader.load_data_set(os.path.join(get_bids_examples_directory(), "ds001"))
 
     def test_read_dataset_subjects(self):
         self.assertEqual(self.dataset.get_subject_ids(),
@@ -34,14 +38,14 @@ class TestReaderDataSet001(TestCase):
     def test_list_subject_scans(self):
         subject = self.dataset.get_subject("01")
         scan_paths = set(subject.get_image_paths())
-        test_paths = set([os.path.abspath(f) for f in glob.glob(os.path.join(get_examples_directory(),
+        test_paths = set([os.path.abspath(f) for f in glob.glob(os.path.join(get_bids_examples_directory(),
                                                                              "ds001", "sub-01", "*", "*.nii.gz"))])
         self.assertEqual(scan_paths, test_paths)
 
     def test_list_subject_anat_scans(self):
         subject = self.dataset.get_subject("01")
         scan_paths = set(subject.get_image_paths(group_name="anat"))
-        test_paths = set([os.path.abspath(f) for f in glob.glob(os.path.join(get_examples_directory(),
+        test_paths = set([os.path.abspath(f) for f in glob.glob(os.path.join(get_bids_examples_directory(),
                                                                              "ds001", "sub-01", "anat", "*.nii.gz"))])
         self.assertEqual(scan_paths, test_paths)
 
@@ -58,18 +62,18 @@ class TestReaderDataSet001(TestCase):
 
     def test_list_all_t1_scans(self):
         t1_images = self.dataset.get_image_paths(modality="T1w")
-        t1_glob_list = [os.path.abspath(f) for f in glob.glob(os.path.join(get_examples_directory(),
+        t1_glob_list = [os.path.abspath(f) for f in glob.glob(os.path.join(get_bids_examples_directory(),
                                                                            "ds001", "sub-*", "anat", "*T1w.nii.gz"))]
         self.assertEqual(sorted(t1_images), sorted(t1_glob_list))
 
     def test_dataset_path(self):
-        self.assertEqual(os.path.join(get_examples_directory(), "ds001"), self.dataset.get_path())
+        self.assertEqual(os.path.join(get_bids_examples_directory(), "ds001"), self.dataset.get_path())
 
 
 class TestReaderDataSet114(TestCase):
     def setUp(self):
         self.reader = DataSetReader()
-        self.dataset = self.reader.load_data_set(os.path.join(get_examples_directory(), "ds114"))
+        self.dataset = self.reader.load_data_set(os.path.join(get_bids_examples_directory(), "ds114"))
 
     def test_list_subject_sessions(self):
         sessions = set(self.dataset.get_subject("01").get_session_names())
