@@ -3,7 +3,6 @@ import os
 from unittest import TestCase
 
 from bidsmanager.read import read_dataset, read_csv
-from bidsmanager.read.dataset_reader import DataSetReader
 
 
 def get_script_directory():
@@ -28,8 +27,7 @@ def get_unorganized_example_directory():
 
 class TestReaderDataSet001(TestCase):
     def setUp(self):
-        self.reader = DataSetReader()
-        self.dataset = self.reader.load_data_set(os.path.join(get_bids_examples_directory(), "ds001"))
+        self.dataset = read_dataset(os.path.join(get_bids_examples_directory(), "ds001"))
 
     def test_read_dataset_subjects(self):
         self.assertEqual(self.dataset.get_subject_ids(),
@@ -72,8 +70,7 @@ class TestReaderDataSet001(TestCase):
 
 class TestReaderDataSet114(TestCase):
     def setUp(self):
-        self.reader = DataSetReader()
-        self.dataset = self.reader.load_data_set(os.path.join(get_bids_examples_directory(), "ds114"))
+        self.dataset = read_dataset(os.path.join(get_bids_examples_directory(), "ds114"))
 
     def test_list_subject_sessions(self):
         sessions = set(self.dataset.get_subject("01").get_session_names())
