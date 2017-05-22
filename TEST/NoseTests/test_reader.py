@@ -1,5 +1,6 @@
 import glob
 import os
+import sqlite3
 from unittest import TestCase
 
 from bidsmanager.read import read_dataset, read_csv
@@ -66,6 +67,18 @@ class TestReaderDataSet001(TestCase):
 
     def test_dataset_path(self):
         self.assertEqual(os.path.join(get_bids_examples_directory(), "ds001"), self.dataset.get_path())
+
+    def test_sql_interface_exists(self):
+        sql_file = os.path.join(get_test_directory(), "ds001.sql")
+        self.dataset.create_sql_interface(sql_file)
+        self.assertTrue(os.path.isfile(sql_file))
+
+        # connect to the sql database to ensure it has all the proper elements
+        connection = sqlite3.connect(sql_file)
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM SUBJECT")
+
+        os.remove(sql_file)
 
 
 class TestReaderDataSet114(TestCase):

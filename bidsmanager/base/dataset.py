@@ -1,4 +1,5 @@
 from .base import BIDSFolder
+from ..write.sql_writer import connect_to_database, execute_statement
 
 
 class DataSet(BIDSFolder):
@@ -45,3 +46,6 @@ class DataSet(BIDSFolder):
     def has_subject_id(self, subject_id):
         return subject_id in self.get_subject_ids()
 
+    def create_sql_interface(self, sql_file):
+        connection = connect_to_database(sql_file)
+        execute_statement(connection, """CREATE TABLE Subject(id INTEGER);""")
