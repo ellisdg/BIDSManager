@@ -55,14 +55,39 @@ class SQLInterface(object):
     def __init__(self, bids_dataset, path):
         self.dataset = bids_dataset
         self.connection = connect_to_database(path)
-        self.write_subjects_to_database(self.connection)
+        self.write_database()
+
+    def write_database(self):
+        self.create_image_table()
+        self.write_subjects_to_database()
         self.connection.commit()
 
-    def write_subjects_to_database(self, connection):
-        execute_statement(connection, """DROP TABLE IF EXISTS Subject;""")
-        execute_statement(connection, """CREATE TABLE Subject (id CHAR(2));""")
+    def write_subjects_to_database(self):
+        table_name = "Subject"
+        self.drop_table(table_name)
+        execute_statement(self.connection, "CREATE TABLE {0} (id CHAR(2));".format(table_name))
         for subject in self.dataset.get_subjects():
-            execute_statement(connection, "INSERT INTO Subject (id) VALUES ('{0}');".format(subject.get_id()))
+            execute_statement(self.connection, "INSERT INTO {0} (id) VALUES ('{1}');".format(table_name,
+                                                                                             subject.get_id()))
+
+    def create_image_table(self):
+        table_name = "Image"
+        self.drop_table(table_name)
+        execute_statement(self.connection,
+                          "CREATE TABLE {0} (modality TEXT, subject CHAR(2), taskname TEXT)".format(table_name))
+        for image in self.dataset.get_images():
+            try:
+                taskname = image.get_task_name()
+            except AttributeError:
+                taskname = ""
+
+            execute_statement(self.connection,
+                              """INSERT INTO {0} (modality, subject, taskname)
+                                 VALUES ('{1}', '{2}', '{3}');""".format(table_name, image.get_modality(),
+                                                                         image.get_subject().get_id(), taskname))
+
+    def drop_table(self, name):
+        execute_statement(self.connection, "DROP TABLE IF EXISTS {0};".format(name))
 
     def __del__(self):
         self.connection.commit()
