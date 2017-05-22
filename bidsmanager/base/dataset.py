@@ -1,5 +1,6 @@
+import sqlite3
+
 from .base import BIDSFolder
-from ..write.sql_writer import connect_to_database, execute_statement
 
 
 class DataSet(BIDSFolder):
@@ -47,5 +48,30 @@ class DataSet(BIDSFolder):
         return subject_id in self.get_subject_ids()
 
     def create_sql_interface(self, sql_file):
-        connection = connect_to_database(sql_file)
-        execute_statement(connection, """CREATE TABLE Subject(id INTEGER);""")
+        return SQLInterface(self, sql_file)
+
+
+class SQLInterface(object):
+    def __init__(self, bids_dataset, path):
+        self.dataset = bids_dataset
+        self.connection = connect_to_database(path)
+        self.write_subjects_to_database(self.connection)
+        self.connection.commit()
+
+    def write_subjects_to_database(self, connection):
+        execute_statement(connection, """DROP TABLE IF EXISTS Subject;""")
+        execute_statement(connection, """CREATE TABLE Subject (id CHAR(2));""")
+        for subject in self.dataset.get_subjects():
+            execute_statement(connection, "INSERT INTO Subject (id) VALUES ('{0}');".format(subject.get_id()))
+
+    def __del__(self):
+        self.connection.commit()
+        self.connection.close()
+
+
+def connect_to_database(sql_file):
+    return sqlite3.connect(sql_file)
+
+
+def execute_statement(connection, sql_statement):
+    return connection.cursor().execute(sql_statement)

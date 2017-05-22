@@ -76,7 +76,8 @@ class TestReaderDataSet001(TestCase):
         # connect to the sql database to ensure it has all the proper elements
         connection = sqlite3.connect(sql_file)
         cursor = connection.cursor()
-        cursor.execute("SELECT * FROM SUBJECT")
+        cursor.execute("SELECT * FROM Subject")
+        self.assertEquals(len(cursor.fetchall()), 16)
 
         os.remove(sql_file)
 
