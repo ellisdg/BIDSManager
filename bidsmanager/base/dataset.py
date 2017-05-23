@@ -58,43 +58,48 @@ class SQLInterface(object):
         self.write_database()
 
     def write_database(self):
-        self.create_image_table()
-        self.write_subjects_to_database()
+        self.write_info_to_database()
         self.connection.commit()
 
-    def write_subjects_to_database(self):
-        table_name = "Subject"
-        self.drop_table(table_name)
-        execute_statement(self.connection, "CREATE TABLE {0} (id CHAR(2));".format(table_name))
-        session_table_name = "Session"
-        self.drop_table(session_table_name)
-        execute_statement(self.connection,
-                          "CREATE TABLE {0} (id TEXT)".format(session_table_name))
+    def write_info_to_database(self):
+        self.write_bids_tables()
         for subject in self.dataset.get_subjects():
-            execute_statement(self.connection, "INSERT INTO {0} (id) VALUES ('{1}');".format(table_name,
-                                                                                             subject.get_id()))
-            for session in subject.get_sessions():
-                session_name = session.get_name()
-                if session_name:
-                    execute_statement(self.connection,
-                                      "INSERT INTO {0} (id) VALUES ('{1}');".format(session_table_name,
-                                                                                    session_name))
+            self.insert_subject_into_database(subject)
 
-    def create_image_table(self):
-        table_name = "Image"
-        self.drop_table(table_name)
-        execute_statement(self.connection,
-                          "CREATE TABLE {0} (modality TEXT, subject CHAR(2), taskname TEXT)".format(table_name))
-        for image in self.dataset.get_images():
-            try:
-                taskname = image.get_task_name()
-            except AttributeError:
-                taskname = ""
+    def insert_subject_into_database(self, subject):
+        self.insert_into_database("Subject", "(id)", "('{0}')".format(subject.get_id()))
+        for session in subject.get_sessions():
+            self.insert_session_into_database(session)
 
-            execute_statement(self.connection,
-                              """INSERT INTO {0} (modality, subject, taskname)
-                                 VALUES ('{1}', '{2}', '{3}');""".format(table_name, image.get_modality(),
-                                                                         image.get_subject().get_id(), taskname))
+    def insert_session_into_database(self, session):
+        if session.get_name():
+            self.insert_into_database("Session", "(id)", "('{0}')".format(session.get_name()))
+        for image in session.get_images():
+            self.insert_image_into_database(image)
+
+    def insert_image_into_database(self, image):
+        try:
+            task_name = image.get_task_name()
+        except AttributeError:
+            task_name = ""
+        self.insert_into_database("Image", "(modality, subject, taskname)",
+                                  "('{0}', '{1}', '{2}')".format(image.get_modality(), image.get_subject().get_id(),
+                                                                 task_name))
+
+    def write_bids_tables(self):
+        self.create_table("Subject", "(id CHAR(2))")
+        self.create_table("Session", "(id TEXT)")
+        self.create_table("Image", "(modality TEXT, subject CHAR(2), taskname TEXT)")
+
+    def insert_into_database(self, table_name, columns, values):
+        execute_statement(self.connection, "INSERT INTO {table} {columns} VALUES {values};".format(table=table_name,
+                                                                                                   columns=columns,
+                                                                                                   values=values))
+
+    def create_table(self, table_name, columns, drop_table=True):
+        if drop_table:
+            self.drop_table(table_name)
+        execute_statement(self.connection, "CREATE TABLE {0} {1}".format(table_name, columns))
 
     def drop_table(self, name):
         execute_statement(self.connection, "DROP TABLE IF EXISTS {0};".format(name))
