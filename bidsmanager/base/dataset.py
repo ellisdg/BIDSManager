@@ -52,9 +52,13 @@ class DataSet(BIDSFolder):
 
 
 class SQLInterface(object):
+    _config = {"Session": {"name": "TEXT",
+                           "id": "INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE"}}
+
     def __init__(self, bids_dataset, path):
         self.dataset = bids_dataset
         self.connection = connect_to_database(path)
+        self.cursor = self.connection.cursor()
         self.write_database()
 
     def write_database(self):
@@ -73,36 +77,43 @@ class SQLInterface(object):
 
     def insert_session_into_database(self, session):
         if session.get_name():
-            self.insert_into_database("Session", "(id)", "('{0}')".format(session.get_name()))
+            self.insert_into_database("Session", "(name)", "('{0}')".format(session.get_name()))
+            session_id = self.cursor.lastrowid
+        else:
+            session_id = -1
         for image in session.get_images():
-            self.insert_image_into_database(image)
+            self.insert_image_into_database(image, session_id)
 
-    def insert_image_into_database(self, image):
+    def insert_image_into_database(self, image, session_id):
         try:
             task_name = image.get_task_name()
         except AttributeError:
             task_name = ""
-        self.insert_into_database("Image", "(modality, subject, taskname)",
-                                  "('{0}', '{1}', '{2}')".format(image.get_modality(), image.get_subject().get_id(),
-                                                                 task_name))
+        self.insert_into_database("Image", "(modality, session_id, taskname)",
+                                  "('{0}', '{1}', '{2}')".format(image.get_modality(), session_id, task_name))
 
     def write_bids_tables(self):
         self.create_table("Subject", "(id CHAR(2))")
-        self.create_table("Session", "(id TEXT)")
-        self.create_table("Image", "(modality TEXT, subject CHAR(2), taskname TEXT)")
+        self.create_session_table()
+        self.create_table("Image", "(modality TEXT, session_id INTEGER, taskname TEXT)")
 
     def insert_into_database(self, table_name, columns, values):
-        execute_statement(self.connection, "INSERT INTO {table} {columns} VALUES {values};".format(table=table_name,
-                                                                                                   columns=columns,
-                                                                                                   values=values))
+        execute_statement(self.cursor, "INSERT INTO {table} {columns} VALUES {values};".format(table=table_name,
+                                                                                               columns=columns,
+                                                                                               values=values))
 
     def create_table(self, table_name, columns, drop_table=True):
         if drop_table:
             self.drop_table(table_name)
-        execute_statement(self.connection, "CREATE TABLE {0} {1}".format(table_name, columns))
+        execute_statement(self.cursor, "CREATE TABLE {0} {1}".format(table_name, columns))
+
+    def create_session_table(self):
+        columns = "({0})".format(", ".join([" ".join((column,
+                                                      spec)) for column, spec in self._config["Session"].items()]))
+        self.create_table("Session", columns)
 
     def drop_table(self, name):
-        execute_statement(self.connection, "DROP TABLE IF EXISTS {0};".format(name))
+        execute_statement(self.cursor, "DROP TABLE IF EXISTS {0};".format(name))
 
     def __del__(self):
         self.connection.commit()
@@ -113,5 +124,5 @@ def connect_to_database(sql_file):
     return sqlite3.connect(sql_file)
 
 
-def execute_statement(connection, sql_statement):
-    return connection.cursor().execute(sql_statement)
+def execute_statement(cursor, sql_statement):
+    return cursor.execute(sql_statement)
