@@ -3,6 +3,7 @@ import os
 
 from ..base.subject import Subject
 from ..read.session_reader import read_session
+from ..read.image_reader import parse_generic_name
 
 
 class SubjectReader(object):
@@ -21,7 +22,7 @@ class SubjectReader(object):
         return subject
 
     def parse_subject_id(self, path_to_subject):
-        return os.path.basename(path_to_subject).lstrip("sub-")
+        return parse_generic_name(path_to_subject, "sub")
 
 
 def read_subject(path_to_subject_folder):

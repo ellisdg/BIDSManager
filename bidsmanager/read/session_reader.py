@@ -3,6 +3,7 @@ import os
 
 from ..base.session import Session
 from ..read.group_reader import read_group
+from ..read.image_reader import parse_generic_name
 
 
 class SessionReader(object):
@@ -14,7 +15,7 @@ class SessionReader(object):
         return session
 
     def parse_session_name(self, path_to_session_folder):
-        return os.path.basename(path_to_session_folder).lstrip("ses-")
+        return parse_generic_name(path_to_session_folder, "ses")
 
     def load_groups(self, path_to_session_folder):
         return [read_group(group_folder) for group_folder in glob.glob(os.path.join(path_to_session_folder, "*"))]

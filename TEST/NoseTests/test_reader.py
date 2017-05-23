@@ -82,6 +82,9 @@ class TestReaderDataSet001(TestCase):
         cursor.execute("SELECT * FROM Image")
         self.assertEquals(len(cursor.fetchall()), 16 * 5)
 
+        cursor.execute("SELECT * FROM Session")
+        self.assertEquals(len(cursor.fetchall()), 0)
+
         cursor.execute("SELECT * FROM Image WHERE modality='bold'")
         self.assertEquals(len(cursor.fetchall()), 16 * 3)
 
@@ -116,6 +119,19 @@ class TestReaderDataSet114(TestCase):
                     modalities = group.get_modalities()
                     if group.get_name() == "func":
                         self.assertEqual(set(modalities), {"bold"})
+
+    def test_sql_interface(self):
+        sql_file = os.path.join(get_test_directory(), "ds114.sql")
+        self.dataset.create_sql_interface(sql_file)
+        self.assertTrue(os.path.isfile(sql_file))
+
+        # connect to the sql database to ensure it has all the proper elements
+        connection = sqlite3.connect(sql_file)
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM Session")
+        self.assertEquals(len(cursor.fetchall()), 10 * 2)
+
+        os.remove(sql_file)
 
 
 class TestReaderTestDir(TestCase):

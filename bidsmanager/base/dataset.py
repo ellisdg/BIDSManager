@@ -66,9 +66,19 @@ class SQLInterface(object):
         table_name = "Subject"
         self.drop_table(table_name)
         execute_statement(self.connection, "CREATE TABLE {0} (id CHAR(2));".format(table_name))
+        session_table_name = "Session"
+        self.drop_table(session_table_name)
+        execute_statement(self.connection,
+                          "CREATE TABLE {0} (id TEXT)".format(session_table_name))
         for subject in self.dataset.get_subjects():
             execute_statement(self.connection, "INSERT INTO {0} (id) VALUES ('{1}');".format(table_name,
                                                                                              subject.get_id()))
+            for session in subject.get_sessions():
+                session_name = session.get_name()
+                if session_name:
+                    execute_statement(self.connection,
+                                      "INSERT INTO {0} (id) VALUES ('{1}');".format(session_table_name,
+                                                                                    session_name))
 
     def create_image_table(self):
         table_name = "Image"
