@@ -8,4 +8,4 @@ nosetests NoseTests/test_reader.py
 nosetests NoseTests/test_session.py
 nosetests NoseTests/test_subject.py
 nosetests NoseTests/test_write.py
-bash <(curl -s https://codecov.io/bash)
+codecov --token=69751b3a-1010-436b-86a6-298d9bbf6364
