@@ -56,7 +56,11 @@ class SQLInterface(object):
     _sql_config = {"Session": {"columns": {"name": "TEXT",
                                            "id": "INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE"},
                                "foreign_keys": {"subject_id": "Subject(id)"}},
-                   "Subject": {"columns": {"id": "CHAR(2)"}}}
+                   "Subject": {"columns": {"id": "CHAR(2)"}},
+                   "Image": {"columns": {"id": "INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE",
+                                         "modality": "TEXT",
+                                         "taskname": "TEXT"},
+                             "foreign_keys": {"session_id": "Session(id)"}}}
 
     def __init__(self, bids_dataset, path):
         self.enforce_foreign_keys()
@@ -70,7 +74,7 @@ class SQLInterface(object):
             column_specifications["columns"] = OrderedDict(column_specifications["columns"])
             if "foreign_keys" in column_specifications:
                 for foreign_key, sql_reference in column_specifications["foreign_keys"].items():
-                    column_specifications["columns"][foreign_key] = self.get_column_config(sql_reference)
+                    column_specifications["columns"][foreign_key] = self.get_column_config(sql_reference).split(" ")[0]
                     column_specifications["columns"]["FOREIGN KEY({0})".format(foreign_key)] = "REFERENCES {0}".format(
                         sql_reference)
 
@@ -88,14 +92,15 @@ class SQLInterface(object):
             self.insert_subject_into_database(subject)
 
     def insert_subject_into_database(self, subject):
-        self.insert_into_database("Subject", "(id)", "('{0}')".format(subject.get_id()))
+        self.insert_dict_into_database("Subject", {"id": subject.get_id()})
         for session in subject.get_sessions():
             self.insert_session_into_database(session)
 
     def insert_session_into_database(self, session):
         if session.get_name():
-            session_id = self.insert_into_database("Session", "(name, subject_id)", "('{0}', '{1}')".format(
-                session.get_name(), session.get_parent().get_id()))
+            session_id = self.insert_dict_into_database("Session",
+                                                        {"name": session.get_name(),
+                                                         "subject_id": session.get_parent().get_id()})
         else:
             session_id = -1
         for image in session.get_images():
@@ -106,13 +111,28 @@ class SQLInterface(object):
             task_name = image.get_task_name()
         except AttributeError:
             task_name = ""
-        self.insert_into_database("Image", "(modality, session_id, taskname)",
-                                  "('{0}', '{1}', '{2}')".format(image.get_modality(), session_id, task_name))
+        self.insert_dict_into_database("Image",
+                                       {"session_id": session_id,
+                                        "modality": image.get_modality(),
+                                        "taskname": task_name})
 
     def write_bids_tables(self):
-        self.create_table_from_config("Subject")
-        self.create_table_from_config("Session")
-        self.create_table("Image", "(modality TEXT, session_id INTEGER, taskname TEXT)")
+        for table_name in self._sql_config:
+            self.create_table_from_config(table_name)
+
+    def insert_dict_into_database(self, table_name, dictionary):
+        keys = dictionary.keys()
+        values = dictionary.values()
+        if len(keys) == 1:
+            value = values[0]
+            if isinstance(value, str):
+                value = "'{0}'".format(value)
+            keys = "({0})".format(keys[0])
+            values = "({0})".format(value)
+        else:
+            keys = str(tuple(keys))
+            values = str(tuple(values))
+        return self.insert_into_database(table_name, keys, values)
 
     def insert_into_database(self, table_name, columns, values):
         execute_statement(self.cursor, "INSERT INTO {table} {columns} VALUES {values};".format(table=table_name,
@@ -123,7 +143,7 @@ class SQLInterface(object):
     def create_table(self, table_name, columns, drop_table=True):
         if drop_table:
             self.drop_table(table_name)
-        execute_statement(self.cursor, "CREATE TABLE {0} {1}".format(table_name, columns))
+        execute_statement(self.cursor, "CREATE TABLE {0} {1};".format(table_name, columns))
 
     def create_table_from_config(self, table_name):
         self.create_table(table_name, format_columns_specifications(self._sql_config[table_name]["columns"]))
