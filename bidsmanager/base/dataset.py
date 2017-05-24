@@ -60,7 +60,8 @@ class SQLInterface(object):
                    "Image": {"columns": {"id": "INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE",
                                          "modality": "TEXT",
                                          "task_name": "TEXT",
-                                         "path": "TEXT"},
+                                         "path": "TEXT",
+                                         "group_name": "TEXT"},
                              "foreign_keys": {"session_id": "Session(id)"}}}
 
     def __init__(self, bids_dataset, path):
@@ -116,7 +117,8 @@ class SQLInterface(object):
                                        {"session_id": session_id,
                                         "modality": image.get_modality(),
                                         "task_name": task_name,
-                                        "path": image.get_path()})
+                                        "path": image.get_path(),
+                                        "group_name": image.get_group().get_name()})
 
     def write_bids_tables(self):
         for table_name in self._sql_config:

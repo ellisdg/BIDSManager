@@ -143,6 +143,10 @@ class TestReaderDataSet114(TestCase):
         self.assertEquals(set(self.dataset.get_image_paths()),
                           set([row[0] for row in cursor.fetchall()]))
 
+        cursor.execute("SELECT Image.path FROM Image WHERE Image.group_name='anat';")
+        self.assertEquals(set(self.dataset.get_image_paths(group_name="anat")),
+                          set([row[0] for row in cursor.fetchall()]))
+
         os.remove(sql_file)
 
 
