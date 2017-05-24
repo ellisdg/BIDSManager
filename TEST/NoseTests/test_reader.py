@@ -139,6 +139,10 @@ class TestReaderDataSet114(TestCase):
                        "AND Session.name='test' AND Session.subject_id=Subject.id AND Subject.id='01'")
         self.assertEqual(len(cursor.fetchall()), 7)
 
+        cursor.execute("SELECT Image.path FROM Image")
+        self.assertEquals(set(self.dataset.get_image_paths()),
+                          set([row[0] for row in cursor.fetchall()]))
+
         os.remove(sql_file)
 
 
