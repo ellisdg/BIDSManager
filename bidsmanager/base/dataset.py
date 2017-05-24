@@ -1,4 +1,5 @@
 import sqlite3
+from collections import OrderedDict
 
 from .base import BIDSFolder
 
@@ -52,14 +53,30 @@ class DataSet(BIDSFolder):
 
 
 class SQLInterface(object):
-    _config = {"Session": {"name": "TEXT",
-                           "id": "INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE"}}
+    _sql_config = {"Session": {"columns": {"name": "TEXT",
+                                           "id": "INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE"},
+                               "foreign_keys": {"subject_id": "Subject(id)"}},
+                   "Subject": {"columns": {"id": "CHAR(2)"}}}
 
     def __init__(self, bids_dataset, path):
+        self.enforce_foreign_keys()
         self.dataset = bids_dataset
         self.connection = connect_to_database(path)
         self.cursor = self.connection.cursor()
         self.write_database()
+
+    def enforce_foreign_keys(self):
+        for column_specifications in self._sql_config.values():
+            column_specifications["columns"] = OrderedDict(column_specifications["columns"])
+            if "foreign_keys" in column_specifications:
+                for foreign_key, sql_reference in column_specifications["foreign_keys"].items():
+                    column_specifications["columns"][foreign_key] = self.get_column_config(sql_reference)
+                    column_specifications["columns"]["FOREIGN KEY({0})".format(foreign_key)] = "REFERENCES {0}".format(
+                        sql_reference)
+
+    def get_column_config(self, sql_reference):
+        table_name, column_name = sql_reference.rstrip(")").split("(")
+        return self._sql_config[table_name]["columns"][column_name]
 
     def write_database(self):
         self.write_info_to_database()
@@ -77,8 +94,8 @@ class SQLInterface(object):
 
     def insert_session_into_database(self, session):
         if session.get_name():
-            self.insert_into_database("Session", "(name)", "('{0}')".format(session.get_name()))
-            session_id = self.cursor.lastrowid
+            session_id = self.insert_into_database("Session", "(name, subject_id)", "('{0}', '{1}')".format(
+                session.get_name(), session.get_parent().get_id()))
         else:
             session_id = -1
         for image in session.get_images():
@@ -93,24 +110,23 @@ class SQLInterface(object):
                                   "('{0}', '{1}', '{2}')".format(image.get_modality(), session_id, task_name))
 
     def write_bids_tables(self):
-        self.create_table("Subject", "(id CHAR(2))")
-        self.create_session_table()
+        self.create_table_from_config("Subject")
+        self.create_table_from_config("Session")
         self.create_table("Image", "(modality TEXT, session_id INTEGER, taskname TEXT)")
 
     def insert_into_database(self, table_name, columns, values):
         execute_statement(self.cursor, "INSERT INTO {table} {columns} VALUES {values};".format(table=table_name,
                                                                                                columns=columns,
                                                                                                values=values))
+        return self.cursor.lastrowid
 
     def create_table(self, table_name, columns, drop_table=True):
         if drop_table:
             self.drop_table(table_name)
         execute_statement(self.cursor, "CREATE TABLE {0} {1}".format(table_name, columns))
 
-    def create_session_table(self):
-        columns = "({0})".format(", ".join([" ".join((column,
-                                                      spec)) for column, spec in self._config["Session"].items()]))
-        self.create_table("Session", columns)
+    def create_table_from_config(self, table_name):
+        self.create_table(table_name, format_columns_specifications(self._sql_config[table_name]["columns"]))
 
     def drop_table(self, name):
         execute_statement(self.cursor, "DROP TABLE IF EXISTS {0};".format(name))
@@ -126,3 +142,7 @@ def connect_to_database(sql_file):
 
 def execute_statement(cursor, sql_statement):
     return cursor.execute(sql_statement)
+
+
+def format_columns_specifications(specifications):
+    return "({0})".format(", ".join([" ".join((column, spec)) for column, spec in specifications.items()]))

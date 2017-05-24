@@ -131,8 +131,13 @@ class TestReaderDataSet114(TestCase):
         cursor.execute("SELECT * FROM Session")
         self.assertEquals(len(cursor.fetchall()), 10 * 2)
 
-        cursor.execute("SELECT Image.modality FROM Image JOIN Session ON Image.session_id=Session.id and Session.name='test'")
+        cursor.execute("SELECT Image.modality FROM Image JOIN Session ON Image.session_id=Session.id "
+                       "AND Session.name='test'")
         self.assertEqual(len(cursor.fetchall()), 10 * 7)
+
+        cursor.execute("SELECT Image.modality FROM Image JOIN Session JOIN Subject ON Image.session_id=Session.id "
+                       "AND Session.name='test' AND Session.subject_id=Subject.id AND Subject.id='01'")
+        self.assertEqual(len(cursor.fetchall()), 7)
 
         os.remove(sql_file)
 
