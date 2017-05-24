@@ -56,7 +56,8 @@ class SQLInterface(object):
     _sql_config = {"Session": {"columns": {"name": "TEXT",
                                            "id": "INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE"},
                                "foreign_keys": {"subject_id": "Subject(id)"}},
-                   "Subject": {"columns": {"id": "CHAR(2)"}},
+                   "Subject": {"columns": {"name": "TEXT",
+                                           "id": "INTEGER NOT NULL PRIMARY KEY UNIQUE"}},
                    "Image": {"columns": {"id": "INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE",
                                          "modality": "TEXT",
                                          "task_name": "TEXT",
@@ -94,7 +95,7 @@ class SQLInterface(object):
             self.insert_subject_into_database(subject)
 
     def insert_subject_into_database(self, subject):
-        self.insert_dict_into_database("Subject", {"id": subject.get_id()})
+        self.insert_dict_into_database("Subject", {"name": subject.get_id(), "id": int(subject.get_id())})
         for session in subject.get_sessions():
             self.insert_session_into_database(session)
 
