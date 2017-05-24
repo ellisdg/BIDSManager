@@ -59,7 +59,7 @@ class SQLInterface(object):
                    "Subject": {"columns": {"id": "CHAR(2)"}},
                    "Image": {"columns": {"id": "INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE",
                                          "modality": "TEXT",
-                                         "taskname": "TEXT"},
+                                         "task_name": "TEXT"},
                              "foreign_keys": {"session_id": "Session(id)"}}}
 
     def __init__(self, bids_dataset, path):
@@ -114,7 +114,7 @@ class SQLInterface(object):
         self.insert_dict_into_database("Image",
                                        {"session_id": session_id,
                                         "modality": image.get_modality(),
-                                        "taskname": task_name})
+                                        "task_name": task_name})
 
     def write_bids_tables(self):
         for table_name in self._sql_config:

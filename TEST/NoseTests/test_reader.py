@@ -88,7 +88,7 @@ class TestReaderDataSet001(TestCase):
         cursor.execute("SELECT * FROM Image WHERE modality='bold'")
         self.assertEquals(len(cursor.fetchall()), 16 * 3)
 
-        cursor.execute("SELECT * FROM Image WHERE taskname='balloonanalogrisktask'")
+        cursor.execute("SELECT * FROM Image WHERE task_name='balloonanalogrisktask'")
         self.assertEquals(len(cursor.fetchall()), 16 * 3)
 
         os.remove(sql_file)
