@@ -193,6 +193,24 @@ class TestReaderTestDir(TestCase):
         self.assertEquals(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("acq_time"),
                           datetime(year=1877, month=6, day=15, hour=13, minute=45, second=30))
 
+    def test_sql_metadata(self):
+        sql_file = os.path.join(get_test_directory(), "example.sql")
+        self.dataset.create_sql_interface(sql_file)
+        self.assertTrue(os.path.isfile(sql_file))
+
+        # connect to the sql database to ensure it has all the proper elements
+        connection = sqlite3.connect(sql_file)
+        cursor = connection.cursor()
+        cursor.execute("SELECT Image.Manufacturer FROM Image JOIN Session ON Session.id=Image.session_id "
+                       "AND Session.name='test'")
+        self.assertEquals(cursor.fetchall()[0][0], "GE")
+
+        cursor.execute("SELECT Image.Manufacturer FROM Image JOIN Session ON Session.id=Image.session_id "
+                       "AND Session.name='retest'")
+        self.assertEquals(cursor.fetchall()[0][0], "Philips")
+
+        os.remove(sql_file)
+
 
 class TestReaderCSV(TestCase):
     def setUp(self):

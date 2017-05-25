@@ -9,12 +9,12 @@ class Session(BIDSFolder):
         super(Session, self).__init__(*inputs, **kwargs)
         self._groups = self._dict
         self._name = name
-        self._folder_type = "session"
+        self._type = "Session"
         if groups:
             self.add_groups(groups)
 
     def add_group(self, group):
-        self._add_object(group, group.get_name(), "group")
+        self._add_object(group, group.get_name(), "Group")
 
     def add_groups(self, groups):
         [self.add_group(group) for group in groups]

@@ -7,12 +7,16 @@ class BIDSObject(object):
         self._parent = None
         self.set_parent(parent)
         self._previous_path = None
-        self._metadata = metadata
+        if metadata is None:
+            self._metadata = dict()
+        else:
+            self._metadata = metadata
         if path:
             self._path = os.path.abspath(path)
         else:
             self._path = path
         self._name = None
+        self._type = "BIDSObject"
 
     def get_parent(self):
         return self._parent
@@ -37,8 +41,10 @@ class BIDSObject(object):
             self._parent.modify_key(self._name, name)
         self._name = name
 
-    def get_metadata(self, key):
-        return self._metadata[key]
+    def get_metadata(self, key=None):
+        if key:
+            return self._metadata[key]
+        return self._metadata
 
 
 class BIDSFolder(BIDSObject):
@@ -50,14 +56,14 @@ class BIDSFolder(BIDSObject):
         else:
             self._dict = dict()
         super(BIDSFolder, self).__init__(*inputs, **kwargs)
-        self._folder_type = "BIDSFolder"
+        self._type = "BIDSFolder"
 
     def _add_object(self, object_to_add, object_name, object_title):
         if object_name not in self._dict:
             self._dict[object_name] = object_to_add
             object_to_add.set_parent(self)
         else:
-            raise(KeyError("Duplicate {0} found in {1}: {2}".format(object_title, self._folder_type, object_name)))
+            raise(KeyError("Duplicate {0} found in {1}: {2}".format(object_title, self._type, object_name)))
 
     def modify_key(self, key, new_key):
         self._add_object(self._dict.pop(key), new_key, "object")

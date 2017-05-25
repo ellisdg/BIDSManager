@@ -1,5 +1,6 @@
 import sqlite3
 from collections import OrderedDict
+import copy
 
 from .base import BIDSFolder
 
@@ -8,7 +9,7 @@ class DataSet(BIDSFolder):
     def __init__(self, subjects=None, *inputs, **kwargs):
         super(DataSet, self).__init__(*inputs, **kwargs)
         self.subjects = self._dict
-        self._folder_type = "dataset"
+        self._type = "Dataset"
         if subjects:
             self.add_subjects(subjects)
 
@@ -17,7 +18,7 @@ class DataSet(BIDSFolder):
             self.add_subject(subject)
 
     def add_subject(self, subject):
-        self._add_object(subject, subject.get_id(), "subject")
+        self._add_object(subject, subject.get_id(), "Subject")
 
     def get_subject_ids(self):
         return sorted([subject_id for subject_id in self.subjects])
@@ -66,6 +67,8 @@ class SQLInterface(object):
                              "foreign_keys": {"session_id": "Session(id)"}}}
 
     def __init__(self, bids_dataset, path):
+        self._sql_config = copy.deepcopy(self._sql_config)
+        self.recursive_config_edit(bids_dataset)
         self.enforce_foreign_keys()
         self.dataset = bids_dataset
         self.connection = connect_to_database(path)
@@ -80,6 +83,17 @@ class SQLInterface(object):
                     column_specifications["columns"][foreign_key] = self.get_column_config(sql_reference).split(" ")[0]
                     column_specifications["columns"]["FOREIGN KEY({0})".format(foreign_key)] = "REFERENCES {0}".format(
                         sql_reference)
+
+    def add_metadata_to_config(self, metadata, table_name):
+        for key, value in metadata.items():
+            if not table_name in self._sql_config:
+                self._sql_config[table_name] = {"columns": OrderedDict()}
+            self._sql_config[table_name]["columns"][key] = "TEXT"
+
+    def recursive_config_edit(self, bids_object):
+        if isinstance(bids_object, BIDSFolder):
+           self.recursive_config_edit(bids_object.get_children()[0])
+        self.add_metadata_to_config(bids_object._metadata, bids_object._type)
 
     def get_column_config(self, sql_reference):
         table_name, column_name = sql_reference.rstrip(")").split("(")
@@ -114,12 +128,14 @@ class SQLInterface(object):
             task_name = image.get_task_name()
         except AttributeError:
             task_name = ""
-        self.insert_dict_into_database("Image",
-                                       {"session_id": session_id,
-                                        "modality": image.get_modality(),
-                                        "task_name": task_name,
-                                        "path": image.get_path(),
-                                        "group_name": image.get_group().get_name()})
+        data = {"session_id": session_id,
+                "modality": image.get_modality(),
+                "task_name": task_name,
+                "path": image.get_path(),
+                "group_name": image.get_group().get_name()}
+        for key, value in image.get_metadata().items():
+            data[str(key)] = str(value)
+        self.insert_dict_into_database("Image", data)
 
     def write_bids_tables(self):
         for table_name in self._sql_config:
@@ -166,6 +182,7 @@ def connect_to_database(sql_file):
 
 
 def execute_statement(cursor, sql_statement):
+    print(sql_statement)
     return cursor.execute(sql_statement)
 
 
