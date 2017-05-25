@@ -123,6 +123,8 @@ class Image(BIDSObject):
         return read_json(self.sidecar_path)
 
     def update_metadata(self):
+        if self._metadata is None:
+            self._metadata = dict()
         if self.sidecar_path:
             for key, value in self.read_sidecar().items():
                 self._metadata[key] = value

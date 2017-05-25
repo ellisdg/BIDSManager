@@ -43,7 +43,11 @@ def read_tsv(in_file):
 
 def parse_input(string):
     try:
-        return pd.to_datetime(string).date()
+        datetime_ = pd.to_datetime(string)
+        if datetime_.hour == 0 and datetime_.minute == 0 and datetime_.second == 0:
+            return datetime_.date()
+        else:
+            return datetime_
     except ValueError:
         return parse_float(string)
 
