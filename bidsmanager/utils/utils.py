@@ -1,7 +1,8 @@
 import filecmp
 import shutil
 import os
-import datetime
+
+import pandas as pd
 
 
 def update_file(old_file, new_file, move=False):
@@ -36,7 +37,7 @@ def read_tsv(in_file):
 
 def parse_input(string):
     try:
-        return datetime.datetime.strptime(string, "%Y/%m/%d").date()
+        return pd.to_datetime(string).date()
     except ValueError:
         return string
 
