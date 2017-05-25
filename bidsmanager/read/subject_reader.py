@@ -23,10 +23,10 @@ def add_session_folders(session_folders, subject, path_to_subject):
     sessions_metadata = read_sessions_metadata(path_to_subject, subject.get_id())
     if session_folders:
         for session_folder in session_folders:
-            session = read_session(session_folder, metadata=sessions_metadata)
+            session = read_session(session_folder, subject_id=subject.get_id(), metadata=sessions_metadata)
             subject.add_session(session)
     else:
-        session = read_session(path_to_subject, metadata=sessions_metadata)
+        session = read_session(path_to_subject, subject_id=subject.get_id(), metadata=sessions_metadata)
         subject.add_session(session)
 
 

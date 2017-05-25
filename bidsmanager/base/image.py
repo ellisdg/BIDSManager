@@ -11,6 +11,7 @@ class Image(BIDSObject):
         self._group = None
         super(Image, self).__init__(*inputs, **kwargs)
         self.sidecar_path = sidecar_path
+        self.update_metadata()
         self._modality = modality
         self._acquisition = acquisition
         self._run_number = run_number
@@ -121,9 +122,10 @@ class Image(BIDSObject):
     def read_sidecar(self):
         return read_json(self.sidecar_path)
 
-    def get_metadata(self, key):
-        self._metadata = self.read_sidecar()
-        return super(Image, self).get_metadata(key=key)
+    def update_metadata(self):
+        if self.sidecar_path:
+            for key, value in self.read_sidecar().items():
+                self._metadata[key] = value
 
 
 class FunctionalImage(Image):

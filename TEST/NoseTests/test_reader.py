@@ -2,7 +2,7 @@ import glob
 import os
 import sqlite3
 from unittest import TestCase
-from datetime import date
+from datetime import date, datetime
 
 from bidsmanager.read import read_dataset, read_csv
 
@@ -189,6 +189,8 @@ class TestReaderTestDir(TestCase):
         self.assertEquals(date(year=1995, month=6, day=1), subject.get_session("test").get_metadata("date"))
         self.assertEquals(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("Manufacturer"),
                           "GE")
+        self.assertEquals(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("acq_time"),
+                          datetime(year=1877, month=6, day=15, hour=13, minute=45, second=30))
 
 
 class TestReaderCSV(TestCase):
