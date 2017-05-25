@@ -97,6 +97,7 @@ class TestReaderDataSet001(TestCase):
     def test_read_metadata(self):
         self.assertEquals(self.dataset.get_subject("11").get_metadata("age"), 24)
         self.assertEquals(self.dataset.get_subject("04").get_metadata("sex"), "F")
+        self.assertEquals(self.dataset.get_metadata("Name"), "Balloon Analog Risk Task")
 
 
 class TestReaderDataSet114(TestCase):
