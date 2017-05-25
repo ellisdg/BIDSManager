@@ -39,5 +39,11 @@ def parse_input(string):
     try:
         return pd.to_datetime(string).date()
     except ValueError:
-        return string
+        return parse_float(string)
 
+
+def parse_float(string):
+    try:
+        return float(string)
+    except ValueError:
+        return string
