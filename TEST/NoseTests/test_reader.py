@@ -191,7 +191,7 @@ class TestReaderCSV(TestCase):
 
     def test_read_subjects(self):
         subject_ids = self.dataset.get_subject_ids()
-        self.assertEqual(set(subject_ids), {"003", "007", "005"})
+        self.assertEqual(set(subject_ids), {"003", "007", "005", "UNMC001"})
 
     def test_read_sessions(self):
         self.assertEqual(set(self.dataset.get_subject("003").get_session_names()), {"visit1", "visit2"})
@@ -207,7 +207,8 @@ class TestReaderCSV(TestCase):
     def test_read_t1w_modality(self):
         self.assertEqual(set([os.path.abspath(os.path.join(get_unorganized_example_directory(), f)) for f in
                               {"t1.nii.gz", "some_t1.nii.gz", "some_other_t1.nii.gz", "third_t1.nii.gz",
-                               "t1_from_different_subject.nii.gz", "i_dont_know.nii.gz", "second_t1.nii.gz"}]),
+                               "t1_from_different_subject.nii.gz", "i_dont_know.nii.gz", "second_t1.nii.gz",
+                               "unmc_t1.nii.gz"}]),
                          set(self.dataset.get_image_paths(group_name="anat", modality="T1w")))
 
     def test_read_flair_modality(self):

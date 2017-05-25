@@ -19,8 +19,9 @@ class TestWrite(TestCase):
 
     def test_write_dataset(self):
         self.bids_dataset = write_dataset(self.dataset, self._dir)
+        subject_ids = {"sub-003", "sub-007", "sub-005", "sub-UNMC001"}
         self.assertEqual(set([os.path.basename(f) for f in glob.glob(os.path.join(self._dir, "*"))]),
-                         {"sub-003", "sub-007", "sub-005"})
+                         subject_ids)
         self.assertEqual(set([os.path.basename(f) for f in glob.glob(os.path.join(self._dir, "sub-007", "*"))]),
                          {"ses-visit1", "ses-visit3"})
         self.assertEqual(set([os.path.basename(f) for f in glob.glob(os.path.join(self._dir, "sub-005", "ses-visit2",
@@ -37,5 +38,6 @@ class TestWrite(TestCase):
         self.dataset.update(run=True, move=True)
 
         reread_dataset = read_dataset(self._dir)
+        self.assertEqual(set(["sub-" + sid for sid in reread_dataset.get_subject_ids()]), subject_ids)
         self.assertEqual(len(reread_dataset.get_images(task_name="fingertapping")), 0)
         self.assertEqual(len(reread_dataset.get_images(task_name="ft")), len(fingertapping_images))
