@@ -2,6 +2,7 @@ import glob
 import os
 import sqlite3
 from unittest import TestCase
+from datetime import date
 
 from bidsmanager.read import read_dataset, read_csv
 
@@ -176,6 +177,12 @@ class TestReaderTestDir(TestCase):
         image_paths_from_images = [image.get_path() for image in self.dataset.get_images()]
         self.assertEqual(sorted(image_paths_glob), sorted(image_paths))
         self.assertEqual(sorted(image_paths), sorted(image_paths_from_images))
+
+    def test_meta_data(self):
+        subject = self.dataset.get_subject("01")
+        self.assertEquals(date(year=1888, day=12, month=3), subject.get_metadata("dob"))
+        self.assertEquals("John Doe", subject.get_metadata("name"))
+        self.assertEquals(date(year=1995, month=6, day=1), subject.get_session("test").get_metadata("date"))
 
 
 class TestReaderCSV(TestCase):

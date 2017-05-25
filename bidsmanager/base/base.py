@@ -3,10 +3,11 @@ import abc
 
 
 class BIDSObject(object):
-    def __init__(self, path=None, parent=None):
+    def __init__(self, path=None, parent=None, metadata=None):
         self._parent = None
         self.set_parent(parent)
         self._previous_path = None
+        self._metadata = metadata
         if path:
             self._path = os.path.abspath(path)
         else:
@@ -35,6 +36,9 @@ class BIDSObject(object):
         if self._parent:
             self._parent.modify_key(self._name, name)
         self._name = name
+
+    def get_metadata(self, key):
+        return self._metadata[key]
 
 
 class BIDSFolder(BIDSObject):
