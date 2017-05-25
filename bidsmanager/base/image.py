@@ -1,7 +1,7 @@
 import os
 
 from .base import BIDSObject
-from ..utils.utils import update_file
+from ..utils.utils import update_file, read_json
 
 
 class Image(BIDSObject):
@@ -117,6 +117,13 @@ class Image(BIDSObject):
         if self.get_parent():
             new_key = self.get_image_key()
             self.get_parent().modify_key(prev_key, new_key)
+
+    def read_sidecar(self):
+        return read_json(self.sidecar_path)
+
+    def get_metadata(self, key):
+        self._metadata = self.read_sidecar()
+        return super(Image, self).get_metadata(key=key)
 
 
 class FunctionalImage(Image):

@@ -1,6 +1,7 @@
 import filecmp
 import shutil
 import os
+import json
 
 import pandas as pd
 
@@ -15,6 +16,11 @@ def copy_or_move(in_file, out_file, move=False):
         shutil.move(in_file, out_file)
     else:
         shutil.copy(in_file, out_file)
+
+
+def read_json(in_file):
+    with open(in_file , "r") as opened_file:
+        return json.load(opened_file)
 
 
 def read_tsv(in_file):

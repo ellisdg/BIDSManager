@@ -187,6 +187,8 @@ class TestReaderTestDir(TestCase):
         self.assertEquals(date(year=1888, day=12, month=3), subject.get_metadata("dob"))
         self.assertEquals("John Doe", subject.get_metadata("name"))
         self.assertEquals(date(year=1995, month=6, day=1), subject.get_session("test").get_metadata("date"))
+        self.assertEquals(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("Manufacturer"),
+                          "GE")
 
 
 class TestReaderCSV(TestCase):

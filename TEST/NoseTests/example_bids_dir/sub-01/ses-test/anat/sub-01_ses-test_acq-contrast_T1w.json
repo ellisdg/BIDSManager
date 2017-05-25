@@ -1,0 +1,10 @@
+{
+	"Manufacturer": "GE",
+	"ManufacturersModelName": "SIGNA",
+	"ImageType": ["ORIGINAL", "PRIMARY", "MPR"],
+	"MagneticFieldStrength": 1.5,
+	"FlipAngle": 90,
+	"EchoTime": 0.022,
+	"RepetitionTime": 2.3,
+	"PhaseEncodingDirection": "i"
+}
