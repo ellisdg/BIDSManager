@@ -182,7 +182,6 @@ def connect_to_database(sql_file):
 
 
 def execute_statement(cursor, sql_statement):
-    print(sql_statement)
     return cursor.execute(sql_statement)
 
 
