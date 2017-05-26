@@ -4,11 +4,11 @@ python:
   - "3.5"
   - "3.6"
 install:
-  - "pip install nibabel"
   - "pip install codecov"
+  - "pip install nibabel"
   - "pip install -r requirements.txt"
 script:
   - "export PYTHONPATH=${PWD}:${PYTHONPATH}"
-  - "nosetests -w ./TEST --with-coverage --exclude=test_dicomreader.py NoseTests"
+  - "nosetests -w ./TEST --exclude=test_dicomreader.py NoseTests"
 after success:
-  - "codecov --token=69751b3a-1010-436b-86a6-298d9bbf6364"
+  - "codecov"
