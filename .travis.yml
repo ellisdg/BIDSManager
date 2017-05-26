@@ -10,5 +10,4 @@ install:
 script:
   - "export PYTHONPATH=${PWD}:${PYTHONPATH}"
   - "nosetests -w ./TEST --exclude=test_dicomreader.py NoseTests"
-after success:
   - "codecov"
