@@ -68,7 +68,7 @@ class SQLInterface(object):
 
     def __init__(self, bids_dataset, path):
         self._sql_config = copy.deepcopy(self._sql_config)
-        self.recursive_config_edit(bids_dataset)
+        self.recursive_config_edit([bids_dataset])
         self.enforce_foreign_keys()
         self.dataset = bids_dataset
         self.connection = connect_to_database(path)
@@ -84,16 +84,19 @@ class SQLInterface(object):
                     column_specifications["columns"]["FOREIGN KEY({0})".format(foreign_key)] = "REFERENCES {0}".format(
                         sql_reference)
 
-    def add_metadata_to_config(self, metadata, table_name):
-        for key, value in metadata.items():
-            if not table_name in self._sql_config:
-                self._sql_config[table_name] = {"columns": OrderedDict()}
+    def add_metadata_to_config(self, keys, table_name):
+        if table_name not in self._sql_config:
+            self._sql_config[table_name] = {"columns": OrderedDict()}
+        for key in keys:
             self._sql_config[table_name]["columns"][key] = "TEXT"
 
-    def recursive_config_edit(self, bids_object):
-        if isinstance(bids_object, BIDSFolder):
-           self.recursive_config_edit(bids_object.get_children()[0])
-        self.add_metadata_to_config(bids_object._metadata, bids_object._type)
+    def recursive_config_edit(self, bids_objects):
+        for bids_object in bids_objects:
+            if isinstance(bids_object, BIDSFolder):
+                self.recursive_config_edit(bids_object.get_children())
+        keys, table_name = get_set_of_metadata_keys_and_types(bids_objects)
+        if keys and table_name != "Group":
+            self.add_metadata_to_config(keys, table_name.pop())
 
     def get_column_config(self, sql_reference):
         table_name, column_name = sql_reference.rstrip(")").split("(")
@@ -187,3 +190,13 @@ def execute_statement(cursor, sql_statement):
 
 def format_columns_specifications(specifications):
     return "({0})".format(", ".join([" ".join((column, spec)) for column, spec in specifications.items()]))
+
+
+def get_set_of_metadata_keys_and_types(bids_objects):
+    keys = set()
+    type_ = set()
+    for bids_object in bids_objects:
+        type_.add(bids_object.get_bids_type())
+        for key in bids_object.get_metadata().keys():
+            keys.add(key)
+    return keys, type_
