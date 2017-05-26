@@ -9,6 +9,5 @@ install:
   - "pip install -r requirements.txt"
 script:
   - "export PYTHONPATH=${PWD}:${PYTHONPATH}"
-  - "nosetests -w ./TEST --exclude=test_dicomreader.py NoseTests"
-after success:
+  - "nosetests --with-coverage --cover-package=bidsmanager -w ./TEST --exclude=test_dicomreader.py NoseTests"
   - "codecov"
