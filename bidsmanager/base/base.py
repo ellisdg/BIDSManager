@@ -69,7 +69,7 @@ class BIDSFolder(BIDSObject):
         self._add_object(self._dict.pop(key), new_key, "object")
 
     def get_children(self):
-        return self._dict.values()
+        return list(self._dict.values())
 
     def get_image_paths(self, **kwargs):
         return [image.get_path() for image in self.get_images(**kwargs)]
