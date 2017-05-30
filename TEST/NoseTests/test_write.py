@@ -50,7 +50,6 @@ class TestWriteMetaData(TestCase):
 
     def test_save_ds001_metadata(self):
         dataset_path = os.path.abspath("./BIDS-examples/ds001")
-
         self._save_metadata(dataset_path)
 
     def _save_metadata(self, dataset_path):
@@ -68,6 +67,12 @@ class TestWriteMetaData(TestCase):
         test_dataset = read_dataset(self.out_dir)
         for subject in test_dataset.get_subjects():
             self.assertEquals(subject.get_metadata("random_int"), test_answers[subject.get_id()])
+            old_subject = dataset.get_subject(subject.get_id())
+            self.assertEquals(subject.get_metadata(), old_subject.get_metadata())
+            for session in subject.get_sessions():
+                if session.get_name() != 'None':
+                    self.assertEquals(session.get_metadata(),
+                                      old_subject.get_session(session.get_name()).get_metadata())
 
         if dataset.get_metadata():
             new_json = os.path.join(test_dataset.get_path(), "dataset_description.json")

@@ -44,3 +44,8 @@ class Subject(BIDSFolder):
 
     def has_session(self, session_name):
         return session_name in self._sessions
+
+    def update(self, run=False, move=False):
+        super(Subject, self).update(run=run, move=move)
+        tsv_basename = "_".join([self.get_basename(), "sessions.tsv"])
+        self.write_child_metadata(tsv_basename)
