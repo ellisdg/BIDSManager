@@ -4,7 +4,7 @@ import copy
 import os
 
 from .base import BIDSFolder
-from ..write.dataset_writer import write_tsv
+from ..write.dataset_writer import write_tsv, write_json
 
 
 class DataSet(BIDSFolder):
@@ -55,13 +55,18 @@ class DataSet(BIDSFolder):
         return SQLInterface(self, sql_file)
 
     def update(self, run=False, move=False):
-        self.write_subject_metadata()
         super(DataSet, self).update(run=run, move=move)
+        self.write_subject_metadata()
+        self.write_dataset_description()
 
     def write_subject_metadata(self):
         metadata = self.compile_subject_metadata()
         if metadata:
             write_tsv(metadata, os.path.join(self.get_path(), "participants.tsv"))
+
+    def write_dataset_description(self):
+        if self.get_metadata():
+            write_json(self.get_metadata(), os.path.join(self.get_path(), "dataset_description.json"))
 
     def compile_subject_metadata(self):
         metadata = dict()

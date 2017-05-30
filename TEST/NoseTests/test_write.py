@@ -6,6 +6,7 @@ import random
 
 from bidsmanager.write.dataset_writer import write_dataset
 from bidsmanager.read import read_csv, read_dataset
+from bidsmanager.utils.utils import read_json
 from test_reader import get_unorganized_example_directory
 
 
@@ -44,7 +45,7 @@ class TestWrite(TestCase):
 
 
 class TestWriteMetaData(TestCase):
-    def test_save_added_data(self):
+    def test_save_ds001_metadata(self):
         dataset = read_dataset(os.path.abspath("./BIDS-examples/ds001"))
 
         test_answers = dict()
@@ -60,5 +61,9 @@ class TestWriteMetaData(TestCase):
         test_dataset = read_dataset(out_dir)
         for subject in test_dataset.get_subjects():
             self.assertEquals(subject.get_metadata("random_int"), test_answers[subject.get_id()])
+
+        new_json = os.path.join(test_dataset.get_path(), "dataset_description.json")
+        self.assertTrue(os.path.exists(new_json))
+        self.assertEquals(dataset.get_metadata(), read_json(new_json))
 
         shutil.rmtree(out_dir)
