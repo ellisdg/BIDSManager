@@ -1,8 +1,10 @@
 import sqlite3
 from collections import OrderedDict
 import copy
+import os
 
 from .base import BIDSFolder
+from ..write.dataset_writer import write_tsv
 
 
 class DataSet(BIDSFolder):
@@ -51,6 +53,21 @@ class DataSet(BIDSFolder):
 
     def create_sql_interface(self, sql_file):
         return SQLInterface(self, sql_file)
+
+    def update(self, run=False, move=False):
+        self.write_subject_metadata()
+        super(DataSet, self).update(run=run, move=move)
+
+    def write_subject_metadata(self):
+        metadata = self.compile_subject_metadata()
+        if metadata:
+            write_tsv(metadata, os.path.join(self.get_path(), "participants.tsv"))
+
+    def compile_subject_metadata(self):
+        metadata = dict()
+        for subject in self.get_subjects():
+            metadata[subject.get_basename()] = subject.get_metadata()
+        return metadata
 
 
 class SQLInterface(object):

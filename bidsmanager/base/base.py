@@ -46,6 +46,9 @@ class BIDSObject(object):
             return self._metadata[key]
         return self._metadata
 
+    def add_metadata(self, key, data):
+        self._metadata[key] = data
+
     def get_bids_type(self):
         return self._type
 
