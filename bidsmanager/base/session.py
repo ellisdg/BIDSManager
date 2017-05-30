@@ -67,6 +67,6 @@ class Session(BIDSFolder):
     def compile_child_metadata(self):
         metadata = dict()
         for image in self.get_images():
-            if image.get_metadata():
-                metadata[os.path.join(image.get_group().get_name(), image.get_basename())] = image.get_metadata()
+            if image.get_tsv_metadata():
+                metadata[os.path.join(image.get_group().get_name(), image.get_basename())] = image.get_tsv_metadata()
         return metadata

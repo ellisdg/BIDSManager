@@ -57,3 +57,9 @@ def parse_float(string):
         return float(string)
     except ValueError:
         return string
+
+
+def combine_dictionaries(dict1, dict2):
+    new_dict = dict1.copy()
+    new_dict.update(dict2)
+    return new_dict

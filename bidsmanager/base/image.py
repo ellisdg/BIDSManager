@@ -1,7 +1,7 @@
 import os
 
 from .base import BIDSObject
-from ..utils.utils import update_file, read_json
+from ..utils.utils import update_file, read_json, combine_dictionaries
 
 
 class Image(BIDSObject):
@@ -11,7 +11,8 @@ class Image(BIDSObject):
         self._group = None
         super(Image, self).__init__(*inputs, **kwargs)
         self.sidecar_path = sidecar_path
-        self.update_metadata()
+        self._sidecar_metadata = dict()
+        self.update_sidecar_metadata()
         self._modality = modality
         self._acquisition = acquisition
         self._run_number = run_number
@@ -78,6 +79,15 @@ class Image(BIDSObject):
     def get_group(self):
         return self._group
 
+    def get_metadata(self, key=None):
+        metadata = combine_dictionaries(self._sidecar_metadata, super(Image, self).get_metadata())
+        if key:
+            return metadata[key]
+        return metadata
+
+    def get_tsv_metadata(self, key=None):
+        return super(Image, self).get_metadata(key=key)
+
     def is_match(self, modality=None, acquisition=None, run_number=None):
         return (not modality or modality == self.get_modality()) \
                and (not acquisition or acquisition == self.get_acquisition()) \
@@ -123,10 +133,10 @@ class Image(BIDSObject):
     def read_sidecar(self):
         return read_json(self.sidecar_path)
 
-    def update_metadata(self):
+    def update_sidecar_metadata(self):
         if self.sidecar_path:
             for key, value in self.read_sidecar().items():
-                self._metadata[key] = value
+                self._sidecar_metadata[key] = value
 
 
 class FunctionalImage(Image):

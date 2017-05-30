@@ -6,7 +6,7 @@ import random
 
 from bidsmanager.write.dataset_writer import write_dataset
 from bidsmanager.read import read_csv, read_dataset
-from bidsmanager.utils.utils import read_json
+from bidsmanager.utils.utils import read_json, read_tsv
 from test_reader import get_unorganized_example_directory
 
 
@@ -45,12 +45,15 @@ class TestWrite(TestCase):
 
 
 class TestWriteMetaData(TestCase):
+    def setUp(self):
+        self.out_dir = os.path.abspath("./tmp/custom_dir")
+
     def test_save_ds001_metadata(self):
         dataset_path = os.path.abspath("./BIDS-examples/ds001")
-        out_dir = os.path.abspath("./tmp/custom_ds001")
-        self._save_metadata(dataset_path, out_dir)
 
-    def _save_metadata(self, dataset_path, out_dir):
+        self._save_metadata(dataset_path)
+
+    def _save_metadata(self, dataset_path):
         dataset = read_dataset(dataset_path)
 
         test_answers = dict()
@@ -60,9 +63,9 @@ class TestWriteMetaData(TestCase):
             subject.add_metadata("random_int", random_int)
             test_answers[subject.get_id()] = random_int
 
-        write_dataset(dataset=dataset, output_dir=out_dir, move=False)
+        write_dataset(dataset=dataset, output_dir=self.out_dir, move=False)
 
-        test_dataset = read_dataset(out_dir)
+        test_dataset = read_dataset(self.out_dir)
         for subject in test_dataset.get_subjects():
             self.assertEquals(subject.get_metadata("random_int"), test_answers[subject.get_id()])
 
@@ -78,9 +81,13 @@ class TestWriteMetaData(TestCase):
                                                 modality=image.get_modality())[0]
             self.assertEquals(image.get_metadata(), new_image.get_metadata())
 
-        shutil.rmtree(out_dir)
-
     def test_save_example_bids_dir(self):
         dataset_path = os.path.abspath("./NoseTests/example_bids_dir")
-        out_dir = os.path.abspath("./tmp/custom_example_bids_dir")
-        self._save_metadata(dataset_path, out_dir)
+        self._save_metadata(dataset_path)
+        old_tsv_file = os.path.join(dataset_path, "sub-01", "ses-test", "sub-01_ses-test_scans.tsv")
+        if os.path.exists(old_tsv_file):
+            new_tsv_file = os.path.join(self.out_dir, "sub-01", "ses-test", "sub-01_ses-test_scans.tsv")
+            self.assertEquals(read_tsv(old_tsv_file), read_tsv(new_tsv_file))
+
+    def tearDown(self):
+        shutil.rmtree(self.out_dir)
