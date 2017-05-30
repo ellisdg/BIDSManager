@@ -46,7 +46,12 @@ class TestWrite(TestCase):
 
 class TestWriteMetaData(TestCase):
     def test_save_ds001_metadata(self):
-        dataset = read_dataset(os.path.abspath("./BIDS-examples/ds001"))
+        dataset_path = os.path.abspath("./BIDS-examples/ds001")
+        out_dir = os.path.abspath("./tmp/custom_ds001")
+        self._save_metadata(dataset_path, out_dir)
+
+    def _save_metadata(self, dataset_path, out_dir):
+        dataset = read_dataset(dataset_path)
 
         test_answers = dict()
 
@@ -55,15 +60,27 @@ class TestWriteMetaData(TestCase):
             subject.add_metadata("random_int", random_int)
             test_answers[subject.get_id()] = random_int
 
-        out_dir = os.path.abspath("./tmp/custom_ds001")
         write_dataset(dataset=dataset, output_dir=out_dir, move=False)
 
         test_dataset = read_dataset(out_dir)
         for subject in test_dataset.get_subjects():
             self.assertEquals(subject.get_metadata("random_int"), test_answers[subject.get_id()])
 
-        new_json = os.path.join(test_dataset.get_path(), "dataset_description.json")
-        self.assertTrue(os.path.exists(new_json))
-        self.assertEquals(dataset.get_metadata(), read_json(new_json))
+        if dataset.get_metadata():
+            new_json = os.path.join(test_dataset.get_path(), "dataset_description.json")
+            self.assertTrue(os.path.exists(new_json))
+            self.assertEquals(dataset.get_metadata(), read_json(new_json))
+
+        for image in dataset.get_images():
+            new_image = test_dataset.get_images(subject_id=image.get_subject().get_id(),
+                                                session=image.get_session().get_name(),
+                                                group_name=image.get_group().get_name(),
+                                                modality=image.get_modality())[0]
+            self.assertEquals(image.get_metadata(), new_image.get_metadata())
 
         shutil.rmtree(out_dir)
+
+    def test_save_example_bids_dir(self):
+        dataset_path = os.path.abspath("./NoseTests/example_bids_dir")
+        out_dir = os.path.abspath("./tmp/custom_example_bids_dir")
+        self._save_metadata(dataset_path, out_dir)

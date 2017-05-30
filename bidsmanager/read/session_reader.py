@@ -8,8 +8,11 @@ from ..utils.utils import read_tsv
 
 
 def load_groups(path_to_session_folder, metadata=None):
-    return [read_group(group_folder, metadata=metadata) for group_folder
-            in glob.glob(os.path.join(path_to_session_folder, "*"))]
+    groups = list()
+    for group_folder in glob.glob(os.path.join(path_to_session_folder, "*")):
+        if os.path.isdir(group_folder):
+            groups.append(read_group(group_folder, metadata=metadata))
+    return groups
 
 
 def parse_session_name(path_to_session_folder):

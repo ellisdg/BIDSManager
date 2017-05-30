@@ -56,23 +56,12 @@ class DataSet(BIDSFolder):
 
     def update(self, run=False, move=False):
         super(DataSet, self).update(run=run, move=move)
-        self.write_subject_metadata()
+        self.write_child_metadata("participants.tsv")
         self.write_dataset_description()
-
-    def write_subject_metadata(self):
-        metadata = self.compile_subject_metadata()
-        if metadata:
-            write_tsv(metadata, os.path.join(self.get_path(), "participants.tsv"))
 
     def write_dataset_description(self):
         if self.get_metadata():
             write_json(self.get_metadata(), os.path.join(self.get_path(), "dataset_description.json"))
-
-    def compile_subject_metadata(self):
-        metadata = dict()
-        for subject in self.get_subjects():
-            metadata[subject.get_basename()] = subject.get_metadata()
-        return metadata
 
 
 class SQLInterface(object):

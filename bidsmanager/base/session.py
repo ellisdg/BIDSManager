@@ -1,3 +1,5 @@
+import os
+
 from bidsmanager.utils.session_utils import modality_to_group_name
 from .base import BIDSFolder
 from .group import FunctionalGroup
@@ -56,3 +58,15 @@ class Session(BIDSFolder):
 
     def has_group(self, group_name):
         return group_name in self._groups
+
+    def update(self, run=False, move=False):
+        super(Session, self).update(run=run, move=move)
+        tsv_basename = "_".join([self.get_parent().get_basename(), self.get_basename(), "scans.tsv"])
+        self.write_child_metadata(tsv_basename=tsv_basename)
+
+    def compile_child_metadata(self):
+        metadata = dict()
+        for image in self.get_images():
+            if image.get_metadata():
+                metadata[os.path.join(image.get_group().get_name(), image.get_basename())] = image.get_metadata()
+        return metadata

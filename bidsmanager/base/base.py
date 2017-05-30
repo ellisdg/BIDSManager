@@ -1,6 +1,8 @@
 import os
 import abc
 
+from ..write.dataset_writer import write_tsv
+
 
 class BIDSObject(object):
     def __init__(self, path=None, parent=None, metadata=None):
@@ -111,3 +113,15 @@ class BIDSFolder(BIDSObject):
         else:
             print("Warning: Updating will possibly move and possibly delete parts of the dataset!")
             print("    To update, set run=True.")
+
+    def write_child_metadata(self, tsv_basename):
+        metadata = self.compile_child_metadata()
+        if metadata:
+            write_tsv(metadata, os.path.join(self.get_path(), tsv_basename))
+
+    def compile_child_metadata(self):
+        metadata = dict()
+        for child in self.get_children():
+            if child.get_metadata():
+                metadata[child.get_basename()] = child.get_metadata()
+        return metadata
