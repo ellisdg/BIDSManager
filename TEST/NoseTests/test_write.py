@@ -48,9 +48,11 @@ class TestWriteMetaData(TestCase):
     def setUp(self):
         self.out_dir = os.path.abspath("./tmp/custom_dir")
 
-    def test_save_ds001_metadata(self):
-        dataset_path = os.path.abspath("./BIDS-examples/ds001")
-        self._save_metadata(dataset_path)
+    def test_save_ds_metadata(self):
+        for dataset_path in glob.glob(os.path.abspath("./BIDS-examples/ds*")):
+            print(dataset_path)
+            self._save_metadata(dataset_path)
+            self.tearDown()
 
     def _save_metadata(self, dataset_path):
         dataset = read_dataset(dataset_path)
@@ -95,4 +97,5 @@ class TestWriteMetaData(TestCase):
             self.assertEquals(read_tsv(old_tsv_file), read_tsv(new_tsv_file))
 
     def tearDown(self):
-        shutil.rmtree(self.out_dir)
+        if os.path.exists(self.out_dir):
+            shutil.rmtree(self.out_dir)

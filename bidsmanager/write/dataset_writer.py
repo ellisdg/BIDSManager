@@ -18,7 +18,13 @@ def write_tsv(data_dict, out_file, first_colum="id"):
         header = [first_colum] + list(columns)
         write_tsv_row(header, opened_file)
         for key, value in data_dict.items():
-            row = [key] + [str(value[column]) for column in columns]
+            column_values = list()
+            for column in columns:
+                if column in value:
+                    column_values.append(str(value[column]))
+                else:
+                    column_values.append("")
+            row = [key] + column_values
             write_tsv_row(row, opened_file)
 
 

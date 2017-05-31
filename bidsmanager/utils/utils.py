@@ -34,7 +34,9 @@ def read_tsv(in_file):
                 row_data = dict()
                 # assumes all rows are the same length
                 for index in range(1, len(row)):
-                    row_data[header[index]] = parse_input(row[index])
+                    value = row[index]
+                    if value:
+                        row_data[header[index]] = parse_input(value)
                 # assumes the first column to be the id column
                 key = row[0]
                 data[key] = row_data

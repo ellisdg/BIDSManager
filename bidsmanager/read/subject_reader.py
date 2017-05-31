@@ -37,5 +37,6 @@ def read_sessions_metadata(path_to_subject, subject_id):
 
 
 def get_subject_metadata(metadata, subject_id):
-    if metadata:
-        return metadata["sub-{0}".format(subject_id)]
+    key = "sub-{0}".format(subject_id)
+    if metadata and key in metadata:
+        return metadata[key]
