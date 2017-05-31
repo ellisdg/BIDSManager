@@ -59,8 +59,8 @@ class Session(BIDSFolder):
     def has_group(self, group_name):
         return group_name in self._groups
 
-    def update(self, run=False, move=False):
-        super(Session, self).update(run=run, move=move)
+    def update(self, move=False):
+        super(Session, self).update(move=move)
         tsv_basename = "_".join([self.get_parent().get_basename(), self.get_basename(), "scans.tsv"])
         self.write_child_metadata(tsv_basename=tsv_basename)
 

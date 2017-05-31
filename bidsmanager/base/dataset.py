@@ -54,8 +54,8 @@ class DataSet(BIDSFolder):
     def create_sql_interface(self, sql_file):
         return SQLInterface(self, sql_file)
 
-    def update(self, run=False, move=False):
-        super(DataSet, self).update(run=run, move=move)
+    def update(self, move=False):
+        super(DataSet, self).update(move=move)
         self.write_child_metadata("participants.tsv")
         self.write_dataset_description()
 

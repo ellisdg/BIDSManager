@@ -36,7 +36,7 @@ class TestWrite(TestCase):
         fingertapping_images = self.dataset.get_images(task_name="fingertapping")
         for image in fingertapping_images:
             image.set_task_name("ft")
-        self.dataset.update(run=True, move=True)
+        self.dataset.update(move=True)
 
         reread_dataset = read_dataset(self._dir)
         self.assertEqual(set(["sub-" + sid for sid in reread_dataset.get_subject_ids()]), subject_ids)

@@ -56,8 +56,6 @@ class BIDSObject(object):
 
 
 class BIDSFolder(BIDSObject):
-    __metaclass__ = abc.ABCMeta
-
     def __init__(self, input_dict=None, *inputs, **kwargs):
         if input_dict:
             self._dict = input_dict
@@ -82,10 +80,6 @@ class BIDSFolder(BIDSObject):
     def get_image_paths(self, **kwargs):
         return [image.get_path() for image in self.get_images(**kwargs)]
 
-    @abc.abstractmethod
-    def get_images(self, **kwargs):
-        return []
-
     def set_parent(self, parent):
         super(BIDSFolder, self).set_parent(parent)
         self.update_parent_of_children()
@@ -94,25 +88,18 @@ class BIDSFolder(BIDSObject):
         for child in self.get_children():
             child.set_parent(self)
 
-    def update(self, run=False, move=False):
-        if run:
-            if self.get_path() and not os.path.exists(self.get_path()):
-                os.makedirs(self.get_path())
+    def update(self, move=False):
+        if self.get_path() and not os.path.exists(self.get_path()):
+            os.makedirs(self.get_path())
 
-            for child in self._dict.values():
-                if isinstance(child, BIDSObject):
-                    basename = child.get_basename()
-                else:
-                    basename = None
-                if basename:
-                    child.set_path(os.path.join(self.get_path(), basename))
-                    child.update(run=True, move=move)
+        for child in self._dict.values():
+            basename = child.get_basename()
+            if basename:
+                child.set_path(os.path.join(self.get_path(), basename))
+                child.update(move=move)
 
-            if self._previous_path and not os.listdir(self._previous_path):
-                os.rmdir(self._previous_path)
-        else:
-            print("Warning: Updating will possibly move and possibly delete parts of the dataset!")
-            print("    To update, set run=True.")
+        if self._previous_path and not os.listdir(self._previous_path):
+            os.rmdir(self._previous_path)
 
     def write_child_metadata(self, tsv_basename):
         metadata = self.compile_child_metadata()

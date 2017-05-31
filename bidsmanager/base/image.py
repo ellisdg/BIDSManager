@@ -113,11 +113,10 @@ class Image(BIDSObject):
         elif isinstance(session, Subject):
             self._subject = session
 
-    def update(self, run=False, move=False):
-        if run:
-            if self._path and self._previous_path:
-                update_file(self._previous_path, self._path, move=move)
-            self.update_sidecar(move=move)
+    def update(self, move=False):
+        if self._path and self._previous_path:
+            update_file(self._previous_path, self._path, move=move)
+        self.update_sidecar(move=move)
 
     def update_sidecar(self, move=False):
         if self.sidecar_path:
@@ -180,8 +179,8 @@ class DiffusionImage(Image):
         update_file(self._bvec_path, tmp_bvec_file, move=move)
         self._bvec_path = tmp_bvec_file
 
-    def update(self, run=False, move=False):
-        super(DiffusionImage, self).update(run=run, move=move)
+    def update(self, move=False):
+        super(DiffusionImage, self).update(move=move)
         if self._bval_path:
             self.update_bval(move=move)
         if self._bvec_path:
