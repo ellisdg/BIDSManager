@@ -172,17 +172,17 @@ class DiffusionImage(Image):
 
     def update_bval(self, move=False):
         tmp_bval_file = self.get_path().replace(self.get_extension(), ".bval")
-        if os.path.exists(tmp_bval_file):
-            update_file(self._bval_path, tmp_bval_file, move=move)
-            self._bval_path = tmp_bval_file
+        update_file(self._bval_path, tmp_bval_file, move=move)
+        self._bval_path = tmp_bval_file
 
     def update_bvec(self, move=False):
         tmp_bvec_file = self.get_path().replace(self.get_extension(), ".bvec")
-        if os.path.exists(tmp_bvec_file):
-            update_file(self._bvec_path, tmp_bvec_file, move=move)
-            self._bvec_path = tmp_bvec_file
+        update_file(self._bvec_path, tmp_bvec_file, move=move)
+        self._bvec_path = tmp_bvec_file
 
     def update(self, run=False, move=False):
         super(DiffusionImage, self).update(run=run, move=move)
-        self.update_bval(move=move)
-        self.update_bvec(move=move)
+        if self._bval_path:
+            self.update_bval(move=move)
+        if self._bvec_path:
+            self.update_bvec(move=move)

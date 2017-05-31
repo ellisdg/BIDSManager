@@ -36,7 +36,7 @@ def get_file(in_file):
 
 
 def parse_generic_name(path_to_image, name):
-    result = re.search('(?<={name}-)[a-z0-9A-Z]*'.format(name=name), os.path.basename(path_to_image))
+    result = re.search('(?<={name}-)[a-z0-9A-Z^]*'.format(name=name), os.path.basename(path_to_image))
     if result:
         return result.group(0)
 
