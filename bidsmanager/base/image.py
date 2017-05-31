@@ -1,7 +1,7 @@
 import os
 
 from .base import BIDSObject
-from ..utils.utils import update_file
+from ..utils.utils import update_file, read_json, combine_dictionaries
 
 
 class Image(BIDSObject):
@@ -11,9 +11,12 @@ class Image(BIDSObject):
         self._group = None
         super(Image, self).__init__(*inputs, **kwargs)
         self.sidecar_path = sidecar_path
+        self._sidecar_metadata = dict()
+        self.update_sidecar_metadata()
         self._modality = modality
         self._acquisition = acquisition
         self._run_number = run_number
+        self._type = "Image"
 
     def get_basename(self):
         return "_".join(self.get_subject_session_keys(keys=self.get_image_keys())) + self.get_extension()
@@ -76,6 +79,15 @@ class Image(BIDSObject):
     def get_group(self):
         return self._group
 
+    def get_metadata(self, key=None):
+        metadata = combine_dictionaries(self._sidecar_metadata, super(Image, self).get_metadata())
+        if key:
+            return metadata[key]
+        return metadata
+
+    def get_tsv_metadata(self, key=None):
+        return super(Image, self).get_metadata(key=key)
+
     def is_match(self, modality=None, acquisition=None, run_number=None):
         return (not modality or modality == self.get_modality()) \
                and (not acquisition or acquisition == self.get_acquisition()) \
@@ -101,11 +113,10 @@ class Image(BIDSObject):
         elif isinstance(session, Subject):
             self._subject = session
 
-    def update(self, run=False, move=False):
-        if run:
-            if self._path and self._previous_path:
-                update_file(self._previous_path, self._path, move=move)
-            self.update_sidecar(move=move)
+    def update(self, move=False):
+        if self._path and self._previous_path:
+            update_file(self._previous_path, self._path, move=move)
+        self.update_sidecar(move=move)
 
     def update_sidecar(self, move=False):
         if self.sidecar_path:
@@ -117,6 +128,14 @@ class Image(BIDSObject):
         if self.get_parent():
             new_key = self.get_image_key()
             self.get_parent().modify_key(prev_key, new_key)
+
+    def read_sidecar(self):
+        return read_json(self.sidecar_path)
+
+    def update_sidecar_metadata(self):
+        if self.sidecar_path:
+            for key, value in self.read_sidecar().items():
+                self._sidecar_metadata[key] = value
 
 
 class FunctionalImage(Image):
@@ -160,7 +179,9 @@ class DiffusionImage(Image):
         update_file(self._bvec_path, tmp_bvec_file, move=move)
         self._bvec_path = tmp_bvec_file
 
-    def update(self, run=False, move=False):
-        super(DiffusionImage, self).update(run=run, move=move)
-        self.update_bval(move=move)
-        self.update_bvec(move=move)
+    def update(self, move=False):
+        super(DiffusionImage, self).update(move=move)
+        if self._bval_path:
+            self.update_bval(move=move)
+        if self._bvec_path:
+            self.update_bvec(move=move)

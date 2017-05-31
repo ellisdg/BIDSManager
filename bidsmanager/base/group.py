@@ -7,7 +7,7 @@ class Group(BIDSFolder):
         self._flags = dict()
         super(Group, self).__init__(*inputs, **kwargs)
         self._images = self._dict
-        self._folder_type = "group"
+        self._type = "Group"
         if images:
             self.add_images(images)
         self._name = name
@@ -19,7 +19,7 @@ class Group(BIDSFolder):
             image._run_number = self._flags[image_key]
             image_key = image.get_image_key()
         try:
-            self._add_object(image, image_key, "image")
+            self._add_object(image, image_key, "Image")
         except KeyError:
             self._flags[image_key] = 0
             self.add_images([self._images.pop(image_key), image])

@@ -1,9 +1,10 @@
 import glob
 import os
+import sqlite3
 from unittest import TestCase
+from datetime import date, datetime
 
 from bidsmanager.read import read_dataset, read_csv
-from bidsmanager.read.dataset_reader import DataSetReader
 
 
 def get_script_directory():
@@ -28,8 +29,7 @@ def get_unorganized_example_directory():
 
 class TestReaderDataSet001(TestCase):
     def setUp(self):
-        self.reader = DataSetReader()
-        self.dataset = self.reader.load_data_set(os.path.join(get_bids_examples_directory(), "ds001"))
+        self.dataset = read_dataset(os.path.join(get_bids_examples_directory(), "ds001"))
 
     def test_read_dataset_subjects(self):
         self.assertEqual(self.dataset.get_subject_ids(),
@@ -69,11 +69,40 @@ class TestReaderDataSet001(TestCase):
     def test_dataset_path(self):
         self.assertEqual(os.path.join(get_bids_examples_directory(), "ds001"), self.dataset.get_path())
 
+    def test_sql_interface_exists(self):
+        sql_file = os.path.join(get_test_directory(), "ds001.sql")
+        self.dataset.create_sql_interface(sql_file)
+        self.assertTrue(os.path.isfile(sql_file))
+
+        # connect to the sql database to ensure it has all the proper elements
+        connection = sqlite3.connect(sql_file)
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM Subject")
+        self.assertEquals(len(cursor.fetchall()), 16)
+
+        cursor.execute("SELECT * FROM Image")
+        self.assertEquals(len(cursor.fetchall()), 16 * 5)
+
+        cursor.execute("SELECT * FROM Session")
+        self.assertEquals(len(cursor.fetchall()), 0)
+
+        cursor.execute("SELECT * FROM Image WHERE modality='bold'")
+        self.assertEquals(len(cursor.fetchall()), 16 * 3)
+
+        cursor.execute("SELECT * FROM Image WHERE task_name='balloonanalogrisktask'")
+        self.assertEquals(len(cursor.fetchall()), 16 * 3)
+
+        os.remove(sql_file)
+
+    def test_read_metadata(self):
+        self.assertEquals(self.dataset.get_subject("11").get_metadata("age"), 24)
+        self.assertEquals(self.dataset.get_subject("04").get_metadata("sex"), "F")
+        self.assertEquals(self.dataset.get_metadata("Name"), "Balloon Analog Risk Task")
+
 
 class TestReaderDataSet114(TestCase):
     def setUp(self):
-        self.reader = DataSetReader()
-        self.dataset = self.reader.load_data_set(os.path.join(get_bids_examples_directory(), "ds114"))
+        self.dataset = read_dataset(os.path.join(get_bids_examples_directory(), "ds114"))
 
     def test_list_subject_sessions(self):
         sessions = set(self.dataset.get_subject("01").get_session_names())
@@ -96,6 +125,35 @@ class TestReaderDataSet114(TestCase):
                     modalities = group.get_modalities()
                     if group.get_name() == "func":
                         self.assertEqual(set(modalities), {"bold"})
+
+    def test_sql_interface(self):
+        sql_file = os.path.join(get_test_directory(), "ds114.sql")
+        self.dataset.create_sql_interface(sql_file)
+        self.assertTrue(os.path.isfile(sql_file))
+
+        # connect to the sql database to ensure it has all the proper elements
+        connection = sqlite3.connect(sql_file)
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM Session")
+        self.assertEquals(len(cursor.fetchall()), 10 * 2)
+
+        cursor.execute("SELECT Image.modality FROM Image JOIN Session ON Image.session_id=Session.id "
+                       "AND Session.name='test'")
+        self.assertEqual(len(cursor.fetchall()), 10 * 7)
+
+        cursor.execute("SELECT Image.modality FROM Image JOIN Session JOIN Subject ON Image.session_id=Session.id "
+                       "AND Session.name='test' AND Session.subject_id=Subject.id AND Subject.name='01'")
+        self.assertEqual(len(cursor.fetchall()), 7)
+
+        cursor.execute("SELECT Image.path FROM Image")
+        self.assertEquals(set(self.dataset.get_image_paths()),
+                          set([row[0] for row in cursor.fetchall()]))
+
+        cursor.execute("SELECT Image.path FROM Image WHERE Image.group_name='anat';")
+        self.assertEquals(set(self.dataset.get_image_paths(group_name="anat")),
+                          set([row[0] for row in cursor.fetchall()]))
+
+        os.remove(sql_file)
 
 
 class TestReaderTestDir(TestCase):
@@ -125,6 +183,34 @@ class TestReaderTestDir(TestCase):
         self.assertEqual(sorted(image_paths_glob), sorted(image_paths))
         self.assertEqual(sorted(image_paths), sorted(image_paths_from_images))
 
+    def test_meta_data(self):
+        subject = self.dataset.get_subject("01")
+        self.assertEquals(date(year=1888, day=12, month=3), subject.get_metadata("dob"))
+        self.assertEquals("John Doe", subject.get_metadata("name"))
+        self.assertEquals(date(year=1995, month=6, day=1), subject.get_session("test").get_metadata("date"))
+        self.assertEquals(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("Manufacturer"),
+                          "GE")
+        self.assertEquals(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("acq_time"),
+                          datetime(year=1877, month=6, day=15, hour=13, minute=45, second=30))
+
+    def test_sql_metadata(self):
+        sql_file = os.path.join(get_test_directory(), "example.sql")
+        self.dataset.create_sql_interface(sql_file)
+        self.assertTrue(os.path.isfile(sql_file))
+
+        # connect to the sql database to ensure it has all the proper elements
+        connection = sqlite3.connect(sql_file)
+        cursor = connection.cursor()
+        cursor.execute("SELECT Image.Manufacturer FROM Image JOIN Session ON Session.id=Image.session_id "
+                       "AND Session.name='test'")
+        self.assertEquals(cursor.fetchall()[0][0], "GE")
+
+        cursor.execute("SELECT Image.Manufacturer FROM Image JOIN Session ON Session.id=Image.session_id "
+                       "AND Session.name='retest'")
+        self.assertEquals(cursor.fetchall()[0][0], "Philips")
+
+        os.remove(sql_file)
+
 
 class TestReaderCSV(TestCase):
     def setUp(self):
@@ -132,7 +218,7 @@ class TestReaderCSV(TestCase):
 
     def test_read_subjects(self):
         subject_ids = self.dataset.get_subject_ids()
-        self.assertEqual(set(subject_ids), {"003", "007", "005"})
+        self.assertEqual(set(subject_ids), {"003", "007", "005", "UNMC^001"})
 
     def test_read_sessions(self):
         self.assertEqual(set(self.dataset.get_subject("003").get_session_names()), {"visit1", "visit2"})
@@ -148,7 +234,8 @@ class TestReaderCSV(TestCase):
     def test_read_t1w_modality(self):
         self.assertEqual(set([os.path.abspath(os.path.join(get_unorganized_example_directory(), f)) for f in
                               {"t1.nii.gz", "some_t1.nii.gz", "some_other_t1.nii.gz", "third_t1.nii.gz",
-                               "t1_from_different_subject.nii.gz", "i_dont_know.nii.gz", "second_t1.nii.gz"}]),
+                               "t1_from_different_subject.nii.gz", "i_dont_know.nii.gz", "second_t1.nii.gz",
+                               "unmc_t1.nii.gz"}]),
                          set(self.dataset.get_image_paths(group_name="anat", modality="T1w")))
 
     def test_read_flair_modality(self):

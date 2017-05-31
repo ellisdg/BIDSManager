@@ -33,7 +33,7 @@ Here we iterate through all the images in the dataset that had the task name “
 ```
 for image in dataset.get_images(task_name=“finger”):
     image.set_task_name(“fingertapping”)
-dataset.update(run=True, move=True)
+dataset.update(move=True)
 ```
 
 ## Convert DICOM data
@@ -43,7 +43,7 @@ from bidsmanager.read.dicom_reader import read_dicom_directory
 from bidsmanager.write.dataset_writer import write_dataset
 dataset = read_dicom_directory(“/path/to/dicom/directory”)
 dataset.set_path(“/path/to/write/bids/directory”)
-dataset.update(run=True, move=True)
+dataset.update(move=True)
 ```
 
 ## Read CSV File
@@ -60,5 +60,5 @@ We can read this CSV file as a data set using BIDSManager and then write the dat
 from bidsmanager.read import read_csv
 dataset = read_csv(“/path/to/csv_file.csv”)
 dataset.set_path(“/path/to/write/bids/directory”)
-dataset.update(run=True)
+dataset.update()
 ```

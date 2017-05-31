@@ -6,10 +6,10 @@ class Subject(BIDSFolder):
         super(Subject, self).__init__(*inputs, **kwargs)
         self.set_name(subject_id)
         self._sessions = self._dict
-        self._folder_type = "subject"
+        self._type = "Subject"
 
     def add_session(self, session):
-        self._add_object(session, session.get_name(), "session")
+        self._add_object(session, session.get_name(), "Session")
 
     def get_basename(self):
         return "sub-{0}".format(self.get_id())
@@ -44,3 +44,8 @@ class Subject(BIDSFolder):
 
     def has_session(self, session_name):
         return session_name in self._sessions
+
+    def update(self, move=False):
+        super(Subject, self).update(move=move)
+        tsv_basename = "_".join([self.get_basename(), "sessions.tsv"])
+        self.write_child_metadata(tsv_basename)

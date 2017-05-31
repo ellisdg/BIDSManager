@@ -153,7 +153,7 @@ class TestDcm2Niix(TestCase):
         self.assertFalse(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "func",
                                                      "sub-03_ses-01_task-lefthandfingertapping_bold.nii.gz")))
         # update the data set
-        self.dataset.update(run=True, move=True)
+        self.dataset.update(move=True)
         # test that the image now exists with the new task name
         self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "func",
                                                     "sub-03_ses-01_task-lefthandfingertapping_bold.nii.gz")))
@@ -183,7 +183,7 @@ class TestDcm2Niix(TestCase):
         self.assertEqual(os.path.basename(final_bids_dataset.get_images(subject_id="04", session="01",
                                                                         modality="dwi")[0].sidecar_path),
                          "sub-04_ses-01_dwi.json")
-        final_bids_dataset.update(run=True)
+        final_bids_dataset.update()
 
         # test moving an image
         image = final_bids_dataset.get_images(acquisition="contrast")[1]
@@ -193,7 +193,7 @@ class TestDcm2Niix(TestCase):
         self.assertEqual(len(glob.glob(os.path.join(out_bids_dataset, "*", "*", "anat", "*acq-postcontrast*.nii.gz"))),
                          0)
         # update the data set
-        final_bids_dataset.update(run=True, move=True)
+        final_bids_dataset.update(move=True)
         # test that the image now exists with the acquisition
         self.assertTrue(os.path.exists(glob.glob(os.path.join(out_bids_dataset, "*", "*", "anat",
                                                               "*acq-postcontrast*.nii.gz"))[0]))
