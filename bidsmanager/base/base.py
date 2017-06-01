@@ -101,10 +101,10 @@ class BIDSFolder(BIDSObject):
         if self._previous_path and not os.listdir(self._previous_path):
             os.rmdir(self._previous_path)
 
-    def write_child_metadata(self, tsv_basename):
+    def write_child_metadata(self, tsv_basename, first_column="id"):
         metadata = self.compile_child_metadata()
         if metadata:
-            write_tsv(metadata, os.path.join(self.get_path(), tsv_basename))
+            write_tsv(metadata, os.path.join(self.get_path(), tsv_basename), first_colum=first_column)
 
     def compile_child_metadata(self):
         metadata = dict()

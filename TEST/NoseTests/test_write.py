@@ -3,6 +3,7 @@ import os
 import shutil
 from unittest import TestCase
 import random
+import csv
 
 from bidsmanager.write.dataset_writer import write_dataset
 from bidsmanager.read import read_csv, read_dataset
@@ -95,6 +96,11 @@ class TestWriteMetaData(TestCase):
         if os.path.exists(old_tsv_file):
             new_tsv_file = os.path.join(self.out_dir, "sub-01", "ses-test", "sub-01_ses-test_scans.tsv")
             self.assertEquals(read_tsv(old_tsv_file), read_tsv(new_tsv_file))
+            with open(new_tsv_file, "r") as opened_file:
+                reader = csv.DictReader(opened_file, delimiter="\t")
+                for row in reader:
+                    if row["filename"] == "anat/sub-01_ses-test_acq-contrast_T1w.nii.gz":
+                        self.assertEquals(row["acq_time"], "1877-06-15T13:45:30")
 
     def tearDown(self):
         if os.path.exists(self.out_dir):

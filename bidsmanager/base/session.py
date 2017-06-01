@@ -62,7 +62,7 @@ class Session(BIDSFolder):
     def update(self, move=False):
         super(Session, self).update(move=move)
         tsv_basename = "_".join([self.get_parent().get_basename(), self.get_basename(), "scans.tsv"])
-        self.write_child_metadata(tsv_basename=tsv_basename)
+        self.write_child_metadata(tsv_basename=tsv_basename, first_column="filename")
 
     def compile_child_metadata(self):
         metadata = dict()

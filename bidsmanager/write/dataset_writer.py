@@ -1,5 +1,6 @@
 import os
 import json
+from datetime import datetime
 
 
 def write_dataset(dataset, output_dir, move=False):
@@ -21,11 +22,18 @@ def write_tsv(data_dict, out_file, first_colum="id"):
             column_values = list()
             for column in columns:
                 if column in value:
-                    column_values.append(str(value[column]))
+                    column_values.append(data_value_to_string(value[column]))
                 else:
                     column_values.append("")
             row = [key] + column_values
             write_tsv_row(row, opened_file)
+
+
+def data_value_to_string(data):
+    if isinstance(data, datetime):
+        return datetime.strftime(data, "%Y-%m-%dT%H:%M:%S")
+    else:
+        return str(data)
 
 
 def write_json(data, out_file):
