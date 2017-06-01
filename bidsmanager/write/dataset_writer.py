@@ -31,7 +31,15 @@ def write_tsv(data_dict, out_file, first_colum="id"):
 
 def data_value_to_string(data):
     if isinstance(data, datetime):
-        return datetime.strftime(data, "%Y-%m-%dT%H:%M:%S")
+        try:
+            return datetime.strftime(data, "%Y-%m-%dT%H:%M:%S")
+        except ValueError:
+            return "{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}".format(year=data.year,
+                                                                                                  month=data.month,
+                                                                                                  day=data.day,
+                                                                                                  hour=data.hour,
+                                                                                                  minute=data.minute,
+                                                                                                  second=data.second)
     else:
         return str(data)
 
