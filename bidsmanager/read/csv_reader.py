@@ -16,7 +16,7 @@ class CSVReader(object):
         self._directory = os.path.dirname(self.path_to_csv_file)
 
     def read_csv(self):
-        with codecs.open(self.path_to_csv_file, "rU", "utf-16") as csv_file:
+        with codecs.open(self.path_to_csv_file, "r", "utf-16") as csv_file:
             reader = csv.DictReader(csv_file)
             for line in reader:
                 subject_id = line["subject"]

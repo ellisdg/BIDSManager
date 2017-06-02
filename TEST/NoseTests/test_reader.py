@@ -78,26 +78,26 @@ class TestReaderDataSet001(TestCase):
         connection = sqlite3.connect(sql_file)
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM Subject")
-        self.assertEquals(len(cursor.fetchall()), 16)
+        self.assertEqual(len(cursor.fetchall()), 16)
 
         cursor.execute("SELECT * FROM Image")
-        self.assertEquals(len(cursor.fetchall()), 16 * 5)
+        self.assertEqual(len(cursor.fetchall()), 16 * 5)
 
         cursor.execute("SELECT * FROM Session")
-        self.assertEquals(len(cursor.fetchall()), 0)
+        self.assertEqual(len(cursor.fetchall()), 0)
 
         cursor.execute("SELECT * FROM Image WHERE modality='bold'")
-        self.assertEquals(len(cursor.fetchall()), 16 * 3)
+        self.assertEqual(len(cursor.fetchall()), 16 * 3)
 
         cursor.execute("SELECT * FROM Image WHERE task_name='balloonanalogrisktask'")
-        self.assertEquals(len(cursor.fetchall()), 16 * 3)
+        self.assertEqual(len(cursor.fetchall()), 16 * 3)
 
         os.remove(sql_file)
 
     def test_read_metadata(self):
-        self.assertEquals(self.dataset.get_subject("11").get_metadata("age"), 24)
-        self.assertEquals(self.dataset.get_subject("04").get_metadata("sex"), "F")
-        self.assertEquals(self.dataset.get_metadata("Name"), "Balloon Analog Risk Task")
+        self.assertEqual(self.dataset.get_subject("11").get_metadata("age"), 24)
+        self.assertEqual(self.dataset.get_subject("04").get_metadata("sex"), "F")
+        self.assertEqual(self.dataset.get_metadata("Name"), "Balloon Analog Risk Task")
 
 
 class TestReaderDataSet114(TestCase):
@@ -135,7 +135,7 @@ class TestReaderDataSet114(TestCase):
         connection = sqlite3.connect(sql_file)
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM Session")
-        self.assertEquals(len(cursor.fetchall()), 10 * 2)
+        self.assertEqual(len(cursor.fetchall()), 10 * 2)
 
         cursor.execute("SELECT Image.modality FROM Image JOIN Session ON Image.session_id=Session.id "
                        "AND Session.name='test'")
@@ -146,12 +146,11 @@ class TestReaderDataSet114(TestCase):
         self.assertEqual(len(cursor.fetchall()), 7)
 
         cursor.execute("SELECT Image.path FROM Image")
-        self.assertEquals(set(self.dataset.get_image_paths()),
-                          set([row[0] for row in cursor.fetchall()]))
+        self.assertEqual(set(self.dataset.get_image_paths()), set([row[0] for row in cursor.fetchall()]))
 
         cursor.execute("SELECT Image.path FROM Image WHERE Image.group_name='anat';")
-        self.assertEquals(set(self.dataset.get_image_paths(group_name="anat")),
-                          set([row[0] for row in cursor.fetchall()]))
+        self.assertEqual(set(self.dataset.get_image_paths(group_name="anat")),
+                         set([row[0] for row in cursor.fetchall()]))
 
         os.remove(sql_file)
 
@@ -185,12 +184,12 @@ class TestReaderTestDir(TestCase):
 
     def test_meta_data(self):
         subject = self.dataset.get_subject("01")
-        self.assertEquals(date(year=1888, day=12, month=3), subject.get_metadata("dob"))
-        self.assertEquals("John Doe", subject.get_metadata("name"))
-        self.assertEquals(date(year=1995, month=6, day=1), subject.get_session("test").get_metadata("date"))
-        self.assertEquals(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("Manufacturer"),
+        self.assertEqual(date(year=1888, day=12, month=3), subject.get_metadata("dob"))
+        self.assertEqual("John Doe", subject.get_metadata("name"))
+        self.assertEqual(date(year=1995, month=6, day=1), subject.get_session("test").get_metadata("date"))
+        self.assertEqual(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("Manufacturer"),
                           "GE")
-        self.assertEquals(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("acq_time"),
+        self.assertEqual(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("acq_time"),
                           datetime(year=1877, month=6, day=15, hour=13, minute=45, second=30))
 
     def test_sql_metadata(self):
@@ -203,11 +202,11 @@ class TestReaderTestDir(TestCase):
         cursor = connection.cursor()
         cursor.execute("SELECT Image.Manufacturer FROM Image JOIN Session ON Session.id=Image.session_id "
                        "AND Session.name='test'")
-        self.assertEquals(cursor.fetchall()[0][0], "GE")
+        self.assertEqual(cursor.fetchall()[0][0], "GE")
 
         cursor.execute("SELECT Image.Manufacturer FROM Image JOIN Session ON Session.id=Image.session_id "
                        "AND Session.name='retest'")
-        self.assertEquals(cursor.fetchall()[0][0], "Philips")
+        self.assertEqual(cursor.fetchall()[0][0], "Philips")
 
         os.remove(sql_file)
 
