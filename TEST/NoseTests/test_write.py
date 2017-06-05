@@ -8,7 +8,14 @@ import csv
 from bidsmanager.write.dataset_writer import write_dataset
 from bidsmanager.read import read_csv, read_dataset
 from bidsmanager.utils.utils import read_json, read_tsv
-from test_reader import get_unorganized_example_directory
+
+
+def get_script_directory():
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def get_unorganized_example_directory():
+    return os.path.join(get_script_directory(), "unorganized_example_dir")
 
 
 class TestWrite(TestCase):
@@ -69,25 +76,24 @@ class TestWriteMetaData(TestCase):
 
         test_dataset = read_dataset(self.out_dir)
         for subject in test_dataset.get_subjects():
-            self.assertEquals(subject.get_metadata("random_int"), test_answers[subject.get_id()])
+            self.assertEqual(subject.get_metadata("random_int"), test_answers[subject.get_id()])
             old_subject = dataset.get_subject(subject.get_id())
-            self.assertEquals(subject.get_metadata(), old_subject.get_metadata())
+            self.assertEqual(subject.get_metadata(), old_subject.get_metadata())
             for session in subject.get_sessions():
                 if session.get_name() != 'None':
-                    self.assertEquals(session.get_metadata(),
-                                      old_subject.get_session(session.get_name()).get_metadata())
+                    self.assertEqual(session.get_metadata(), old_subject.get_session(session.get_name()).get_metadata())
 
         if dataset.get_metadata():
             new_json = os.path.join(test_dataset.get_path(), "dataset_description.json")
             self.assertTrue(os.path.exists(new_json))
-            self.assertEquals(dataset.get_metadata(), read_json(new_json))
+            self.assertEqual(dataset.get_metadata(), read_json(new_json))
 
         for image in dataset.get_images():
             new_image = test_dataset.get_images(subject_id=image.get_subject().get_id(),
                                                 session=image.get_session().get_name(),
                                                 group_name=image.get_group().get_name(),
                                                 modality=image.get_modality())[0]
-            self.assertEquals(image.get_metadata(), new_image.get_metadata())
+            self.assertEqual(image.get_metadata(), new_image.get_metadata())
 
     def test_save_example_bids_dir(self):
         dataset_path = os.path.abspath("./NoseTests/example_bids_dir")
@@ -95,12 +101,12 @@ class TestWriteMetaData(TestCase):
         old_tsv_file = os.path.join(dataset_path, "sub-01", "ses-test", "sub-01_ses-test_scans.tsv")
         if os.path.exists(old_tsv_file):
             new_tsv_file = os.path.join(self.out_dir, "sub-01", "ses-test", "sub-01_ses-test_scans.tsv")
-            self.assertEquals(read_tsv(old_tsv_file), read_tsv(new_tsv_file))
+            self.assertEqual(read_tsv(old_tsv_file), read_tsv(new_tsv_file))
             with open(new_tsv_file, "r") as opened_file:
                 reader = csv.DictReader(opened_file, delimiter="\t")
                 for row in reader:
                     if row["filename"] == "anat/sub-01_ses-test_acq-contrast_T1w.nii.gz":
-                        self.assertEquals(row["acq_time"], "1877-06-15T13:45:30")
+                        self.assertEqual(row["acq_time"], "1877-06-15T13:45:30")
 
     def tearDown(self):
         if os.path.exists(self.out_dir):

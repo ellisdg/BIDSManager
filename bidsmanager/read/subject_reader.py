@@ -13,7 +13,7 @@ def parse_subject_id(path_to_subject):
 
 def read_subject(path_to_subject, metadata=None):
     subject_id = parse_subject_id(path_to_subject)
-    subject = Subject(subject_id, metadata=get_subject_metadata(metadata, subject_id))
+    subject = Subject(subject_id, metadata=get_subject_metadata(metadata, subject_id), path=path_to_subject)
     session_folders = glob.glob(os.path.join(path_to_subject, "ses-*"))
     add_session_folders(session_folders, subject, path_to_subject)
     return subject

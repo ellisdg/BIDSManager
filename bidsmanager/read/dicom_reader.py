@@ -264,8 +264,7 @@ def run_dcm2niix_on_directory(input_directory, output_directory, filename="%t%d%
     command = ['dcm2niix', "-b", "y", "-z", "y", "-o", output_directory, "-f", filename, input_directory]
     process = Popen(command, stdout=PIPE, stderr=PIPE)
     output, err = process.communicate()
-    if "No valid DICOM files were found" in output:
-        raise RuntimeError("No valid DICOM files were found")
+    parse_cmd_output(output)
 
 
 def run_dcm2niix(in_file, out_dir="/tmp/dcm2niix", dwi=False):
@@ -274,9 +273,13 @@ def run_dcm2niix(in_file, out_dir="/tmp/dcm2niix", dwi=False):
     command = ['dcm2niix', "-b", "y", "-z", "y", "-o", out_dir, in_file]
     process = Popen(command, stdout=PIPE, stderr=PIPE)
     output, err = process.communicate()
-    if "No valid DICOM files were found" in output:
-        raise RuntimeError("No valid DICOM files were found")
+    parse_cmd_output(output)
     return get_dcm2niix_outputs(out_dir=out_dir, dwi=dwi)
+
+
+def parse_cmd_output(cmd_output):
+    if "No valid DICOM files were found" in str(cmd_output):
+        raise RuntimeError("No valid DICOM files were found")
 
 
 def get_dcm2niix_outputs(out_dir, dwi=False):
@@ -303,6 +306,7 @@ def get_output_file(output_directory, extension):
         warn("Multiple output files found:\n\t{0}".format("\n\t".join(output_files)), RuntimeWarning)
     return output_files[0]
 
+
 def description_to_modality(description):
     if "FLAIR" in description:
         return "FLAIR"
@@ -322,7 +326,7 @@ class DicomFile(BIDSObject):
         self.save_tags(tags_to_save)
 
     def get_data(self):
-        if self._path:
+        if self._path and os.path.exists(self._path):
             return dicom.read_file(self._path)
 
     def get_modality(self):
@@ -349,11 +353,11 @@ class DicomFile(BIDSObject):
 
     def get_field(self, key):
         try:
-            return self._info[key]
+            return str(self._info[key])
         except KeyError:
             dicom_data = self.get_data()
             if key in dicom_data:
-                return dicom_data.get(key)
+                return str(dicom_data.get(key))
 
     def save_tags(self, tags_to_save):
         dicom_data = self.get_data()

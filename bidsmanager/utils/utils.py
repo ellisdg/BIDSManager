@@ -25,7 +25,7 @@ def read_json(in_file):
 
 def read_tsv(in_file):
     data = dict()
-    with open(in_file, "rU") as tsv_file:
+    with open(in_file, "r") as tsv_file:
         for i, line in enumerate(tsv_file):
             row = line.strip().split("\t")
             if i == 0:
