@@ -102,7 +102,8 @@ class TestReaderDataSet001(TestCase):
 
 class TestReaderDataSet114(TestCase):
     def setUp(self):
-        self.dataset = read_dataset(os.path.join(get_bids_examples_directory(), "ds114"))
+        self.ds_path = os.path.join(get_bids_examples_directory(), "ds114")
+        self.dataset = read_dataset(self.ds_path)
 
     def test_list_subject_sessions(self):
         sessions = set(self.dataset.get_subject("01").get_session_names())
@@ -153,6 +154,10 @@ class TestReaderDataSet114(TestCase):
                          set([row[0] for row in cursor.fetchall()]))
 
         os.remove(sql_file)
+
+    def test_subject_path(self):
+        subject = self.dataset.get_subject("05")
+        self.assertEqual(os.path.join(self.ds_path, "sub-05"), subject.get_path())
 
 
 class TestReaderTestDir(TestCase):
