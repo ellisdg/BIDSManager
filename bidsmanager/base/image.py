@@ -63,7 +63,7 @@ class Image(BIDSObject):
         return self._run_number
 
     def get_session_key(self):
-        if self._session:
+        if self._session and self._session.get_name():
             return self._session.get_basename()
 
     def get_session(self):

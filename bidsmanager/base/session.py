@@ -31,7 +31,8 @@ class Session(BIDSFolder):
         group.add_image(image)
 
     def get_basename(self):
-        return "ses-{0}".format(self.get_name())
+        if self.get_name():
+            return "ses-{0}".format(self.get_name())
 
     def get_images(self, group_name=None, modality=None, acquisition=None, run_number=None, task_name=None):
         images = []
@@ -61,7 +62,10 @@ class Session(BIDSFolder):
 
     def update(self, move=False):
         super(Session, self).update(move=move)
-        tsv_basename = "_".join([self.get_parent().get_basename(), self.get_basename(), "scans.tsv"])
+        keys = [self.get_parent().get_basename(), self.get_basename(), "scans.tsv"]
+        if None in keys:
+            keys.remove(None)
+        tsv_basename = "_".join(keys)
         self.write_child_metadata(tsv_basename=tsv_basename, first_column="filename")
 
     def compile_child_metadata(self):

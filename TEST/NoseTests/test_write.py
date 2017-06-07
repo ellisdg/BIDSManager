@@ -101,6 +101,7 @@ class TestWriteMetaData(TestCase):
                                                task_name=task_name)
             self.assertEqual(image.get_metadata(), new_image.get_metadata())
             self.assertNotEqual(image.get_path(), new_image.get_path())
+            self.assertEqual(image.get_path().replace(dataset_path, self.out_dir), new_image.get_path())
 
     def test_save_example_bids_dir(self):
         dataset_path = os.path.abspath("./NoseTests/example_bids_dir")
