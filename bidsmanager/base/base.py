@@ -89,17 +89,22 @@ class BIDSFolder(BIDSObject):
             child.set_parent(self)
 
     def update(self, move=False):
-        if self.get_path() and not os.path.exists(self.get_path()):
-            os.makedirs(self.get_path())
-
-        for child in self._dict.values():
-            basename = child.get_basename()
-            if basename:
-                child.set_path(os.path.join(self.get_path(), basename))
-                child.update(move=move)
-
+        self.make_path()
+        self.update_children(move=move)
         if self._previous_path and not os.listdir(self._previous_path):
             os.rmdir(self._previous_path)
+
+    def update_children(self, move=False):
+        for child in self._dict.values():
+            if child.get_basename():
+                child.set_path(os.path.join(self.get_path(), child.get_basename()))
+            else:
+                child.set_path(self.get_path())
+            child.update(move=move)
+
+    def make_path(self):
+        if self.get_path() and not os.path.exists(self.get_path()):
+            os.makedirs(self.get_path())
 
     def write_child_metadata(self, tsv_basename, first_column="id"):
         metadata = self.compile_child_metadata()

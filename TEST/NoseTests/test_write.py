@@ -8,6 +8,7 @@ import csv
 from bidsmanager.write.dataset_writer import write_dataset
 from bidsmanager.read import read_csv, read_dataset
 from bidsmanager.utils.utils import read_json, read_tsv
+from bidsmanager.base.image import FunctionalImage
 
 
 def get_script_directory():
@@ -41,10 +42,10 @@ class TestWrite(TestCase):
                          {"sub-003_ses-visit1_task-fingertapping_bold.nii.gz", "sub-003_ses-visit1_FLAIR.nii.gz",
                           "sub-003_ses-visit1_T1w.nii.gz"})
 
-        fingertapping_images = self.dataset.get_images(task_name="fingertapping")
+        fingertapping_images = self.bids_dataset.get_images(task_name="fingertapping")
         for image in fingertapping_images:
             image.set_task_name("ft")
-        self.dataset.update(move=True)
+        self.bids_dataset.update(move=True)
 
         reread_dataset = read_dataset(self._dir)
         self.assertEqual(set(["sub-" + sid for sid in reread_dataset.get_subject_ids()]), subject_ids)
@@ -89,11 +90,18 @@ class TestWriteMetaData(TestCase):
             self.assertEqual(dataset.get_metadata(), read_json(new_json))
 
         for image in dataset.get_images():
-            new_image = test_dataset.get_images(subject_id=image.get_subject().get_id(),
-                                                session=image.get_session().get_name(),
-                                                group_name=image.get_group().get_name(),
-                                                modality=image.get_modality())[0]
+            acquisition = "" if not image.get_acquisition() else image.get_acquisition()
+            task_name = image.get_task_name() if isinstance(image, FunctionalImage) else None
+            new_image = test_dataset.get_image(subject_id=image.get_subject().get_id(),
+                                               session=image.get_session().get_name(),
+                                               group_name=image.get_group().get_name(),
+                                               acquisition=acquisition,
+                                               modality=image.get_modality(),
+                                               run_number=image.get_run_number(),
+                                               task_name=task_name)
             self.assertEqual(image.get_metadata(), new_image.get_metadata())
+            self.assertNotEqual(image.get_path(), new_image.get_path())
+            self.assertEqual(image.get_path().replace(dataset_path, self.out_dir), new_image.get_path())
 
     def test_save_example_bids_dir(self):
         dataset_path = os.path.abspath("./NoseTests/example_bids_dir")

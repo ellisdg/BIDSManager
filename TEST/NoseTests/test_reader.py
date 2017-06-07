@@ -28,8 +28,10 @@ def get_unorganized_example_directory():
 
 
 class TestReaderDataSet001(TestCase):
-    def setUp(self):
-        self.dataset = read_dataset(os.path.join(get_bids_examples_directory(), "ds001"))
+    @classmethod
+    def setUpClass(cls):
+        super(TestReaderDataSet001, cls).setUpClass()
+        cls.dataset = read_dataset(os.path.join(get_bids_examples_directory(), "ds001"))
 
     def test_read_dataset_subjects(self):
         self.assertEqual(self.dataset.get_subject_ids(),
@@ -101,9 +103,11 @@ class TestReaderDataSet001(TestCase):
 
 
 class TestReaderDataSet114(TestCase):
-    def setUp(self):
-        self.ds_path = os.path.join(get_bids_examples_directory(), "ds114")
-        self.dataset = read_dataset(self.ds_path)
+    @classmethod
+    def setUpClass(cls):
+        super(TestReaderDataSet114, cls).setUpClass()
+        cls.ds_path = os.path.join(get_bids_examples_directory(), "ds114")
+        cls.dataset = read_dataset(cls.ds_path)
 
     def test_list_subject_sessions(self):
         sessions = set(self.dataset.get_subject("01").get_session_names())
@@ -161,8 +165,10 @@ class TestReaderDataSet114(TestCase):
 
 
 class TestReaderTestDir(TestCase):
-    def setUp(self):
-        self.dataset = read_dataset(get_example_directory())
+    @classmethod
+    def setUpClass(cls):
+        super(TestReaderTestDir, cls).setUpClass()
+        cls.dataset = read_dataset(get_example_directory())
 
     def test_get_session_names(self):
         session_names = self.dataset.get_subject("01").get_session_names()
@@ -183,7 +189,8 @@ class TestReaderTestDir(TestCase):
                             glob.glob(os.path.join(get_example_directory(),
                                                    "sub-*", "ses-*", "*", "*acq-contrast*.nii.gz"))]
         image_paths = self.dataset.get_image_paths(acquisition="contrast", modality="T1w")
-        image_paths_from_images = [image.get_path() for image in self.dataset.get_images()]
+        image_paths_from_images = [image.get_path() for image in self.dataset.get_images(acquisition="contrast",
+                                                                                         modality="T1w")]
         self.assertEqual(sorted(image_paths_glob), sorted(image_paths))
         self.assertEqual(sorted(image_paths), sorted(image_paths_from_images))
 
@@ -192,10 +199,9 @@ class TestReaderTestDir(TestCase):
         self.assertEqual(date(year=1888, day=12, month=3), subject.get_metadata("dob"))
         self.assertEqual("John Doe", subject.get_metadata("name"))
         self.assertEqual(date(year=1995, month=6, day=1), subject.get_session("test").get_metadata("date"))
-        self.assertEqual(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("Manufacturer"),
-                          "GE")
+        self.assertEqual(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("Manufacturer"), "GE")
         self.assertEqual(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("acq_time"),
-                          datetime(year=1877, month=6, day=15, hour=13, minute=45, second=30))
+                         datetime(year=1877, month=6, day=15, hour=13, minute=45, second=30))
 
     def test_sql_metadata(self):
         sql_file = os.path.join(get_test_directory(), "example.sql")
@@ -210,15 +216,28 @@ class TestReaderTestDir(TestCase):
         self.assertEqual(cursor.fetchall()[0][0], "GE")
 
         cursor.execute("SELECT Image.Manufacturer FROM Image JOIN Session ON Session.id=Image.session_id "
-                       "AND Session.name='retest'")
+                       "AND Session.name='retest' AND Image.acquisition='contrast'")
         self.assertEqual(cursor.fetchall()[0][0], "Philips")
 
         os.remove(sql_file)
 
+    def test_get_no_acquisition(self):
+        images = self.dataset.get_images(subject_id="01", session="retest", modality="T1w", acquisition="")
+        self.assertEqual(len(images), 1)
+
+    def test_get_image(self):
+        images = self.dataset.get_images(subject_id="01", session="retest", modality="T1w", acquisition="")
+        self.assertEqual(self.dataset.get_image(subject_id="01", session="retest", modality="T1w", acquisition=""),
+                         images[0])
+        self.assertRaises(RuntimeError, self.dataset.get_image)
+        self.assertRaises(RuntimeError, self.dataset.get_image, session="retest")
+
 
 class TestReaderCSV(TestCase):
-    def setUp(self):
-        self.dataset = read_csv(os.path.join(get_unorganized_example_directory(), "data_dict.csv"))
+    @classmethod
+    def setUpClass(cls):
+        super(TestReaderCSV, cls).setUpClass()
+        cls.dataset = read_csv(os.path.join(get_unorganized_example_directory(), "data_dict.csv"))
 
     def test_read_subjects(self):
         subject_ids = self.dataset.get_subject_ids()

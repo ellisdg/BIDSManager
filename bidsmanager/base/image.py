@@ -63,7 +63,7 @@ class Image(BIDSObject):
         return self._run_number
 
     def get_session_key(self):
-        if self._session:
+        if self._session and self._session.get_name():
             return self._session.get_basename()
 
     def get_session(self):
@@ -90,7 +90,8 @@ class Image(BIDSObject):
 
     def is_match(self, modality=None, acquisition=None, run_number=None):
         return (not modality or modality == self.get_modality()) \
-               and (not acquisition or acquisition == self.get_acquisition()) \
+               and ((acquisition is None) or acquisition == self.get_acquisition()
+                    or (not acquisition and not self.get_acquisition())) \
                and (not run_number or int(run_number) == int(self.get_run_number()))
 
     def set_acquisition(self, acquisition):
@@ -155,7 +156,7 @@ class FunctionalImage(Image):
         if not keys:
             keys = []
         if self._task_name:
-            keys.append("task-{0}".format(self._task_name.lower().replace(" ", "")))
+            keys.append("task-{0}".format(self._task_name.replace(" ", "")))
         return super(FunctionalImage, self).get_image_keys(keys)
 
     def is_match(self, task_name=None, **kwargs):
