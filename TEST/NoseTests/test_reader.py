@@ -183,7 +183,8 @@ class TestReaderTestDir(TestCase):
                             glob.glob(os.path.join(get_example_directory(),
                                                    "sub-*", "ses-*", "*", "*acq-contrast*.nii.gz"))]
         image_paths = self.dataset.get_image_paths(acquisition="contrast", modality="T1w")
-        image_paths_from_images = [image.get_path() for image in self.dataset.get_images()]
+        image_paths_from_images = [image.get_path() for image in self.dataset.get_images(acquisition="contrast",
+                                                                                         modality="T1w")]
         self.assertEqual(sorted(image_paths_glob), sorted(image_paths))
         self.assertEqual(sorted(image_paths), sorted(image_paths_from_images))
 
@@ -192,10 +193,9 @@ class TestReaderTestDir(TestCase):
         self.assertEqual(date(year=1888, day=12, month=3), subject.get_metadata("dob"))
         self.assertEqual("John Doe", subject.get_metadata("name"))
         self.assertEqual(date(year=1995, month=6, day=1), subject.get_session("test").get_metadata("date"))
-        self.assertEqual(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("Manufacturer"),
-                          "GE")
+        self.assertEqual(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("Manufacturer"), "GE")
         self.assertEqual(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("acq_time"),
-                          datetime(year=1877, month=6, day=15, hour=13, minute=45, second=30))
+                         datetime(year=1877, month=6, day=15, hour=13, minute=45, second=30))
 
     def test_sql_metadata(self):
         sql_file = os.path.join(get_test_directory(), "example.sql")
@@ -210,7 +210,7 @@ class TestReaderTestDir(TestCase):
         self.assertEqual(cursor.fetchall()[0][0], "GE")
 
         cursor.execute("SELECT Image.Manufacturer FROM Image JOIN Session ON Session.id=Image.session_id "
-                       "AND Session.name='retest'")
+                       "AND Session.name='retest' AND Image.acquisition='contrast'")
         self.assertEqual(cursor.fetchall()[0][0], "Philips")
 
         os.remove(sql_file)

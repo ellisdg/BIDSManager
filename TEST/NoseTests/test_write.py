@@ -92,6 +92,7 @@ class TestWriteMetaData(TestCase):
             new_image = test_dataset.get_images(subject_id=image.get_subject().get_id(),
                                                 session=image.get_session().get_name(),
                                                 group_name=image.get_group().get_name(),
+                                                acquisition=image.get_acquisition(),
                                                 modality=image.get_modality())[0]
             self.assertEqual(image.get_metadata(), new_image.get_metadata())
 
