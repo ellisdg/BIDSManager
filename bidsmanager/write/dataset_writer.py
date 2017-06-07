@@ -1,11 +1,14 @@
 import os
 import json
 from datetime import datetime
+import copy
 
 
 def write_dataset(dataset, output_dir, move=False):
+    dataset = copy.deepcopy(dataset)
     dataset.set_path(os.path.abspath(output_dir))
     dataset.update(move=move)
+    return dataset
 
 
 def make_dirs(directory):

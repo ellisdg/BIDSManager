@@ -156,7 +156,7 @@ class FunctionalImage(Image):
         if not keys:
             keys = []
         if self._task_name:
-            keys.append("task-{0}".format(self._task_name.lower().replace(" ", "")))
+            keys.append("task-{0}".format(self._task_name.replace(" ", "")))
         return super(FunctionalImage, self).get_image_keys(keys)
 
     def is_match(self, task_name=None, **kwargs):
