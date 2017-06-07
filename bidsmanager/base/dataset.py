@@ -47,7 +47,10 @@ class DataSet(BIDSFolder):
             return images
 
     def get_image(self, **kwargs):
-        return self.get_images(**kwargs)[0]
+        images = self.get_images(**kwargs)
+        if len(images) > 1:
+            raise RuntimeError("More than one image found: ".format([image.get_path() for image in images]))
+        return images[0]
 
     def has_subject_id(self, subject_id):
         return subject_id in self.get_subject_ids()

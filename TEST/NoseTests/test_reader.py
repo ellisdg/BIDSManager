@@ -223,6 +223,8 @@ class TestReaderTestDir(TestCase):
         images = self.dataset.get_images(subject_id="01", session="retest", modality="T1w", acquisition="")
         self.assertEqual(self.dataset.get_image(subject_id="01", session="retest", modality="T1w", acquisition=""),
                          images[0])
+        self.assertRaises(RuntimeError, self.dataset.get_image)
+        self.assertRaises(RuntimeError, self.dataset.get_image, session="retest")
 
 
 class TestReaderCSV(TestCase):
