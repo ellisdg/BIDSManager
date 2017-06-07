@@ -46,6 +46,9 @@ class DataSet(BIDSFolder):
                                                       task_name=task_name))
             return images
 
+    def get_image(self, **kwargs):
+        return self.get_images(**kwargs)[0]
+
     def has_subject_id(self, subject_id):
         return subject_id in self.get_subject_ids()
 

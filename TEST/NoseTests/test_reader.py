@@ -219,6 +219,11 @@ class TestReaderTestDir(TestCase):
         images = self.dataset.get_images(subject_id="01", session="retest", modality="T1w", acquisition="")
         self.assertEqual(len(images), 1)
 
+    def test_get_image(self):
+        images = self.dataset.get_images(subject_id="01", session="retest", modality="T1w", acquisition="")
+        self.assertEqual(self.dataset.get_image(subject_id="01", session="retest", modality="T1w", acquisition=""),
+                         images[0])
+
 
 class TestReaderCSV(TestCase):
     def setUp(self):
