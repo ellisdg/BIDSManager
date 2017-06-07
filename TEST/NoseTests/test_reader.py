@@ -28,8 +28,10 @@ def get_unorganized_example_directory():
 
 
 class TestReaderDataSet001(TestCase):
-    def setUp(self):
-        self.dataset = read_dataset(os.path.join(get_bids_examples_directory(), "ds001"))
+    @classmethod
+    def setUpClass(cls):
+        super(TestReaderDataSet001, cls).setUpClass()
+        cls.dataset = read_dataset(os.path.join(get_bids_examples_directory(), "ds001"))
 
     def test_read_dataset_subjects(self):
         self.assertEqual(self.dataset.get_subject_ids(),
@@ -101,9 +103,11 @@ class TestReaderDataSet001(TestCase):
 
 
 class TestReaderDataSet114(TestCase):
-    def setUp(self):
-        self.ds_path = os.path.join(get_bids_examples_directory(), "ds114")
-        self.dataset = read_dataset(self.ds_path)
+    @classmethod
+    def setUpClass(cls):
+        super(TestReaderDataSet114, cls).setUpClass()
+        cls.ds_path = os.path.join(get_bids_examples_directory(), "ds114")
+        cls.dataset = read_dataset(cls.ds_path)
 
     def test_list_subject_sessions(self):
         sessions = set(self.dataset.get_subject("01").get_session_names())
@@ -161,8 +165,10 @@ class TestReaderDataSet114(TestCase):
 
 
 class TestReaderTestDir(TestCase):
-    def setUp(self):
-        self.dataset = read_dataset(get_example_directory())
+    @classmethod
+    def setUpClass(cls):
+        super(TestReaderTestDir, cls).setUpClass()
+        cls.dataset = read_dataset(get_example_directory())
 
     def test_get_session_names(self):
         session_names = self.dataset.get_subject("01").get_session_names()
@@ -228,8 +234,10 @@ class TestReaderTestDir(TestCase):
 
 
 class TestReaderCSV(TestCase):
-    def setUp(self):
-        self.dataset = read_csv(os.path.join(get_unorganized_example_directory(), "data_dict.csv"))
+    @classmethod
+    def setUpClass(cls):
+        super(TestReaderCSV, cls).setUpClass()
+        cls.dataset = read_csv(os.path.join(get_unorganized_example_directory(), "data_dict.csv"))
 
     def test_read_subjects(self):
         subject_ids = self.dataset.get_subject_ids()
