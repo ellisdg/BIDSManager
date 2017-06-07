@@ -90,7 +90,8 @@ class Image(BIDSObject):
 
     def is_match(self, modality=None, acquisition=None, run_number=None):
         return (not modality or modality == self.get_modality()) \
-               and (not acquisition or acquisition == self.get_acquisition()) \
+               and ((acquisition is None) or acquisition == self.get_acquisition()
+                    or (not acquisition and not self.get_acquisition())) \
                and (not run_number or int(run_number) == int(self.get_run_number()))
 
     def set_acquisition(self, acquisition):

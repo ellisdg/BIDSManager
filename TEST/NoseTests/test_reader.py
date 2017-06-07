@@ -215,6 +215,10 @@ class TestReaderTestDir(TestCase):
 
         os.remove(sql_file)
 
+    def test_get_no_acquisition(self):
+        images = self.dataset.get_images(subject_id="01", session="retest", modality="T1w", acquisition="")
+        self.assertEqual(len(images), 1)
+
 
 class TestReaderCSV(TestCase):
     def setUp(self):
