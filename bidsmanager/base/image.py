@@ -115,8 +115,9 @@ class Image(BIDSObject):
             self._subject = session
 
     def update(self, move=False):
-        if self._path and self._previous_path:
-            update_file(self._previous_path, self._path, move=move)
+        if os.path.basename(self.get_path()) != self.get_basename():
+            self.set_path(os.path.join(os.path.dirname(self.get_path()), self.get_basename()))
+        update_file(self._previous_path, self._path, move=move)
         self.update_sidecar(move=move)
 
     def update_sidecar(self, move=False):
