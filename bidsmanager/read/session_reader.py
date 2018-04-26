@@ -34,7 +34,12 @@ def get_session_metadata(metadata, session_name):
         return metadata["ses-{0}".format(session_name)]
 
 
-def read_scans_metadata(path_to_sessoin_folder, subject_id, session_name):
-    metadata_file = os.path.join(path_to_sessoin_folder, "sub-{0}_ses-{1}_scans.tsv".format(subject_id, session_name))
+def read_scans_metadata(path_to_session_folder, subject_id, session_name=None):
+    subject_basename = "sub-{}".format(subject_id)
+    components = [subject_basename, "scans.tsv"]
+    if session_name:
+        session_basename = "ses-{}".format(session_name)
+        components.insert(1, session_basename)
+    metadata_file = os.path.join(path_to_session_folder, "_".join(components))
     if os.path.isfile(metadata_file):
         return read_tsv(metadata_file)

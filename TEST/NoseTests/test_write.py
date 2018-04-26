@@ -73,6 +73,11 @@ class TestWriteMetaData(TestCase):
             subject.add_metadata("random_int", random_int)
             test_answers[subject.get_id()] = random_int
 
+            for image in subject.get_images():
+                image.add_metadata("random_int", random_int)
+
+        if os.path.exists(self.out_dir):
+            shutil.rmtree(self.out_dir)
         write_dataset(dataset=dataset, output_dir=self.out_dir, move=False)
 
         test_dataset = read_dataset(self.out_dir)
@@ -83,6 +88,9 @@ class TestWriteMetaData(TestCase):
             for session in subject.get_sessions():
                 if session.get_name() != 'None':
                     self.assertEqual(session.get_metadata(), old_subject.get_session(session.get_name()).get_metadata())
+
+            for image in subject.get_images():
+                self.assertEqual(image.get_metadata("random_int"), test_answers[subject.get_id()])
 
         if dataset.get_metadata():
             new_json = os.path.join(test_dataset.get_path(), "dataset_description.json")

@@ -2,6 +2,7 @@ import os
 
 from .base import BIDSObject
 from ..utils.utils import update_file, read_json, combine_dictionaries
+from ..write.dataset_writer import write_json
 
 
 class Image(BIDSObject):
@@ -121,10 +122,13 @@ class Image(BIDSObject):
         self.update_sidecar(move=move)
 
     def update_sidecar(self, move=False):
-        if self.sidecar_path:
+        if self._sidecar_metadata:
             tmp_sidecar_file = self._path.replace(self.get_extension(), ".json")
-            update_file(self.sidecar_path, tmp_sidecar_file, move=move)
-            self.sidecar_path = tmp_sidecar_file
+            if self._sidecar_metadata != self.read_sidecar():
+                write_json(self._sidecar_metadata, tmp_sidecar_file)
+            else:
+                update_file(self.sidecar_path, tmp_sidecar_file, move=move)
+                self.sidecar_path = tmp_sidecar_file
 
     def update_key(self, prev_key):
         if self.get_parent():
