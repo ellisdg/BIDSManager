@@ -4,6 +4,7 @@ from unittest import TestCase
 from bidsmanager.base.image import Image, FunctionalImage
 from bidsmanager.read.image_reader import read_image_from_bids_path
 from bidsmanager.write.dataset_writer import write_json
+from bidsmanager.utils.utils import read_json
 
 
 def touch(tmp_file):
@@ -70,8 +71,22 @@ class TestImage(TestCase):
         self.assertFalse(os.path.exists(prev_sidecar_path))
 
     def test_add_sidecar_metadata(self):
-        image_filename = "sub-9000_ses-gigawatts_angio.nii.gz"
+        image_filename = "acq-contrast_T1w.nii.gz"
         self.touch(image_filename)
+        image = Image(path=image_filename, acquisition='contrast', modality='T1w')
+        key = 'delete_file'
+        value = True
+        image.add_sidecar_metadata(key, value)
+        image.update(move=True)
+        self._filenames_to_delete.add(image.sidecar_path)
+        self._filenames_to_delete.add(image.get_path())
+        sidecar_path = image_filename.replace('.nii.gz', '.json')
+        self.assertTrue(os.path.exists(sidecar_path))
+        sidecar_metadata = read_json(sidecar_path)
+        self.assertDictEqual(image.get_metadata(), sidecar_metadata)
+        self.assertEqual(sidecar_metadata[key], value)
+
+        self._filenames_to_delete.add(sidecar_path)
 
     def touch(self, filename):
         touch(filename)
@@ -82,5 +97,5 @@ class TestImage(TestCase):
 
     def tearDown(self):
         for filename in self._filenames_to_delete:
-            if os.path.exists(filename):
+            if filename is not None and os.path.exists(filename):
                 os.remove(filename)

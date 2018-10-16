@@ -7,7 +7,7 @@ import pandas as pd
 
 
 def update_file(old_file, new_file, move=False):
-    if not os.path.exists(new_file) or not filecmp.cmp(old_file, new_file):
+    if not os.path.exists(new_file) or (old_file is not None and not filecmp.cmp(old_file, new_file)):
         copy_or_move(old_file, new_file, move=move)
 
 

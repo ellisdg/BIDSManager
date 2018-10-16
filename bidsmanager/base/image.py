@@ -124,7 +124,7 @@ class Image(BIDSObject):
     def update_sidecar(self, move=False):
         if self._sidecar_metadata:
             tmp_sidecar_file = self._path.replace(self.get_extension(), ".json")
-            if self._sidecar_metadata != self.read_sidecar():
+            if self.sidecar_path is None or self._sidecar_metadata != self.read_sidecar():
                 write_json(self._sidecar_metadata, tmp_sidecar_file)
             else:
                 update_file(self.sidecar_path, tmp_sidecar_file, move=move)
@@ -141,7 +141,10 @@ class Image(BIDSObject):
     def update_sidecar_metadata(self):
         if self.sidecar_path:
             for key, value in self.read_sidecar().items():
-                self._sidecar_metadata[key] = value
+                self.add_sidecar_metadata(key, value)
+
+    def add_sidecar_metadata(self, key, value):
+        self._sidecar_metadata[key] = value
 
 
 class FunctionalImage(Image):
