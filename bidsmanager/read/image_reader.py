@@ -9,19 +9,21 @@ def parse_task_name(path_to_image):
     return parse_generic_name(path_to_image, name="task")
 
 
-def read_image_from_bids_path(path_to_image, metadata=None):
+def read_image_from_bids_path(path_to_image, metadata_dictionary=None):
     modality = parse_image_modality(path_to_image)
     acquisition = parse_generic_name(path_to_image, name="acq")
     task_name = parse_task_name(path_to_image)
     run_number = parse_generic_name(path_to_image, name="run")
-    if metadata:
-        metadata = metadata[os.path.join(os.path.basename(os.path.dirname(path_to_image)),
-                                         os.path.basename(path_to_image))]
+    metadata_key = os.path.join(os.path.basename(os.path.dirname(path_to_image)), os.path.basename(path_to_image))
+    if metadata_dictionary and metadata_key in metadata_dictionary:
+        image_metadata = metadata_dictionary[metadata_key]
+    else:
+        image_metadata = None
     return load_image(path_to_image, modality=modality, acquisition=acquisition, task_name=task_name,
                       run_number=run_number, bval_path=find_sidecar(path_to_image, extension=".bval"),
                       bvec_path=find_sidecar(path_to_image, extension=".bvec"),
                       path_to_sidecar=find_sidecar(path_to_image, extension=".json"),
-                      metadata=metadata)
+                      metadata=image_metadata)
 
 
 def find_sidecar(in_file, extension=".json"):
@@ -46,4 +48,4 @@ def parse_image_modality(path_to_image):
 
 
 def read_image(path_to_image_file, metadata=None):
-    return read_image_from_bids_path(path_to_image_file, metadata=metadata)
+    return read_image_from_bids_path(path_to_image_file, metadata_dictionary=metadata)
