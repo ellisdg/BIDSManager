@@ -27,7 +27,7 @@ class TestImage(TestCase):
 
     def test_write_changed_acquisition(self):
         tmp_file = "run-05_FLAIR.nii.gz"
-        touch(tmp_file)
+        self.touch(tmp_file)
         new_tmp_file = "acq-contrast_" + tmp_file
         self.assertTrue(os.path.exists(tmp_file))
         try:
@@ -46,9 +46,9 @@ class TestImage(TestCase):
 
     def test_write_metadata(self):
         tmp_file = "run-05_FLAIR.nii.gz"
-        touch(tmp_file)
+        self.touch(tmp_file)
         tmp_json = "run-05_FLAIR.json"
-        files_to_delete = [tmp_file, tmp_json]
+        self._filenames_to_delete.add(tmp_json)
         json_data = {"the_answer": 42}
         write_json(json_data, tmp_json)
         image = read_image_from_bids_path(tmp_file)
@@ -56,19 +56,31 @@ class TestImage(TestCase):
 
         image._run_number = 6
         image.update(move=False)
-        files_to_delete.append(image.get_path())
-        files_to_delete.append(image.sidecar_path)
+        self._filenames_to_delete.add(image.get_path())
+        self._filenames_to_delete.add(image.sidecar_path)
         self.assertEqual(image.get_metadata(), json_data)
         self.assertTrue(os.path.exists(image.sidecar_path))
 
         prev_sidecar_path = image.sidecar_path
         image._run_number = 7
         image.update(move=True)
-        files_to_delete.append(image.get_path())
-        files_to_delete.append(image.sidecar_path)
+        self._filenames_to_delete.add(image.get_path())
+        self._filenames_to_delete.add(image.sidecar_path)
         self.assertEqual(image.get_metadata(), json_data)
         self.assertFalse(os.path.exists(prev_sidecar_path))
 
-        for f in set(files_to_delete):
-            if os.path.exists(f):
-                os.remove(f)
+    def test_add_sidecar_metadata(self):
+        image_filename = "sub-9000_ses-gigawatts_angio.nii.gz"
+        self.touch(image_filename)
+
+    def touch(self, filename):
+        touch(filename)
+        self._filenames_to_delete.add(filename)
+
+    def setUp(self):
+        self._filenames_to_delete = set()
+
+    def tearDown(self):
+        for filename in self._filenames_to_delete:
+            if os.path.exists(filename):
+                os.remove(filename)
