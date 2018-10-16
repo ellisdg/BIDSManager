@@ -8,7 +8,7 @@ import csv
 from bidsmanager.write.dataset_writer import write_dataset
 from bidsmanager.read import read_csv, read_dataset
 from bidsmanager.utils.utils import read_json, read_tsv
-from bidsmanager.base.image import FunctionalImage
+from bidsmanager.base import DataSet, Subject, Session, Image, FunctionalImage
 
 
 def get_script_directory():
@@ -130,3 +130,15 @@ class TestWriteMetaData(TestCase):
     def tearDown(self):
         if os.path.exists(self.out_dir):
             shutil.rmtree(self.out_dir)
+
+
+class TestCreateDataSet(TestCase):
+    def setUp(self):
+        self.temp_directory = os.path.abspath('./NoseTests/new_bids_dir_from_scratch')
+
+    def test_create_dataset_from_scratch(self):
+        dataset = DataSet(path=self.temp_directory)
+
+    def tearDown(self):
+        if os.path.exists(self.temp_directory):
+            shutil.rmtree(self.temp_directory)
