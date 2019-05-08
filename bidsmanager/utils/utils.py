@@ -12,7 +12,9 @@ def update_file(old_file, new_file, move=False):
 
 
 def copy_or_move(in_file, out_file, move=False):
-    if move:
+    if move == 'link':
+        os.symlink(in_file, out_file)
+    elif move is True:
         shutil.move(in_file, out_file)
     else:
         shutil.copy(in_file, out_file)

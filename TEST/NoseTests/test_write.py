@@ -52,6 +52,20 @@ class TestWrite(TestCase):
         self.assertEqual(len(reread_dataset.get_images(task_name="fingertapping")), 0)
         self.assertEqual(len(reread_dataset.get_images(task_name="ft")), len(fingertapping_images))
 
+    def test_create_linked_dataset(self):
+        new_dataset = DataSet(path=self._dir)
+        for subject in self.dataset.get_subjects():
+            name = subject.get_id()
+            new_name = "new" + name
+            subject.set_name(new_name)
+            new_dataset.add_subject(subject)
+        new_dataset.update(move="link")
+        self.setUp()
+        for image in new_dataset.get_images():
+            self.assertTrue(os.path.islink(image.get_path()))
+        for image in self.dataset.get_images():
+            self.assertTrue(os.path.exists(image.get_path()))
+
 
 class TestWriteMetaData(TestCase):
     def setUp(self):
