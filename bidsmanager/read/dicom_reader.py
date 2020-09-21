@@ -324,7 +324,7 @@ def description_to_modality(description, heuristic=None):
         for value in values:
             if value in description:
                 return key
-    raise warn(RuntimeWarning("No modality found for description: {}".format(description)))
+    warn(RuntimeWarning("No modality found for description: {}".format(description)))
 
 
 class DicomFile(BIDSObject):
