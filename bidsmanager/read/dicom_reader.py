@@ -5,8 +5,8 @@ import shutil
 import random
 from warnings import warn
 
-import dicom
-from dicom.errors import InvalidDicomError
+import pydicom as dicom
+from pydicom.errors import InvalidDicomError
 import nibabel as nib
 
 from ..base.subject import Subject
@@ -18,8 +18,10 @@ from ..utils.image_utils import load_image
 from ..utils.dataset_utils import anonymize_dataset
 
 
-def read_dicom_directory(input_directory, anonymize=False, id_length=2, skip_image_descriptions=None):
-    return convert_directory(input_directory, skip_image_descriptions=skip_image_descriptions, anonymize=anonymize)
+def read_dicom_directory(input_directory, anonymize=False, id_length=2, skip_image_descriptions=(),
+                         image_modality_heuristic=None):
+    return convert_directory(input_directory, skip_image_descriptions=skip_image_descriptions, anonymize=anonymize,
+                             image_modality_heuristic=image_modality_heuristic)
 
 
 def get_acquisition(description):
@@ -27,8 +29,8 @@ def get_acquisition(description):
         return "contrast"
 
 
-def get_image_modality(in_file, description):
-    modality = description_to_modality(description)
+def get_image_modality(in_file, description, heuristic=None):
+    modality = description_to_modality(description, heuristic=heuristic)
     if not modality and is_4d(in_file):
         return "bold"
     return modality
@@ -57,10 +59,10 @@ def parse_output(in_file, separator):
     return os.path.basename(in_file).split(separator)
 
 
-def get_image(in_file, separator, skip_image_descriptions):
+def get_image(in_file, separator, skip_image_descriptions, image_modality_heuristic=None):
     subject_name, time, description, protocol, run = parse_output(in_file, separator)
-    if not skip_series(description, skip_image_descriptions) and "ADC" not in run:
-        modality = get_image_modality(in_file, description)
+    if not skip_series(description, skip_image_descriptions):
+        modality = get_image_modality(in_file, description, heuristic=image_modality_heuristic)
         bval_path = get_secondary_output(in_file, ".nii.gz", ".bval")
         bvec_path = get_secondary_output(in_file, ".nii.gz", ".bvec")
         sidecar_path = get_secondary_output(in_file, ".nii.gz", ".json")
@@ -70,7 +72,7 @@ def get_image(in_file, separator, skip_image_descriptions):
                           path_to_sidecar=sidecar_path, acquisition=acquisition, task_name=task_name)
 
 
-def convert_directory(input_directory, skip_image_descriptions=None, anonymize=False):
+def convert_directory(input_directory, skip_image_descriptions=None, anonymize=False, image_modality_heuristic=None):
     separator = "---"
     output_directory = random_tmp_directory()
     run_dcm2niix_on_directory(input_directory, output_directory, filename="%n{0}%t{0}%d{0}%p{0}".format(separator))
@@ -93,7 +95,7 @@ def convert_directory(input_directory, skip_image_descriptions=None, anonymize=F
             subject.add_session(session)
 
         # add image
-        image = get_image(f, separator, skip_image_descriptions)
+        image = get_image(f, separator, skip_image_descriptions, image_modality_heuristic=image_modality_heuristic)
         # todo: test for duplicates
         if image:
             session.add_image(image)
@@ -110,14 +112,16 @@ def random_hash():
 
 
 def random_tmp_directory():
-    directory = os.path.join("/tmp", random_hash())
+    directory = os.path.join("/tmp", "bidsmanager_" + random_hash())
     os.makedirs(directory)
     return directory
 
 
-def dicoms_to_dataset(dicom_files, anonymize=False, id_length=2, skip_image_descriptions=None):
+def dicoms_to_dataset(dicom_files, anonymize=False, id_length=2, skip_image_descriptions=None,
+                      subject_field="PatientName", session_field="StudyDate", series_field="SeriesDescription",
+                      series_time="SeriesTime"):
     dataset = DataSet()
-    sorted_dicoms = sort_dicoms(dicom_files, field="PatientName")
+    sorted_dicoms = sort_dicoms(dicom_files, field=subject_field)
     subject_count = 0
     for subject_name in sorted_dicoms:
         session_count = 0
@@ -127,7 +131,7 @@ def dicoms_to_dataset(dicom_files, anonymize=False, id_length=2, skip_image_desc
         else:
             subject = Subject(subject_name)
         dataset.add_subject(subject)
-        subject_dicoms = sort_dicoms(sorted_dicoms[subject_name], field="StudyDate")
+        subject_dicoms = sort_dicoms(sorted_dicoms[subject_name], field=session_field)
         for date in sorted(subject_dicoms.keys()):
             if anonymize:
                 session_count += 1
@@ -135,10 +139,10 @@ def dicoms_to_dataset(dicom_files, anonymize=False, id_length=2, skip_image_desc
             else:
                 session = Session(date)
             subject.add_session(session)
-            session_dicoms = sort_dicoms(subject_dicoms[date], field="SeriesDescription")
+            session_dicoms = sort_dicoms(subject_dicoms[date], field=series_field)
             for description in session_dicoms:
                 if not skip_series(description=description, skip_image_descriptions=skip_image_descriptions):
-                    series_dicoms = sort_dicoms(session_dicoms[description], field="SeriesTime")
+                    series_dicoms = sort_dicoms(session_dicoms[description], field=series_time)
                     for i, time in enumerate(sorted(series_dicoms.keys())):
                         try:
                             session.add_image(convert_dicoms(series_dicoms[time]))
@@ -250,13 +254,13 @@ def dcm2niix(in_file, out_file=None):
     return out_file, sidecar
 
 
-def get_dicom_set(in_file):
+def get_dicom_set(in_file, subject_field="PatientName", session_field="StudyDate", series_field="SeriesTime"):
     dicom_file = DicomFile(in_file)
     dicom_directory = os.path.dirname(in_file)
     dicom_files = get_dicom_files(dicom_directory)
-    subject_dicoms = sort_dicoms(dicom_files, "PatientName")[dicom_file.get_field("PatientName")]
-    session_dicoms = sort_dicoms(subject_dicoms, "StudyDate")[dicom_file.get_field("StudyDate")]
-    series_dicoms = sort_dicoms(session_dicoms, "SeriesTime")[dicom_file.get_field("SeriesTime")]
+    subject_dicoms = sort_dicoms(dicom_files, subject_field)[dicom_file.get_field(subject_field)]
+    session_dicoms = sort_dicoms(subject_dicoms, session_field)[dicom_file.get_field(session_field)]
+    series_dicoms = sort_dicoms(session_dicoms, series_field)[dicom_file.get_field(series_field)]
     return series_dicoms
 
 
@@ -307,15 +311,20 @@ def get_output_file(output_directory, extension):
     return output_files[0]
 
 
-def description_to_modality(description):
-    if "FLAIR" in description:
-        return "FLAIR"
-    elif "T2" in description:
-        return "T2w"
-    elif "T1" in description:
-        return "T1w"
-    elif "DTI" in description:
-        return "dwi"
+default_heuristic = {"FLAIR": ["FLAIR"],
+                     "T2w": ["T2"],
+                     "T1w": ["T1"],
+                     "dwi": ["DTI", "DWI", "dmri"]}
+
+
+def description_to_modality(description, heuristic=None):
+    if heuristic is None:
+        heuristic = default_heuristic
+    for key, values in heuristic.items():
+        for value in values:
+            if value in description:
+                return key
+    raise warn(RuntimeWarning("No modality found for description: {}".format(description)))
 
 
 class DicomFile(BIDSObject):
