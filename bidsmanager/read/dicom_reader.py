@@ -72,10 +72,11 @@ def get_image(in_file, separator, skip_image_descriptions, image_modality_heuris
                           path_to_sidecar=sidecar_path, acquisition=acquisition, task_name=task_name)
 
 
-def convert_directory(input_directory, skip_image_descriptions=None, anonymize=False, image_modality_heuristic=None):
-    separator = "---"
+def convert_directory(input_directory, skip_image_descriptions=None, anonymize=False, image_modality_heuristic=None,
+                      separator="---"):
     output_directory = random_tmp_directory()
-    run_dcm2niix_on_directory(input_directory, output_directory, filename="%n{0}%t{0}%d{0}%p{0}".format(separator))
+    run_dcm2niix_on_directory(input_directory, output_directory, filename="%n{0}%t{0}%d{0}%p{0}".format(separator),
+                              anonymize=anonymize)
     output_niftis = sorted(glob.glob(os.path.join(output_directory, "*.nii.gz")))
     dataset = DataSet()
     for f in output_niftis:
@@ -264,8 +265,12 @@ def get_dicom_set(in_file, subject_field="PatientName", session_field="StudyDate
     return series_dicoms
 
 
-def run_dcm2niix_on_directory(input_directory, output_directory, filename="%t%d%n%p"):
-    command = ['dcm2niix', "-b", "y", "-z", "y", "-o", output_directory, "-f", filename, input_directory]
+def run_dcm2niix_on_directory(input_directory, output_directory, filename="%t%d%n%p", anonymize=False):
+    command = ['dcm2niix', "-b", "y", "-ba", "-z", "y", "-o", output_directory, "-f", filename, input_directory]
+    if anonymize:
+        command.insert(4, "y")
+    else:
+        command.insert(4, "n")
     process = Popen(command, stdout=PIPE, stderr=PIPE)
     output, err = process.communicate()
     parse_cmd_output(output)
