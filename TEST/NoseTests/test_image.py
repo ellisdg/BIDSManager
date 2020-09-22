@@ -88,6 +88,17 @@ class TestImage(TestCase):
 
         self._filenames_to_delete.add(sidecar_path)
 
+    def test_add_phase_encoding_direction(self):
+        image = Image(direction="AP", extension=".nii.gz")
+        assert "dir-AP" in image.get_basename()
+        assert "AP" == image.get_direction()
+        image.set_direction("LR")
+        assert "dir-LR" in image.get_basename()
+        image.set_run_number(2)
+        image.set_acquisition("test")
+        image.set_modality("bogus")
+        assert image.get_basename() == "acq-test_dir-LR_run-02_bogus.nii.gz"
+
     def touch(self, filename):
         touch(filename)
         self._filenames_to_delete.add(filename)

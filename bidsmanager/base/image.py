@@ -6,7 +6,8 @@ from ..write.dataset_writer import write_json
 
 
 class Image(BIDSObject):
-    def __init__(self, sidecar_path=None, modality=None, acquisition=None, run_number=None, *inputs, **kwargs):
+    def __init__(self, sidecar_path=None, modality=None, acquisition=None, run_number=None, direction=None,
+                 extension=".nii", *inputs, **kwargs):
         self._session = None
         self._subject = None
         self._group = None
@@ -17,7 +18,9 @@ class Image(BIDSObject):
         self._modality = modality
         self._acquisition = acquisition
         self._run_number = run_number
+        self._direction = direction
         self._type = "Image"
+        self._extension = extension
 
     def get_basename(self):
         return "_".join(self.get_subject_session_keys(keys=self.get_image_keys())) + self.get_extension()
@@ -27,7 +30,7 @@ class Image(BIDSObject):
             if ".nii.gz" in self._path:
                 return ".nii.gz"
             return os.path.splitext(self._path)[-1]
-        return ".nii"
+        return self._extension
 
     def get_modality(self):
         return self._modality
@@ -40,6 +43,8 @@ class Image(BIDSObject):
             keys = []
         if self._acquisition:
             keys.append("acq-{0}".format(self._acquisition))
+        if self._direction:
+            keys.append("dir-{0}".format(self.get_direction()))
         if self._run_number:
             keys.append("run-{0:02d}".format(int(self._run_number)))
         if self._modality:
@@ -89,6 +94,9 @@ class Image(BIDSObject):
     def get_tsv_metadata(self, key=None):
         return super(Image, self).get_metadata(key=key)
 
+    def get_direction(self):
+        return self._direction
+
     def is_match(self, modality=None, acquisition=None, run_number=None):
         return (not modality or modality == self.get_modality()) \
                and ((acquisition is None) or acquisition == self.get_acquisition()
@@ -114,6 +122,15 @@ class Image(BIDSObject):
             self._subject = session.get_parent()
         elif isinstance(session, Subject):
             self._subject = session
+
+    def set_direction(self, direction):
+        self._direction = direction
+
+    def set_modality(self, modality):
+        self._modality = modality
+
+    def set_run_number(self, run_number):
+        self._run_number = run_number
 
     def update(self, move=False):
         if os.path.basename(self.get_path()) != self.get_basename():
