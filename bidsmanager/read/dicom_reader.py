@@ -314,7 +314,10 @@ def get_output_file(output_directory, extension):
 default_heuristic = {"FLAIR": ["FLAIR"],
                      "T2w": ["T2"],
                      "T1w": ["T1"],
-                     "dwi": ["DTI", "DWI", "dmri"]}
+                     "dwi": ["DTI", "DWI", "dmri", "dMRI"],
+                     "bold": ["bold", "fMRI"],
+                     "epi": ["SpinEchoFieldMap"],
+                     "sbref": ["SBRef"]}
 
 
 def description_to_modality(description, heuristic=None):
@@ -339,16 +342,12 @@ class DicomFile(BIDSObject):
             return dicom.read_file(self._path)
 
     def get_modality(self):
-        if "FLAIR" in self.get_series_description():
-            return "FLAIR"
-        elif "T2" in self.get_series_description():
-            return "T2w"
-        elif "T1" in self.get_series_description():
-            return "T1w"
-        elif "DTI" in self.get_series_description():
-            return "dwi"
-        elif self.get_field("NumberOfTemporalPositions") and int(self.get_field("NumberOfTemporalPositions")) > 1:
+        modality = description_to_modality(self.get_series_description())
+        if (modality is None and self.get_field("NumberOfTemporalPositions")
+                and int(self.get_field("NumberOfTemporalPositions")) > 1):
             return "bold"
+        else:
+            return modality
 
     def get_acquisition(self):
         if "GAD" in self.get_series_description() or "+C" in self.get_series_description():

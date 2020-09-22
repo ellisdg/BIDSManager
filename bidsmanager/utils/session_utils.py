@@ -15,5 +15,7 @@ def modality_to_group_name(modality):
         return "dwi"
     elif modality in ["bold"]:
         return "func"
+    elif modality in ["epi", "sbref"]:
+        return "fmap"
     else:
         return "unknown"
