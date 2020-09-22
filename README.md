@@ -54,7 +54,7 @@ sort those files into a BIDS formatted directory. Take the below information tha
 | subject | session | modality | file | task |
 | ------- | ------- | -------- | ---- | -------- |
 | 003 | Visit1 | T1w | /path/to/t1.nii.gz |  |
-| 005 | Visit1 | T1w | /path/to/fmri.nii.gz | Finger Tapping |
+| 005 | Visit1 | bold | /path/to/fmri.nii.gz | Finger Tapping |
 
 We can read this CSV file as a data set using BIDSManager and then write the data into BIDS format:
 ```
