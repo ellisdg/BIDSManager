@@ -1,6 +1,7 @@
 import os
 from unittest import TestCase
 
+from bidsmanager.base.group import Group
 from bidsmanager.base.image import Image, FunctionalImage
 from bidsmanager.read.image_reader import read_image_from_bids_path
 from bidsmanager.write.dataset_writer import write_json
@@ -104,6 +105,12 @@ class TestImage(TestCase):
         image.set_task_name("rest")
         assert image.get_task_name() == "rest"
         assert "task-rest" in image.get_basename()
+        group = Group()
+        group.add_image(image)
+        image.set_run_number(5)
+        image.set_direction("PA")
+        image.set_task_name("science")
+        assert image.get_task_name() == "science"
 
     def touch(self, filename):
         touch(filename)

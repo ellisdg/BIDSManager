@@ -127,13 +127,16 @@ class Image(BIDSObject):
             self._subject = session
 
     def set_direction(self, direction):
-        self._direction = direction
+        self._set_key_attribute("_direction", direction)
 
     def set_modality(self, modality):
-        self._modality = modality
+        self._set_key_attribute("_modality", modality)
 
     def set_run_number(self, run_number):
-        self._run_number = run_number
+        self._set_key_attribute("_run_number", run_number)
+
+    def set_task_name(self, task_name):
+        self._set_key_attribute("_task_name", task_name)
 
     def update(self, move=False):
         if os.path.basename(self.get_path()) != self.get_basename():
@@ -169,10 +172,11 @@ class Image(BIDSObject):
     def get_task_name(self):
         return self._task_name
 
-    def set_task_name(self, task_name):
+    def _set_key_attribute(self, attribute, value):
         current_key = self.get_image_key()
-        self._task_name = task_name
+        setattr(self, attribute, value)
         self.update_key(current_key)
+
 
 
 class FunctionalImage(Image):
