@@ -316,13 +316,13 @@ def get_output_file(output_directory, extension):
     return output_files[0]
 
 
-default_heuristic = {"FLAIR": ["FLAIR"],
+default_heuristic = {"epi": ["SpinEchoFieldMap"],
+                     "sbref": ["SBRef"],
+                     "FLAIR": ["FLAIR"],
                      "T2w": ["T2"],
                      "T1w": ["T1"],
                      "dwi": ["DTI", "DWI", "dmri", "dMRI"],
-                     "bold": ["bold", "fMRI"],
-                     "epi": ["SpinEchoFieldMap"],
-                     "sbref": ["SBRef"]}
+                     "bold": ["bold", "fMRI"]}
 
 
 def description_to_modality(description, heuristic=None):
