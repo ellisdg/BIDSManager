@@ -100,6 +100,8 @@ def convert_directory(input_directory, skip_image_descriptions=None, anonymize=F
         # todo: test for duplicates
         if image:
             session.add_image(image)
+        if "SBRef" in description:
+            image.set_modality("sbref")
 
     if anonymize:
         return anonymize_dataset(dataset)
@@ -317,7 +319,6 @@ def get_output_file(output_directory, extension):
 
 
 default_heuristic = {"epi": ["SpinEchoFieldMap"],
-                     "sbref": ["SBRef"],
                      "FLAIR": ["FLAIR"],
                      "T2w": ["T2"],
                      "T1w": ["T1"],

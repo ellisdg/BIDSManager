@@ -178,7 +178,6 @@ class Image(BIDSObject):
         self.update_key(current_key)
 
 
-
 class FunctionalImage(Image):
     def __init__(self, *inputs, **kwargs):
         super(FunctionalImage, self).__init__(*inputs, **kwargs)
