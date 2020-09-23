@@ -99,6 +99,12 @@ class TestImage(TestCase):
         image.set_modality("bogus")
         assert image.get_basename() == "acq-test_dir-LR_run-02_bogus.nii.gz"
 
+    def test_task_name(self):
+        image = Image()
+        image.set_task_name("rest")
+        assert image.get_task_name() == "rest"
+        assert "task-rest" in image.get_basename()
+
     def touch(self, filename):
         touch(filename)
         self._filenames_to_delete.add(filename)

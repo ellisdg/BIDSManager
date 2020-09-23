@@ -80,9 +80,8 @@ class SQLInterface(object):
             self.insert_image_into_database(image, session_id)
 
     def insert_image_into_database(self, image, session_id):
-        try:
-            task_name = image.get_task_name()
-        except AttributeError:
+        task_name = image.get_task_name()
+        if task_name is None:
             task_name = ""
         data = {"session_id": session_id,
                 "modality": image.get_modality(),

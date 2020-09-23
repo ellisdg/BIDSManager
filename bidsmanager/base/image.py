@@ -7,7 +7,7 @@ from ..write.dataset_writer import write_json
 
 class Image(BIDSObject):
     def __init__(self, sidecar_path=None, modality=None, acquisition=None, run_number=None, direction=None,
-                 extension=".nii", *inputs, **kwargs):
+                 extension=".nii", task_name=None, *inputs, **kwargs):
         self._session = None
         self._subject = None
         self._group = None
@@ -21,6 +21,7 @@ class Image(BIDSObject):
         self._direction = direction
         self._type = "Image"
         self._extension = extension
+        self._task_name = task_name
 
     def get_basename(self):
         return "_".join(self.get_subject_session_keys(keys=self.get_image_keys())) + self.get_extension()
@@ -41,6 +42,8 @@ class Image(BIDSObject):
     def get_image_keys(self, keys=None):
         if not keys:
             keys = []
+        if self._task_name:
+            keys.append("task-{0}".format(self._task_name.replace(" ", "")))
         if self._acquisition:
             keys.append("acq-{0}".format(self._acquisition))
         if self._direction:
@@ -163,12 +166,6 @@ class Image(BIDSObject):
     def add_sidecar_metadata(self, key, value):
         self._sidecar_metadata[key] = value
 
-
-class FunctionalImage(Image):
-    def __init__(self, task_name=None, *inputs, **kwargs):
-        super(FunctionalImage, self).__init__(*inputs, **kwargs)
-        self._task_name = task_name
-
     def get_task_name(self):
         return self._task_name
 
@@ -177,12 +174,10 @@ class FunctionalImage(Image):
         self._task_name = task_name
         self.update_key(current_key)
 
-    def get_image_keys(self, keys=None):
-        if not keys:
-            keys = []
-        if self._task_name:
-            keys.append("task-{0}".format(self._task_name.replace(" ", "")))
-        return super(FunctionalImage, self).get_image_keys(keys)
+
+class FunctionalImage(Image):
+    def __init__(self, *inputs, **kwargs):
+        super(FunctionalImage, self).__init__(*inputs, **kwargs)
 
     def is_match(self, task_name=None, **kwargs):
         return (not task_name or task_name == self.get_task_name()) and super(FunctionalImage, self).is_match(**kwargs)
@@ -205,9 +200,9 @@ class DiffusionImage(Image):
         update_file(self._bvec_path, tmp_bvec_file, move=move)
         self._bvec_path = tmp_bvec_file
 
-    def update(self, move=False):
-        super(DiffusionImage, self).update(move=move)
+    def update(self, *args, **kwargs):
+        super(DiffusionImage, self).update(*args, **kwargs)
         if self._bval_path:
-            self.update_bval(move=move)
+            self.update_bval(*args, **kwargs)
         if self._bvec_path:
-            self.update_bvec(move=move)
+            self.update_bvec(*args, **kwargs)
