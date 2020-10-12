@@ -161,9 +161,11 @@ class Image(BIDSObject):
             tmp_sidecar_file = self._path.replace(self.get_extension(), ".json")
             if self.sidecar_path is None or self._sidecar_metadata != self.read_sidecar():
                 write_json(self._sidecar_metadata, tmp_sidecar_file)
+                if move and self.sidecar_path and self.sidecar_path != tmp_sidecar_file:
+                    os.remove(self.sidecar_path)
             else:
                 update_file(self.sidecar_path, tmp_sidecar_file, move=move)
-                self.sidecar_path = tmp_sidecar_file
+            self.sidecar_path = tmp_sidecar_file
 
     def update_key(self, prev_key):
         if self.get_parent():
