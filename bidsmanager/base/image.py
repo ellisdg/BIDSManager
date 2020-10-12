@@ -109,6 +109,9 @@ class Image(BIDSObject):
     def get_entity(self, entity):
         return getattr(self, "_" + entity)
 
+    def get_sidecar_metadata(self, key):
+        return self._sidecar_metadata[key]
+
     def is_match(self, **kwargs):
         return all((entity not in kwargs
                     or self.get_entity(entity) == kwargs[entity]
@@ -174,6 +177,12 @@ class Image(BIDSObject):
         if self.sidecar_path:
             for key, value in self.read_sidecar().items():
                 self.add_sidecar_metadata(key, value)
+
+    def add_metadata(self, key, value, sidecar=True):
+        if sidecar:
+            self.add_sidecar_metadata(key, value)
+        else:
+            super(Image, self).add_metadata(key, value)
 
     def add_sidecar_metadata(self, key, value):
         self._sidecar_metadata[key] = value

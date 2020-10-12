@@ -16,4 +16,4 @@ class TestEPI(TestCase):
         _intended_for_path = epi_image.get_metadata("IntendedFor")
         intended_for_path = intended_for_image.get_path().replace(bids_dir, "").replace("sub-01", "", 1).strip("/")
         assert _intended_for_path == intended_for_path
-
+        epi_image.get_sidecar_metadata("IntendedFor")
