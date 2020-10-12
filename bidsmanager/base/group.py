@@ -52,11 +52,5 @@ class FunctionalGroup(Group):
     def __init__(self, *inputs, **kwargs):
         super(FunctionalGroup, self).__init__(*inputs, **kwargs)
 
-    def add_image(self, image):
-        if isinstance(image, FunctionalImage):
-            super(FunctionalGroup, self).add_image(image)
-        else:
-            raise TypeError("Cannot add non-functional image to a functional group")
-
     def get_task_names(self):
         return [image.get_task_name() for image in self._images.values()]

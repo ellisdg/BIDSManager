@@ -113,14 +113,13 @@ class TestWriteMetaData(TestCase):
 
         for image in dataset.get_images():
             acquisition = "" if not image.get_acquisition() else image.get_acquisition()
-            task_name = image.get_task_name() if isinstance(image, FunctionalImage) else None
             new_image = test_dataset.get_image(subject_id=image.get_subject().get_id(),
                                                session=image.get_session().get_name(),
                                                group_name=image.get_group().get_name(),
                                                acq=acquisition,
                                                modality=image.get_modality(),
                                                run=image.get_run_number(),
-                                               task=task_name,
+                                               task=image.get_task_name(),
                                                dir=image.get_direction(),
                                                ce=image.get_contrast(),
                                                rec=image.get_reconstruction())
