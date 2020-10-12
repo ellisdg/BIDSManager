@@ -42,15 +42,15 @@ class TestWrite(TestCase):
                          {"sub-003_ses-visit1_task-fingertapping_bold.nii.gz", "sub-003_ses-visit1_FLAIR.nii.gz",
                           "sub-003_ses-visit1_T1w.nii.gz"})
 
-        fingertapping_images = self.bids_dataset.get_images(task_name="fingertapping")
+        fingertapping_images = self.bids_dataset.get_images(task="fingertapping")
         for image in fingertapping_images:
             image.set_task_name("ft")
         self.bids_dataset.update(move=True)
 
         reread_dataset = read_dataset(self._dir)
         self.assertEqual(set(["sub-" + sid for sid in reread_dataset.get_subject_ids()]), subject_ids)
-        self.assertEqual(len(reread_dataset.get_images(task_name="fingertapping")), 0)
-        self.assertEqual(len(reread_dataset.get_images(task_name="ft")), len(fingertapping_images))
+        self.assertEqual(len(reread_dataset.get_images(task="fingertapping")), 0)
+        self.assertEqual(len(reread_dataset.get_images(task="ft")), len(fingertapping_images))
 
     def test_create_linked_dataset(self):
         new_dataset = DataSet(path=self._dir)
@@ -117,10 +117,13 @@ class TestWriteMetaData(TestCase):
             new_image = test_dataset.get_image(subject_id=image.get_subject().get_id(),
                                                session=image.get_session().get_name(),
                                                group_name=image.get_group().get_name(),
-                                               acquisition=acquisition,
+                                               acq=acquisition,
                                                modality=image.get_modality(),
-                                               run_number=image.get_run_number(),
-                                               task_name=task_name)
+                                               run=image.get_run_number(),
+                                               task=task_name,
+                                               dir=image.get_direction(),
+                                               ce=image.get_contrast(),
+                                               rec=image.get_reconstruction())
             self.assertEqual(image.get_metadata(), new_image.get_metadata())
             self.assertNotEqual(image.get_path(), new_image.get_path())
             self.assertEqual(image.get_path().replace(dataset_path, self.out_dir), new_image.get_path())

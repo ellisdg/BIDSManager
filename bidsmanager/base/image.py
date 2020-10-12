@@ -6,22 +6,22 @@ from ..write.dataset_writer import write_json
 
 
 class Image(BIDSObject):
-    def __init__(self, sidecar_path=None, modality=None, acquisition=None, run_number=None, direction=None,
-                 extension=".nii", task_name=None, *inputs, **kwargs):
+    def __init__(self, sidecar_path=None, modality=None, extension=".nii", *inputs, **kwargs):
         self._session = None
         self._subject = None
         self._group = None
+        for key in image_entities:
+            if key in kwargs:
+                setattr(self, "_" + key, kwargs.pop(key))
+            else:
+                setattr(self, "_" + key, None)
         super(Image, self).__init__(*inputs, **kwargs)
         self.sidecar_path = sidecar_path
         self._sidecar_metadata = dict()
         self.update_sidecar_metadata()
         self._modality = modality
-        self._acquisition = acquisition
-        self._run_number = run_number
-        self._direction = direction
         self._type = "Image"
         self._extension = extension
-        self._task_name = task_name
 
     def get_basename(self):
         return "_".join(self.get_subject_session_keys(keys=self.get_image_keys())) + self.get_extension()
@@ -37,19 +37,19 @@ class Image(BIDSObject):
         return self._modality
 
     def get_acquisition(self):
-        return self._acquisition
+        return self._acq
 
     def get_image_keys(self, keys=None):
         if not keys:
             keys = []
-        if self._task_name:
-            keys.append("task-{0}".format(self._task_name.replace(" ", "")))
-        if self._acquisition:
-            keys.append("acq-{0}".format(self._acquisition))
-        if self._direction:
+        if self.get_task_name():
+            keys.append("task-{0}".format(self.get_task_name().replace(" ", "")))
+        if self.get_acquisition():
+            keys.append("acq-{0}".format(self.get_acquisition()))
+        if self.get_direction():
             keys.append("dir-{0}".format(self.get_direction()))
-        if self._run_number:
-            keys.append("run-{0:02d}".format(int(self._run_number)))
+        if self.get_run_number():
+            keys.append("run-{0:02d}".format(int(self.get_run_number())))
         if self._modality:
             keys.append(self._modality)
         return keys
@@ -69,7 +69,7 @@ class Image(BIDSObject):
         return keys
 
     def get_run_number(self):
-        return self._run_number
+        return self._run
 
     def get_session_key(self):
         if self._session and self._session.get_name():
@@ -98,17 +98,26 @@ class Image(BIDSObject):
         return super(Image, self).get_metadata(key=key)
 
     def get_direction(self):
-        return self._direction
+        return self._dir
 
-    def is_match(self, modality=None, acquisition=None, run_number=None):
-        return (not modality or modality == self.get_modality()) \
-               and ((acquisition is None) or acquisition == self.get_acquisition()
-                    or (not acquisition and not self.get_acquisition())) \
-               and (not run_number or int(run_number) == int(self.get_run_number()))
+    def get_contrast(self):
+        return self._ce
+
+    def get_reconstruction(self):
+        return self._rec
+
+    def get_entity(self, entity):
+        return getattr(self, "_" + entity)
+
+    def is_match(self, **kwargs):
+        return all((entity not in kwargs
+                    or self.get_entity(entity) == kwargs[entity]
+                    or (not self.get_entity(entity) and not kwargs[entity])
+                    for entity in image_entities + ("modality",)))
 
     def set_acquisition(self, acquisition):
         current_key = self.get_image_key()
-        self._acquisition = acquisition
+        self._acq = acquisition
         self.update_key(current_key)
 
     def set_parent(self, parent):
@@ -127,16 +136,16 @@ class Image(BIDSObject):
             self._subject = session
 
     def set_direction(self, direction):
-        self._set_key_attribute("_direction", direction)
+        self._set_key_attribute("_dir", direction)
 
     def set_modality(self, modality):
         self._set_key_attribute("_modality", modality)
 
     def set_run_number(self, run_number):
-        self._set_key_attribute("_run_number", run_number)
+        self._set_key_attribute("_run", run_number)
 
     def set_task_name(self, task_name):
-        self._set_key_attribute("_task_name", task_name)
+        self._set_key_attribute("_task", task_name)
 
     def update(self, move=False):
         if os.path.basename(self.get_path()) != self.get_basename():
@@ -170,7 +179,7 @@ class Image(BIDSObject):
         self._sidecar_metadata[key] = value
 
     def get_task_name(self):
-        return self._task_name
+        return self._task
 
     def _set_key_attribute(self, attribute, value):
         current_key = self.get_image_key()
@@ -209,3 +218,6 @@ class DiffusionImage(Image):
             self.update_bval(*args, **kwargs)
         if self._bvec_path:
             self.update_bvec(*args, **kwargs)
+
+
+image_entities = ("acq", "run", "task", "dir", "ce", "rec")

@@ -53,7 +53,7 @@ class CSVReader(object):
             file_path = os.path.abspath(os.path.join(self._directory, file_path))
         if task_name:
             task_name = task_name.lower().replace(" ", "")
-        return load_image(path_to_image=file_path, modality=modality, task_name=task_name)
+        return load_image(path_to_image=file_path, modality=modality, task=task_name)
 
     @staticmethod
     def correct_modality(modality):
