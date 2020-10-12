@@ -2,8 +2,8 @@ import os
 
 from bidsmanager.utils.session_utils import modality_to_group_name
 from .base import BIDSFolder
-from .group import FunctionalGroup
 from ..utils.session_utils import load_group
+from ..utils.utils import get_image
 
 
 class Session(BIDSFolder):
@@ -40,6 +40,9 @@ class Session(BIDSFolder):
             if not group_name or group_name == group.get_name():
                 images.extend(group.get_images(**kwargs))
         return images
+
+    def get_image(self, **kwargs):
+        return get_image(self, **kwargs)
 
     def get_group(self, group_name):
         return self._groups[group_name]

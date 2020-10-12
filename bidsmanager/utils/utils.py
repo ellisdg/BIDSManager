@@ -67,3 +67,10 @@ def combine_dictionaries(dict1, dict2):
     new_dict = dict1.copy()
     new_dict.update(dict2)
     return new_dict
+
+
+def get_image(obj, **kwargs):
+    images = obj.get_images(**kwargs)
+    if len(images) > 1:
+        raise RuntimeError("More than one image found: ".format([image.get_path() for image in images]))
+    return images[0]

@@ -3,6 +3,7 @@ import os
 from .sql import SQLInterface
 from .base import BIDSFolder
 from ..write.dataset_writer import write_json
+from ..utils.utils import get_image
 
 
 class DataSet(BIDSFolder):
@@ -45,10 +46,7 @@ class DataSet(BIDSFolder):
             return images
 
     def get_image(self, **kwargs):
-        images = self.get_images(**kwargs)
-        if len(images) > 1:
-            raise RuntimeError("More than one image found: ".format([image.get_path() for image in images]))
-        return images[0]
+        return get_image(self, **kwargs)
 
     def has_subject_id(self, subject_id):
         return subject_id in self.get_subject_ids()
