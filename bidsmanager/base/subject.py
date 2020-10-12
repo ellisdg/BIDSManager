@@ -23,17 +23,13 @@ class Subject(BIDSFolder):
     def get_sessions(self):
         return list(self._sessions.values())
 
-    def get_images(self, group_name=None, modality=None, acquisition=None, run_number=None, session_name=None,
-                   task_name=None):
+    def get_images(self, group_name=None, session_name=None, **kwargs):
         if session_name:
-            return self.get_session(session_name).get_images(group_name=group_name, modality=modality,
-                                                             acquisition=acquisition, run_number=run_number,
-                                                             task_name=task_name)
+            return self.get_session(session_name).get_images(group_name=group_name, **kwargs)
         else:
             images = []
             for bids_session in self._sessions.values():
-                images.extend(bids_session.get_images(group_name=group_name, modality=modality, acquisition=acquisition,
-                                                      run_number=run_number, task_name=task_name))
+                images.extend(bids_session.get_images(group_name=group_name, **kwargs))
             return images
 
     def get_task_names(self):

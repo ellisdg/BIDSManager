@@ -16,13 +16,13 @@ def touch(tmp_file):
 
 class TestImage(TestCase):
     def test_change_acquisition(self):
-        image = Image(modality="T1w", acquisition="contrast")
+        image = Image(modality="T1w", acq="contrast")
         basename = image.get_basename()
         image.set_acquisition("postcontrast")
         self.assertEqual(basename.replace("contrast", "postcontrast"), image.get_basename())
 
     def test_change_task_name(self):
-        image = FunctionalImage(modality="bold", task_name="prediction", run_number=3)
+        image = FunctionalImage(modality="bold", task="prediction", run=3)
         basename = image.get_basename()
         image.set_task_name("weatherprediction")
         self.assertEqual(basename.replace("prediction", "weatherprediction"), image.get_basename())
@@ -56,7 +56,7 @@ class TestImage(TestCase):
         image = read_image_from_bids_path(tmp_file)
         self.assertEqual(image.get_metadata(), json_data)
 
-        image._run_number = 6
+        image._run = 6
         image.update(move=False)
         self._filenames_to_delete.add(image.get_path())
         self._filenames_to_delete.add(image.sidecar_path)
@@ -64,7 +64,7 @@ class TestImage(TestCase):
         self.assertTrue(os.path.exists(image.sidecar_path))
 
         prev_sidecar_path = image.sidecar_path
-        image._run_number = 7
+        image._run = 7
         image.update(move=True)
         self._filenames_to_delete.add(image.get_path())
         self._filenames_to_delete.add(image.sidecar_path)
@@ -74,7 +74,7 @@ class TestImage(TestCase):
     def test_add_sidecar_metadata(self):
         image_filename = "acq-contrast_T1w.nii.gz"
         self.touch(image_filename)
-        image = Image(path=image_filename, acquisition='contrast', modality='T1w')
+        image = Image(path=image_filename, acq='contrast', modality='T1w')
         key = 'delete_file'
         value = True
         image.add_sidecar_metadata(key, value)
@@ -90,7 +90,7 @@ class TestImage(TestCase):
         self._filenames_to_delete.add(sidecar_path)
 
     def test_add_phase_encoding_direction(self):
-        image = Image(direction="AP", extension=".nii.gz")
+        image = Image(dir="AP", extension=".nii.gz")
         assert "dir-AP" in image.get_basename()
         assert "AP" == image.get_direction()
         image.set_direction("LR")

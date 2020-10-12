@@ -16,7 +16,7 @@ class Group(BIDSFolder):
         image_key = image.get_image_key()
         if image_key in self._flags:
             self._flags[image_key] += 1
-            image._run_number = self._flags[image_key]
+            image._run = self._flags[image_key]
             image_key = image.get_image_key()
         try:
             self._add_object(image, image_key, "Image")

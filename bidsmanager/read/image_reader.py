@@ -2,28 +2,30 @@ import os
 import re
 import glob
 
+from bidsmanager.base.image import image_entities
 from bidsmanager.utils.image_utils import load_image
+
+
+def parse_path_name(path_to_image, entities=image_entities):
+    return {entity: parse_generic_name(path_to_image, entity) for entity in image_entities}
 
 
 def parse_task_name(path_to_image):
     return parse_generic_name(path_to_image, name="task")
 
 
-def read_image_from_bids_path(path_to_image, metadata_dictionary=None):
+def read_image_from_bids_path(path_to_image, metadata_dictionary=None, entity_specification=image_entities):
     modality = parse_image_modality(path_to_image)
-    acquisition = parse_generic_name(path_to_image, name="acq")
-    task_name = parse_task_name(path_to_image)
-    run_number = parse_generic_name(path_to_image, name="run")
+    entities = parse_path_name(path_to_image, entity_specification)
     metadata_key = os.path.join(os.path.basename(os.path.dirname(path_to_image)), os.path.basename(path_to_image))
     if metadata_dictionary and metadata_key in metadata_dictionary:
         image_metadata = metadata_dictionary[metadata_key]
     else:
         image_metadata = None
-    return load_image(path_to_image, modality=modality, acquisition=acquisition, task_name=task_name,
-                      run_number=run_number, bval_path=find_sidecar(path_to_image, extension=".bval"),
+    return load_image(path_to_image, modality=modality, bval_path=find_sidecar(path_to_image, extension=".bval"),
                       bvec_path=find_sidecar(path_to_image, extension=".bvec"),
                       path_to_sidecar=find_sidecar(path_to_image, extension=".json"),
-                      metadata=image_metadata)
+                      metadata=image_metadata, **entities)
 
 
 def find_sidecar(in_file, extension=".json"):

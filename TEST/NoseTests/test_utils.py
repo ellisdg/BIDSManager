@@ -8,7 +8,7 @@ from bidsmanager.utils.epi import set_intended_for
 
 class TestEPI(TestCase):
     def test_intended_for(self):
-        bids_dir = os.path.abspath("../BIDS-examples/ds001")
+        bids_dir = os.path.abspath("./BIDS-examples/ds001")
         dataset = read_dataset(bids_dir)
         intended_for_image = dataset.get_images(subject_id="01", modality="bold")[0]
         epi_image = Image(modality="epi")

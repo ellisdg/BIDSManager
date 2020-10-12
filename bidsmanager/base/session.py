@@ -34,15 +34,11 @@ class Session(BIDSFolder):
         if self.get_name():
             return "ses-{0}".format(self.get_name())
 
-    def get_images(self, group_name=None, modality=None, acquisition=None, run_number=None, task_name=None):
+    def get_images(self, group_name=None, **kwargs):
         images = []
         for group in self._groups.values():
             if not group_name or group_name == group.get_name():
-                if isinstance(group, FunctionalGroup):
-                    images.extend(group.get_images(modality=modality, acquisition=acquisition, run_number=run_number,
-                                                   task_name=task_name))
-                elif not task_name:
-                    images.extend(group.get_images(modality=modality, acquisition=acquisition, run_number=run_number))
+                images.extend(group.get_images(**kwargs))
         return images
 
     def get_group(self, group_name):

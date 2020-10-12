@@ -58,8 +58,8 @@ class TestReaderDataSet001(TestCase):
         self.assertEqual(task_names, test_task_names)
 
     def test_get_images_with_task_name(self):
-        self.assertEqual(os.path.basename(self.dataset.get_image_paths(task_name="balloonanalogrisktask",
-                                                                       subject_id="01", run_number="01")[0]),
+        self.assertEqual(os.path.basename(self.dataset.get_image_paths(task="balloonanalogrisktask",
+                                                                       subject_id="01", run="01")[0]),
                          "sub-01_task-balloonanalogrisktask_run-01_bold.nii.gz")
 
     def test_list_all_t1_scans(self):
@@ -188,8 +188,8 @@ class TestReaderTestDir(TestCase):
         image_paths_glob = [os.path.abspath(f) for f in
                             glob.glob(os.path.join(get_example_directory(),
                                                    "sub-*", "ses-*", "*", "*acq-contrast*.nii.gz"))]
-        image_paths = self.dataset.get_image_paths(acquisition="contrast", modality="T1w")
-        image_paths_from_images = [image.get_path() for image in self.dataset.get_images(acquisition="contrast",
+        image_paths = self.dataset.get_image_paths(acq="contrast", modality="T1w")
+        image_paths_from_images = [image.get_path() for image in self.dataset.get_images(acq="contrast",
                                                                                          modality="T1w")]
         self.assertEqual(sorted(image_paths_glob), sorted(image_paths))
         self.assertEqual(sorted(image_paths), sorted(image_paths_from_images))
@@ -199,8 +199,12 @@ class TestReaderTestDir(TestCase):
         self.assertEqual(date(year=1888, day=12, month=3), subject.get_metadata("dob"))
         self.assertEqual("John Doe", subject.get_metadata("name"))
         self.assertEqual(date(year=1995, month=6, day=1), subject.get_session("test").get_metadata("date"))
-        self.assertEqual(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("Manufacturer"), "GE")
-        self.assertEqual(self.dataset.get_images(subject_id="01", session="test")[0].get_metadata("acq_time"),
+        self.assertEqual(self.dataset.get_image(subject_id="01",
+                                                session="test",
+                                                modality="T1w").get_metadata("Manufacturer"), "GE")
+        self.assertEqual(self.dataset.get_image(subject_id="01",
+                                                session="test",
+                                                modality="T1w").get_metadata("acq_time"),
                          datetime(year=1877, month=6, day=15, hour=13, minute=45, second=30))
 
     def test_sql_metadata(self):
@@ -212,22 +216,22 @@ class TestReaderTestDir(TestCase):
         connection = sqlite3.connect(sql_file)
         cursor = connection.cursor()
         cursor.execute("SELECT Image.Manufacturer FROM Image JOIN Session ON Session.id=Image.session_id "
-                       "AND Session.name='test'")
+                       "AND Session.name='test' AND Image.Modality='T1w'")
         self.assertEqual(cursor.fetchall()[0][0], "GE")
 
         cursor.execute("SELECT Image.Manufacturer FROM Image JOIN Session ON Session.id=Image.session_id "
-                       "AND Session.name='retest' AND Image.acquisition='contrast'")
+                       "AND Session.name='retest' AND Image.acquisition='contrast' AND Image.Modality='T1w'")
         self.assertEqual(cursor.fetchall()[0][0], "Philips")
 
         os.remove(sql_file)
 
     def test_get_no_acquisition(self):
-        images = self.dataset.get_images(subject_id="01", session="retest", modality="T1w", acquisition="")
+        images = self.dataset.get_images(subject_id="01", session="retest", modality="T1w", acq=False)
         self.assertEqual(len(images), 1)
 
     def test_get_image(self):
-        images = self.dataset.get_images(subject_id="01", session="retest", modality="T1w", acquisition="")
-        self.assertEqual(self.dataset.get_image(subject_id="01", session="retest", modality="T1w", acquisition=""),
+        images = self.dataset.get_images(subject_id="01", session="retest", modality="T1w", acq=False)
+        self.assertEqual(self.dataset.get_image(subject_id="01", session="retest", modality="T1w", acq=False),
                          images[0])
         self.assertRaises(RuntimeError, self.dataset.get_image)
         self.assertRaises(RuntimeError, self.dataset.get_image, session="retest")
@@ -275,4 +279,4 @@ class TestReaderCSV(TestCase):
 
     def test_read_multiple_runs(self):
         group = self.dataset.get_subject("003").get_session("visit2").get_group("anat")
-        self.assertEqual([os.path.basename(f) for f in group.get_image_paths(run_number=3)], ["third_t1.nii.gz"])
+        self.assertEqual([os.path.basename(f) for f in group.get_image_paths(run=3)], ["third_t1.nii.gz"])
