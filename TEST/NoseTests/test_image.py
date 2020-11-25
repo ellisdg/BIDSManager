@@ -112,6 +112,12 @@ class TestImage(TestCase):
         image.set_task_name("science")
         assert image.get_task_name() == "science"
 
+    def test_contrast(self):
+        image = Image(modality="T1w")
+        image.set_contrast("gad")
+        assert image.get_contrast() == "gad"
+        assert "ce-gad" in image.get_basename()
+
     def touch(self, filename):
         touch(filename)
         self._filenames_to_delete.add(filename)

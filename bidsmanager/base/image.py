@@ -46,6 +46,8 @@ class Image(BIDSObject):
             keys.append("task-{0}".format(self.get_task_name().replace(" ", "")))
         if self.get_acquisition():
             keys.append("acq-{0}".format(self.get_acquisition()))
+        if self.get_contrast():
+            keys.append("ce-{0}".format(self.get_contrast()))
         if self.get_direction():
             keys.append("dir-{0}".format(self.get_direction()))
         if self.get_run_number():
@@ -149,6 +151,9 @@ class Image(BIDSObject):
 
     def set_task_name(self, task_name):
         self._set_key_attribute("_task", task_name)
+
+    def set_contrast(self, contrast):
+        self._set_key_attribute("_ce", contrast)
 
     def update(self, move=False):
         if os.path.basename(self.get_path()) != self.get_basename():
