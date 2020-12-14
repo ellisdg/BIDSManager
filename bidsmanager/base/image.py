@@ -155,6 +155,9 @@ class Image(BIDSObject):
     def set_contrast(self, contrast):
         self._set_key_attribute("_ce", contrast)
 
+    def set_reconstruction(self, reconstruction):
+        self._set_key_attribute("_rec", reconstruction)
+
     def update(self, move=False):
         if os.path.basename(self.get_path()) != self.get_basename():
             self.set_path(os.path.join(os.path.dirname(self.get_path()), self.get_basename()))
