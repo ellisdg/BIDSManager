@@ -42,16 +42,13 @@ class Image(BIDSObject):
     def get_image_keys(self, keys=None):
         if not keys:
             keys = []
-        if self.get_task_name():
-            keys.append("task-{0}".format(self.get_task_name().replace(" ", "")))
-        if self.get_acquisition():
-            keys.append("acq-{0}".format(self.get_acquisition()))
-        if self.get_contrast():
-            keys.append("ce-{0}".format(self.get_contrast()))
-        if self.get_direction():
-            keys.append("dir-{0}".format(self.get_direction()))
-        if self.get_run_number():
-            keys.append("run-{0:02d}".format(int(self.get_run_number())))
+        for attribute in image_entities:
+            if self._get_key_attribute(attribute):
+                if attribute == "run":
+                    keys.append("{}-{:02d}".format(attribute, int(self.get_run_number())))
+                else:
+                    keys.append(attribute + "-" + str(self._get_key_attribute(attribute).replace(" ", "")))
+
         if self._modality:
             keys.append(self._modality)
         return keys
@@ -200,6 +197,9 @@ class Image(BIDSObject):
     def get_task_name(self):
         return self._task
 
+    def _get_key_attribute(self, attribute):
+        return getattr(self, "_" + attribute)
+
     def _set_key_attribute(self, attribute, value):
         current_key = self.get_image_key()
         setattr(self, attribute, value)
@@ -239,4 +239,4 @@ class DiffusionImage(Image):
             self.update_bvec(*args, **kwargs)
 
 
-image_entities = ("acq", "run", "task", "dir", "ce", "rec")
+image_entities = ("task", "acq", "ce", "dir", "rec",  "run", "echo")

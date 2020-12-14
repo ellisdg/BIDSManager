@@ -200,26 +200,26 @@ def convert_dicom(dicom_file):
     file_path = dicom_file.get_path()
     modality = dicom_file.get_modality()
     task_name = dicom_file.get_series_description().lower().replace(" ", "")
-    acquisition = dicom_file.get_acquisition()
-    return convert_dicom_file_path(file_path=file_path, modality=modality, task_name=task_name, acquisition=acquisition)
+    acquisition = dicom_file.contrast()
+    return convert_dicom_file_path(file_path=file_path, modality=modality, task_name=task_name, contrast=acquisition)
 
 
-def convert_dicom_file_path(file_path, modality, acquisition, task_name):
+def convert_dicom_file_path(file_path, modality, contrast, task_name):
     if modality == "dwi":
         return convert_dwi_dicom(file_path)
     else:
         nifti_file, sidecar_file = dcm2niix(file_path)
         return load_image(path_to_image=nifti_file, modality=modality, path_to_sidecar=sidecar_file,
-                          task_name=task_name, acquisition=acquisition)
+                          task_name=task_name, ce=contrast)
 
 
 def convert_dicoms(dicom_objects):
     file_paths = [dicom_object.get_path() for dicom_object in dicom_objects]
     modality = dicom_objects[0].get_modality()
     task_name = dicom_objects[0].get_series_description().lower().replace(" ", "")
-    acquisition = dicom_objects[0].get_acquisition()
+    acquisition = dicom_objects[0].contrast()
     return convert_dicom_file_path(file_path=file_paths, modality=modality, task_name=task_name,
-                                   acquisition=acquisition)
+                                   contrast=acquisition)
 
 
 def convert_dwi_dicom(in_file):
@@ -355,9 +355,9 @@ class DicomFile(BIDSObject):
         else:
             return modality
 
-    def get_acquisition(self):
+    def contrast(self):
         if "GAD" in self.get_series_description() or "+C" in self.get_series_description():
-            return "contrast"
+            return "gad"
 
     def get_series_description(self):
         return self.get_field("SeriesDescription")

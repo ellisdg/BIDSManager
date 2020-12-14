@@ -111,7 +111,7 @@ class TestDcm2Niix(TestCase):
                          0)
         # update the data set
         final_bids_dataset.update(move=True)
-        # test that the image now exists with the acquisition
+        # test that the image now exists with the contrast
         self.assertTrue(os.path.exists(glob.glob(os.path.join(out_bids_dataset, "*", "*", "anat",
                                                               "*acq-postcontrast*.nii.gz"))[0]))
 

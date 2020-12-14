@@ -84,7 +84,7 @@ class TestDicomReader(TestCase):
     def test_read_t1(self):
         image = read_dicom_file(self.dicom_files["BRTUM008"])
         self._test_image_modality(image, "T1w")
-        self.assertEqual(image.get_acquisition(), 'contrast')
+        self.assertEqual(image.get_contrast(), 'gad')
 
     def test_read_t2(self):
         image = read_dicom_file(self.dicom_files["BRTUM014"])

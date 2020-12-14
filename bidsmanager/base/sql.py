@@ -16,6 +16,7 @@ class SQLInterface(object):
                                          "task_name": "TEXT",
                                          "path": "TEXT",
                                          "group_name": "TEXT",
+                                         "contrast": "TEXT",
                                          "acquisition": "TEXT"},
                              "foreign_keys": {"session_id": "Session(id)"}}}
 
@@ -88,7 +89,8 @@ class SQLInterface(object):
                 "task_name": task_name,
                 "path": image.get_path(),
                 "group_name": image.get_group().get_name(),
-                "acquisition": image.get_acquisition() if image.get_acquisition() else ""}
+                "acquisition": image.get_acquisition() if image.get_acquisition() else "",
+                "contrast": image.get_contrast() if image.get_contrast() else ""}
         for key, value in image.get_metadata().items():
             data[str(key)] = str(value)
         self.insert_dict_into_database("Image", data)
