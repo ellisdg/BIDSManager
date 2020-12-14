@@ -2,7 +2,7 @@ import os
 from unittest import TestCase
 
 from bidsmanager.base.group import Group
-from bidsmanager.base.image import Image, FunctionalImage
+from bidsmanager.base.image import Image, FunctionalImage, DiffusionImage
 from bidsmanager.read.image_reader import read_image_from_bids_path
 from bidsmanager.write.dataset_writer import write_json
 from bidsmanager.utils.utils import read_json
@@ -117,6 +117,30 @@ class TestImage(TestCase):
         image.set_contrast("gad")
         assert image.get_contrast() == "gad"
         assert "ce-gad" in image.get_basename()
+
+    def test_reconstruction(self):
+        image = Image(modality="T1w")
+        image.set_reconstruction("axial")
+        assert image.get_reconstruction() == "axial"
+        assert "rec-axial" in image.get_basename()
+
+    def test_add_metadata_without_sidecar(self):
+        image = DiffusionImage(modality="dwi", bval_path="./bval", bvec_path="./bvec")
+        image.add_metadata("WellThoughtOutTest", False)
+        image.set_path("./test.nii.gz")
+        touch(image.get_path())
+        touch(image.get_bval_path())
+        touch(image.get_bvec_path())
+        image.set_direction("AP")
+        image.update(move=True)
+        assert not os.path.exists("./test.nii.gz")
+        assert not os.path.exists("./bvec")
+        assert not os.path.exists("./bval")
+        assert os.path.exists(image.get_path())
+        assert os.path.exists(image.get_bval_path())
+        assert os.path.exists(image.get_bvec_path())
+        for fn in (image.get_path(), image.get_bval_path(), image.get_bvec_path(), image.get_sidecar_path()):
+            os.remove(fn)
 
     def touch(self, filename):
         touch(filename)

@@ -205,6 +205,9 @@ class Image(BIDSObject):
         setattr(self, attribute, value)
         self.update_key(current_key)
 
+    def get_sidecar_path(self):
+        return self.sidecar_path
+
 
 class FunctionalImage(Image):
     def __init__(self, *inputs, **kwargs):
@@ -220,6 +223,12 @@ class DiffusionImage(Image):
         self._bval_path = bval_path
         self._bvec_path = bvec_path
         self._modality = "dwi"
+
+    def get_bval_path(self):
+        return self._bval_path
+
+    def get_bvec_path(self):
+        return self._bvec_path
 
     def update_bval(self, move=False):
         tmp_bval_file = self.get_path().replace(self.get_extension(), ".bval")
