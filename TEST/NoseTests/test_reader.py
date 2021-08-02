@@ -5,6 +5,7 @@ from unittest import TestCase
 from datetime import date, datetime
 
 from bidsmanager.read import read_dataset, read_csv
+from bidsmanager.read.image_reader import read_image
 
 
 def get_script_directory():
@@ -280,3 +281,15 @@ class TestReaderCSV(TestCase):
     def test_read_multiple_runs(self):
         group = self.dataset.get_subject("003").get_session("visit2").get_group("anat")
         self.assertEqual([os.path.basename(f) for f in group.get_image_paths(run=3)], ["third_t1.nii.gz"])
+
+
+class TestImageReader(TestCase):
+    def test_overwrite_entities(self):
+        image_path = os.path.join(get_unorganized_example_directory(), "fmri.nii.gz")
+        image = read_image(image_path)
+        self.assertIsNone(image.get_task_name())
+        self.assertEqual(image.get_modality(), "fmri")
+        custom_entities = {"modality": "bold", "task": "rest", "run": 2, "dir": "AP"}
+        image = read_image(image_path, **custom_entities)
+        for key, value in custom_entities.items():
+            self.assertEqual(getattr(image, "get_" + key)(), value)

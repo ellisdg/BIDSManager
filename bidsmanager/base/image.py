@@ -70,6 +70,9 @@ class Image(BIDSObject):
     def get_run_number(self):
         return self._run
 
+    def get_run(self):
+        return self.get_run_number()
+
     def get_session_key(self):
         if self._session and self._session.get_name():
             return self._session.get_basename()
@@ -98,6 +101,9 @@ class Image(BIDSObject):
 
     def get_direction(self):
         return self._dir
+
+    def get_dir(self):
+        return self.get_direction()
 
     def get_contrast(self):
         return self._ce
@@ -196,6 +202,9 @@ class Image(BIDSObject):
 
     def get_task_name(self):
         return self._task
+
+    def get_task(self):
+        return self.get_task_name()
 
     def _get_key_attribute(self, attribute):
         return getattr(self, "_" + attribute)
