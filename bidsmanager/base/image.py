@@ -18,7 +18,6 @@ class Image(BIDSObject):
         super(Image, self).__init__(*inputs, **kwargs)
         self.sidecar_path = sidecar_path
         self._sidecar_metadata = dict()
-        self.update_sidecar_metadata()
         self._modality = modality
         self._type = "Image"
         self._extension = extension
@@ -91,6 +90,8 @@ class Image(BIDSObject):
         return self._group
 
     def get_metadata(self, key=None):
+        if not self._sidecar_metadata:
+            self.update_sidecar_metadata()
         metadata = combine_dictionaries(self._sidecar_metadata, super(Image, self).get_metadata())
         if key:
             return metadata[key]

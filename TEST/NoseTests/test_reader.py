@@ -107,6 +107,11 @@ class TestReaderDataSet001(TestCase):
         self.assertEqual(self.dataset.get_metadata("Name"), "Balloon Analog Risk Task")
         self.assertTrue(self.dataset._metadata)
 
+        # Can't figure out lazy loading of subjects and session metadata
+        # self.assertFalse(self.dataset.get_subject("11")._metadata)
+        # self.assertEqual(self.dataset.get_subject("11").get_metadata("age"), 24)
+        # self.assertTrue(self.dataset.get_subject("11")._metadata)
+
 
 class TestReaderDataSet114(TestCase):
     @classmethod

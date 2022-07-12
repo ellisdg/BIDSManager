@@ -13,6 +13,7 @@ def parse_path_name(path_to_image, entities=image_entities):
 def parse_task_name(path_to_image):
     return parse_generic_name(path_to_image, name="task")
 
+
 def parse_entities(path_to_image, entity_specification, **custom_entities):
     entities = custom_entities.copy()
     remaining_entities = set(entity_specification).difference(set(entities.keys()))
@@ -26,6 +27,7 @@ def parse_entities(path_to_image, entity_specification, **custom_entities):
     else:
         modality = parse_image_modality(path_to_image)
     return modality, entities
+
 
 def read_image_from_bids_path(path_to_image, metadata_dictionary=None, entity_specification=image_entities,
                               **custom_entities):

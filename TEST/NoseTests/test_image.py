@@ -54,7 +54,11 @@ class TestImage(TestCase):
         json_data = {"the_answer": 42}
         write_json(json_data, tmp_json)
         image = read_image_from_bids_path(tmp_file)
+
+        # lazy loading
+        self.assertFalse(image._sidecar_metadata)
         self.assertEqual(image.get_metadata(), json_data)
+        self.assertTrue(image._sidecar_metadata)
 
         image._run = 6
         image.update(move=False)
