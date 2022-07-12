@@ -76,7 +76,8 @@ class TestDicomReader(TestCase):
     def _test_image_modality(self, image, modality):
         self.assertEqual(image.get_modality(), modality)
 
-    def test_read_flair(self):
+    def _test_read_flair(self):
+        # Don't run this test for now
         image_file = read_dicom_file(self.dicom_files["MR-MONO2-16-head"]).get_path()
         test_image_file = os.path.join("TestNiftis", "MR-MONO2-16-head.nii.gz")
         self.assertEqual(nib.load(image_file).header, nib.load(test_image_file).header)

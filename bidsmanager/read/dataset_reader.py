@@ -7,7 +7,8 @@ from ..utils.utils import read_tsv, read_json
 
 
 def load_data_set(path_to_dataset):
-    dataset = DataSet(path=path_to_dataset, metadata=read_dataset_metadata(path_to_dataset))
+    dataset = DataSet(path=path_to_dataset,
+                      metadata_filename=os.path.join(path_to_dataset, "dataset_description.json"))
     return add_subjects_to_dataset(dataset, path_to_dataset)
 
 

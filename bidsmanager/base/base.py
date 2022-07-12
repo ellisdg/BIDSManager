@@ -1,11 +1,11 @@
 import os
-import abc
 
 from ..write.dataset_writer import write_tsv
+from ..utils.utils import read_json
 
 
 class BIDSObject(object):
-    def __init__(self, path=None, parent=None, metadata=None):
+    def __init__(self, path=None, parent=None, metadata=None, metadata_filename=None):
         self._parent = None
         self.set_parent(parent)
         self._previous_path = None
@@ -19,6 +19,7 @@ class BIDSObject(object):
             self._path = path
         self._name = None
         self._type = "BIDSObject"
+        self._metadata_filename = metadata_filename
 
     def get_parent(self):
         return self._parent
@@ -44,12 +45,18 @@ class BIDSObject(object):
         self._name = name
 
     def get_metadata(self, key=None):
+        if not self._metadata and self._metadata_filename:
+            self.load_metadata()
         if key:
             return self._metadata[key]
         return self._metadata
 
     def add_metadata(self, key, data):
         self._metadata[key] = data
+
+    def load_metadata(self):
+        if ".json" in self._metadata_filename and os.path.exists(self._metadata_filename):
+            self._metadata = read_json(self._metadata_filename)
 
     def get_bids_type(self):
         return self._type
