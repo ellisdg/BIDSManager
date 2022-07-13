@@ -21,7 +21,7 @@ def copy_or_move(in_file, out_file, move=False):
 
 
 def read_json(in_file):
-    with open(in_file , "r") as opened_file:
+    with open(in_file, "r") as opened_file:
         return json.load(opened_file)
 
 
