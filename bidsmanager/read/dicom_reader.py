@@ -11,7 +11,7 @@ import nibabel as nib
 
 from ..base.subject import Subject
 from ..base.dataset import DataSet
-from ..base.image import DiffusionImage
+from ..base.image import Image
 from ..base.base import BIDSObject
 from ..base.session import Session
 from ..utils.image_utils import load_image
@@ -224,7 +224,7 @@ def convert_dicoms(dicom_objects):
 
 def convert_dwi_dicom(in_file):
     nifti_file, bval_file, bvec_file, sidecar_file = dcm2niix_dwi(in_file)
-    return DiffusionImage(path=nifti_file, bval_path=bval_file, bvec_path=bvec_file, sidecar_path=sidecar_file)
+    return Image(path=nifti_file, bval_path=bval_file, bvec_path=bvec_file, sidecar_path=sidecar_file)
 
 
 def dcm2niix_dwi(in_file):

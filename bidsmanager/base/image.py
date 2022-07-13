@@ -6,7 +6,8 @@ from ..write.dataset_writer import write_json
 
 
 class Image(BIDSObject):
-    def __init__(self, sidecar_path=None, modality=None, extension=".nii", *inputs, **kwargs):
+    def __init__(self, sidecar_path=None, modality=None, extension=".nii", bval_path=None, bvec_path=None,
+                 *inputs, **kwargs):
         self._session = None
         self._subject = None
         self._group = None
@@ -21,6 +22,8 @@ class Image(BIDSObject):
         self._modality = modality
         self._type = "Image"
         self._extension = extension
+        self._bval_path = bval_path
+        self._bvec_path = bvec_path
 
     def get_basename(self):
         return "_".join(self.get_subject_session_keys(keys=self.get_image_keys())) + self.get_extension()
@@ -167,6 +170,7 @@ class Image(BIDSObject):
             self.set_path(os.path.join(os.path.dirname(self.get_path()), self.get_basename()))
         update_file(self._previous_path, self._path, move=move)
         self.update_sidecar(move=move)
+        self.update_diffusion_files(move=move)
 
     def update_sidecar(self, move=False):
         if self._sidecar_metadata:
@@ -218,22 +222,6 @@ class Image(BIDSObject):
     def get_sidecar_path(self):
         return self.sidecar_path
 
-
-class FunctionalImage(Image):
-    def __init__(self, *inputs, **kwargs):
-        super(FunctionalImage, self).__init__(*inputs, **kwargs)
-
-    def is_match(self, task_name=None, **kwargs):
-        return (not task_name or task_name == self.get_task_name()) and super(FunctionalImage, self).is_match(**kwargs)
-
-
-class DiffusionImage(Image):
-    def __init__(self, bval_path, bvec_path, *inputs, **kwargs):
-        super(DiffusionImage, self).__init__(*inputs, **kwargs)
-        self._bval_path = bval_path
-        self._bvec_path = bvec_path
-        self._modality = "dwi"
-
     def get_bval_path(self):
         return self._bval_path
 
@@ -250,12 +238,19 @@ class DiffusionImage(Image):
         update_file(self._bvec_path, tmp_bvec_file, move=move)
         self._bvec_path = tmp_bvec_file
 
-    def update(self, *args, **kwargs):
-        super(DiffusionImage, self).update(*args, **kwargs)
+    def update_diffusion_files(self, move=False):
         if self._bval_path:
-            self.update_bval(*args, **kwargs)
+            self.update_bval(move=move)
         if self._bvec_path:
-            self.update_bvec(*args, **kwargs)
+            self.update_bvec(move=move)
+
+
+class FunctionalImage(Image):
+    def __init__(self, *inputs, **kwargs):
+        super(FunctionalImage, self).__init__(*inputs, **kwargs)
+
+    def is_match(self, task_name=None, **kwargs):
+        return (not task_name or task_name == self.get_task_name()) and super(FunctionalImage, self).is_match(**kwargs)
 
 
 image_entities = ("task", "acq", "ce", "dir", "rec",  "run", "echo")

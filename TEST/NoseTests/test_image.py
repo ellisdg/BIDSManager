@@ -2,7 +2,7 @@ import os
 from unittest import TestCase
 
 from bidsmanager.base.group import Group
-from bidsmanager.base.image import Image, FunctionalImage, DiffusionImage
+from bidsmanager.base.image import Image
 from bidsmanager.read.image_reader import read_image_from_bids_path
 from bidsmanager.write.dataset_writer import write_json
 from bidsmanager.utils.utils import read_json
@@ -22,10 +22,12 @@ class TestImage(TestCase):
         self.assertEqual(basename.replace("contrast", "postcontrast"), image.get_basename())
 
     def test_change_task_name(self):
-        image = FunctionalImage(modality="bold", task="prediction", run=3)
+        image = Image(modality="bold", task="prediction", run=3)
         basename = image.get_basename()
-        image.set_task_name("weatherprediction")
-        self.assertEqual(basename.replace("prediction", "weatherprediction"), image.get_basename())
+        new_task_name = "weatherprediction"
+        image.set_task_name(new_task_name)
+        self.assertEqual(basename.replace("prediction", new_task_name), image.get_basename())
+        self.assertEqual(image.get_task_name(), new_task_name)
 
     def test_write_changed_acquisition(self):
         tmp_file = "run-05_FLAIR.nii.gz"
@@ -129,7 +131,7 @@ class TestImage(TestCase):
         assert "rec-axial" in image.get_basename()
 
     def test_add_metadata_without_sidecar(self):
-        image = DiffusionImage(modality="dwi", bval_path="./bval", bvec_path="./bvec")
+        image = Image(modality="dwi", bval_path="./bval", bvec_path="./bvec")
         image.add_metadata("WellThoughtOutTest", False)
         image.set_path("./test.nii.gz")
         touch(image.get_path())
