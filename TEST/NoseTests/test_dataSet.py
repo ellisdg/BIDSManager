@@ -1,7 +1,7 @@
 import unittest
 from unittest import TestCase
-from bidsmanager.base.dataset import DataSet
-from bidsmanager.base.subject import Subject
+from bidsmanager import DataSet
+from bidsmanager import Subject
 
 
 class TestDataSet(TestCase):

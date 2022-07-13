@@ -4,7 +4,7 @@ import sqlite3
 from unittest import TestCase
 from datetime import date, datetime
 
-from bidsmanager.read import read_dataset, read_csv
+from bidsmanager import read_dataset, read_csv
 from bidsmanager.read.image_reader import read_image
 
 
