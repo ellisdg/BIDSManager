@@ -8,7 +8,7 @@ import csv
 from bidsmanager.write.dataset_writer import write_dataset
 from bidsmanager.read import read_csv, read_dataset
 from bidsmanager.utils.utils import read_json, read_tsv
-from bidsmanager.base import DataSet, Subject, Session, Image, FunctionalImage
+from bidsmanager.base import DataSet, Subject, Session, Image
 
 
 def get_script_directory():

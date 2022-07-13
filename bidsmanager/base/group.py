@@ -1,4 +1,3 @@
-from .image import FunctionalImage
 from .base import BIDSFolder
 
 

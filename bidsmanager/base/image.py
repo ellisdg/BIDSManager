@@ -245,12 +245,4 @@ class Image(BIDSObject):
             self.update_bvec(move=move)
 
 
-class FunctionalImage(Image):
-    def __init__(self, *inputs, **kwargs):
-        super(FunctionalImage, self).__init__(*inputs, **kwargs)
-
-    def is_match(self, task_name=None, **kwargs):
-        return (not task_name or task_name == self.get_task_name()) and super(FunctionalImage, self).is_match(**kwargs)
-
-
 image_entities = ("task", "acq", "ce", "dir", "rec",  "run", "echo")
