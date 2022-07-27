@@ -3,6 +3,7 @@ import gzip
 import os
 import tarfile
 from unittest import TestCase
+import unittest
 
 try:
     from urllib.request import urlretrieve
@@ -48,14 +49,14 @@ def write_data_to_file(data, out_file):
 
 class TestDicomReader(TestCase):
     @classmethod
-    def setUpClass(cls):
+    def _setUpClass(cls):
         super(TestDicomReader, cls).setUpClass()
         cls.dicom_files = dict()
         TestDicomReader.setUpDicomFiles(cls.dicom_files)
         TestDicomReader.setUpFlair(cls.dicom_files)
 
     @staticmethod
-    def setUpDicomFiles(dicom_files):
+    def _setUpDicomFiles(dicom_files):
         dicom_dir = os.path.join("tmp", "DICOMDIR")
         if not os.path.exists(dicom_dir):
             file_url = "ftp://medical.nema.org/medical/dicom/Multiframe/MR/nemamfmr.imagesAB.tar.bz2"
@@ -76,17 +77,20 @@ class TestDicomReader(TestCase):
     def _test_image_modality(self, image, modality):
         self.assertEqual(image.get_modality(), modality)
 
-    def _test_read_flair(self):
+    def test_read_flair(self):
+        raise unittest.SkipTest("Skipping dicom tests")
         # Don't run this test for now
         image_file = read_dicom_file(self.dicom_files["MR-MONO2-16-head"]).get_path()
         test_image_file = os.path.join("TestNiftis", "MR-MONO2-16-head.nii.gz")
         self.assertEqual(nib.load(image_file).header, nib.load(test_image_file).header)
 
     def test_read_t1(self):
+        raise unittest.SkipTest("Skipping dicom tests")
         image = read_dicom_file(self.dicom_files["BRTUM008"])
         self._test_image_modality(image, "T1w")
         self.assertEqual(image.get_contrast(), 'gad')
 
     def test_read_t2(self):
+        raise unittest.SkipTest("Skipping dicom tests")
         image = read_dicom_file(self.dicom_files["BRTUM014"])
         self._test_image_modality(image, "T2w")

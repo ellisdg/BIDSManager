@@ -3,6 +3,7 @@ import os
 import shutil
 import warnings
 from unittest import TestCase
+import unittest
 
 import nibabel as nib
 import numpy as np
@@ -21,6 +22,7 @@ class TestDcm2Niix(TestCase):
                                            skip_image_descriptions=["SENSE", "FS", "Ax", "MC"])
 
     def test_convert(self):
+        raise unittest.SkipTest("Skipping dicom tests")
         in_dicom_file = os.path.join("TestDicoms", "brain_001.dcm")
         nifti_file, sidecar_file = dcm2niix(in_dicom_file)
         image = nib.load(nifti_file)
@@ -28,6 +30,7 @@ class TestDcm2Niix(TestCase):
         self.assertEqual(image.header, test_image.header)
 
     def test_convert_dwi(self):
+        raise unittest.SkipTest("Skipping dicom tests")
         warnings.simplefilter("error")
         from bidsmanager.read.dicom_reader import get_dicom_set
         dwi_dicoms = get_dicom_set(os.path.join("TestDicoms", "DTI_0544"))
@@ -39,6 +42,7 @@ class TestDcm2Niix(TestCase):
         warnings.simplefilter("default")
 
     def test_convert_dir_to_bids(self):
+        raise unittest.SkipTest("Skipping dicom tests")
         self.assertEqual(self.dataset.get_number_of_subjects(), 4)
         self.assertEqual(len(self.dataset.get_image_paths()), 7)
         for subject in self.dataset.get_subjects():
@@ -48,6 +52,7 @@ class TestDcm2Niix(TestCase):
                         self.assertEqual(image.get_extension(), ".nii.gz")
 
     def test_convert_to_bids(self):
+        raise unittest.SkipTest("Skipping dicom tests")
         out_bids_dataset = os.path.abspath("TestWriteBIDS")
         orig_file = self.dataset.get_image_paths(modality="T1w")[0]
         write_dataset(self.dataset, out_bids_dataset, move=True)
@@ -118,4 +123,5 @@ class TestDcm2Niix(TestCase):
         shutil.rmtree(out_bids_dataset)
 
     def test_invalid_key_modification(self):
+        raise unittest.SkipTest("Skipping dicom tests")
         self.assertRaises(KeyError, self.dataset.modify_key, "01", "02")

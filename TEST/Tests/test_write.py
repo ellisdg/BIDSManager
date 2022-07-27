@@ -128,7 +128,7 @@ class TestWriteMetaData(TestCase):
             self.assertEqual(image.get_path().replace(dataset_path, self.out_dir), new_image.get_path())
 
     def test_save_example_bids_dir(self):
-        dataset_path = os.path.abspath("./NoseTests/example_bids_dir")
+        dataset_path = os.path.abspath("./Tests/example_bids_dir")
         self._save_metadata(dataset_path)
         old_tsv_file = os.path.join(dataset_path, "sub-01", "ses-test", "sub-01_ses-test_scans.tsv")
         if os.path.exists(old_tsv_file):
@@ -150,7 +150,7 @@ class TestWriteMetaData(TestCase):
 
 class TestCreateDataSet(TestCase):
     def setUp(self):
-        self.temp_directory = os.path.abspath('./NoseTests/new_bids_dir_from_scratch')
+        self.temp_directory = os.path.abspath('./Tests/new_bids_dir_from_scratch')
 
     def test_create_dataset_from_scratch(self):
         dataset = DataSet(path=self.temp_directory)
