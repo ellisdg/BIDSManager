@@ -23,6 +23,10 @@ class BIDSObject(object):
     def get_parent(self):
         return self._parent
 
+    @property
+    def filename(self):
+        return self.get_path()
+
     def get_path(self):
         return os.path.abspath(self._path)
 

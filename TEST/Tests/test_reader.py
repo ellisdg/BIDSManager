@@ -299,6 +299,8 @@ class TestImageReader(TestCase):
     def test_overwrite_entities(self):
         image_path = os.path.join(get_unorganized_example_directory(), "fmri.nii.gz")
         image = read_image(image_path)
+        self.assertEqual(image_path, image.filename)
+        self.assertEqual(image.filename, image.get_path())
         self.assertIsNone(image.get_task_name())
         self.assertEqual(image.get_modality(), "fmri")
         custom_entities = {"modality": "bold", "task": "rest", "run": 2, "dir": "AP"}
