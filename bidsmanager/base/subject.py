@@ -14,7 +14,7 @@ class Subject(BIDSFolder):
         return "sub-{0}".format(self.get_id())
 
     def get_id(self):
-        return self._name
+        return self.get_name()
 
     def get_session(self, session_name):
         return self._sessions[session_name]
