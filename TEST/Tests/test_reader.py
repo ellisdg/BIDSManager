@@ -131,6 +131,7 @@ class TestReaderDataSet114(TestCase):
 
     def test_get_dataset_summary(self):
         subjects = self.dataset.get_subjects()
+        self.assertEqual("ds114", self.dataset.name)
         for subject in subjects:
             session_names = subject.get_session_names()
             self.assertEqual(set(session_names), {"test", "retest"})

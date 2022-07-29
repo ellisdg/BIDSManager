@@ -65,3 +65,9 @@ class DataSet(BIDSFolder):
     def write_dataset_description(self):
         if self.get_metadata():
             write_json(self.get_metadata(), os.path.join(self.get_path(), "dataset_description.json"))
+
+    def get_name(self):
+        if "Name" in self.get_metadata():
+            if not self._name:
+                self.set_name(self.get_metadata("Name"))
+        return super(DataSet, self).get_name()
