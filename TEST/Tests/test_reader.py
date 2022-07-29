@@ -257,6 +257,7 @@ class TestReaderCSV(TestCase):
     def test_read_subjects(self):
         subject_ids = self.dataset.get_subject_ids()
         self.assertEqual(set(subject_ids), {"003", "007", "005", "UNMC^001"})
+        self.assertEqual(set(subject_ids), set(self.dataset.get_subject_names()))
 
     def test_read_sessions(self):
         self.assertEqual(set(self.dataset.get_subject("003").get_session_names()), {"visit1", "visit2"})

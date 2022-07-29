@@ -22,6 +22,9 @@ class DataSet(BIDSFolder):
         self._add_object(subject, subject.get_id(), "Subject")
 
     def get_subject_ids(self):
+        return self.get_subject_names()
+
+    def get_subject_names(self):
         return sorted([subject_id for subject_id in self.subjects])
 
     def get_number_of_subjects(self):
