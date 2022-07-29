@@ -307,3 +307,4 @@ class TestImageReader(TestCase):
         image = read_image(image_path, **custom_entities)
         for key, value in custom_entities.items():
             self.assertEqual(getattr(image, "get_" + key)(), value)
+        self.assertEqual(image.get_basename(), image.basename)

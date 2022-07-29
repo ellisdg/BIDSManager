@@ -35,6 +35,10 @@ class BIDSObject(object):
             self._previous_path = self._path
         self._path = os.path.abspath(path)
 
+    @property
+    def basename(self):
+        return self.get_basename()
+
     def get_basename(self):
         if self._path:
             return os.path.basename(self._path)
