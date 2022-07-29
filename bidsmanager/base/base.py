@@ -5,8 +5,8 @@ from ..utils.utils import read_json
 
 
 class BIDSObject(object):
-    def __init__(self, path=None, parent=None, metadata=None, metadata_filename=None):
-        self._parent = None
+    def __init__(self, name=None, path=None, parent=None, metadata=None, metadata_filename=None):
+        self.set_name(name)
         self.set_parent(parent)
         self._previous_path = None
         if metadata is None:
@@ -17,7 +17,6 @@ class BIDSObject(object):
             self._path = os.path.abspath(path)
         else:
             self._path = path
-        self._name = None
         self._type = "BIDSObject"
         self._metadata_filename = metadata_filename
 
@@ -39,8 +38,15 @@ class BIDSObject(object):
     def set_parent(self, parent):
         self._parent = parent
 
+    @property
+    def name(self):
+        return self.get_name()
+
+    def get_name(self):
+        return self._name
+
     def set_name(self, name):
-        if self._parent:
+        if hasattr(self, "_parent") and self._parent:
             self._parent.modify_key(self._name, name)
         self._name = name
 
@@ -63,7 +69,7 @@ class BIDSObject(object):
 
 
 class BIDSFolder(BIDSObject):
-    def __init__(self, input_dict=None, *inputs, **kwargs):
+    def __init__(self, *inputs, input_dict=None, **kwargs):
         if input_dict:
             self._dict = input_dict
         else:

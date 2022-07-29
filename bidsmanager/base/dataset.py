@@ -7,7 +7,7 @@ from ..utils.utils import get_image
 
 
 class DataSet(BIDSFolder):
-    def __init__(self, subjects=None, *inputs, **kwargs):
+    def __init__(self, *inputs, subjects=None, **kwargs):
         super(DataSet, self).__init__(*inputs, **kwargs)
         self.subjects = self._dict
         self._type = "Dataset"

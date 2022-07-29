@@ -22,7 +22,7 @@ class CSVReader(object):
                 subject_id = line["subject"]
 
                 if not self.dataset.has_subject_id(subject_id):
-                    subject = Subject(subject_id=subject_id)
+                    subject = Subject(name=subject_id)
                     self.dataset.add_subject(subject)
                 else:
                     subject = self.dataset.get_subject(subject_id)

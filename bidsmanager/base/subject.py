@@ -2,9 +2,8 @@ from .base import BIDSFolder
 
 
 class Subject(BIDSFolder):
-    def __init__(self, subject_id=None, *inputs, **kwargs):
+    def __init__(self, *inputs, **kwargs):
         super(Subject, self).__init__(*inputs, **kwargs)
-        self.set_name(subject_id)
         self._sessions = self._dict
         self._type = "Subject"
 
