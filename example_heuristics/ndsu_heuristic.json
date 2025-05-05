@@ -1,0 +1,8 @@
+{"SeriesDescription": [["T1", {"modality": "T1w"}],
+                                           ["T2", {"modality": "T2w"}],
+                                           ["Field", {"modality": "epi"}],
+                                           ["fMRI", {"modality": "bold", "task": "rest"}],
+                                           ["L-R", {"dir": "LR"}],
+                                           ["R-L", {"dir": "RL"}],
+                                           ["Loc", null],
+                                           ["_ND", {"acq": "normalized"}]]}

@@ -7,7 +7,7 @@ from ..utils.utils import get_image
 
 
 class DataSet(BIDSFolder):
-    def __init__(self, subjects=None, *inputs, **kwargs):
+    def __init__(self, *inputs, subjects=None, **kwargs):
         super(DataSet, self).__init__(*inputs, **kwargs)
         self.subjects = self._dict
         self._type = "Dataset"
@@ -22,6 +22,9 @@ class DataSet(BIDSFolder):
         self._add_object(subject, subject.get_id(), "Subject")
 
     def get_subject_ids(self):
+        return self.get_subject_names()
+
+    def get_subject_names(self):
         return sorted([subject_id for subject_id in self.subjects])
 
     def get_number_of_subjects(self):
@@ -62,3 +65,9 @@ class DataSet(BIDSFolder):
     def write_dataset_description(self):
         if self.get_metadata():
             write_json(self.get_metadata(), os.path.join(self.get_path(), "dataset_description.json"))
+
+    def get_name(self):
+        if "Name" in self.get_metadata():
+            if not self._name:
+                self.set_name(self.get_metadata("Name"))
+        return super(DataSet, self).get_name()

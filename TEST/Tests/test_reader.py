@@ -131,6 +131,7 @@ class TestReaderDataSet114(TestCase):
 
     def test_get_dataset_summary(self):
         subjects = self.dataset.get_subjects()
+        self.assertEqual("ds114", self.dataset.name)
         for subject in subjects:
             session_names = subject.get_session_names()
             self.assertEqual(set(session_names), {"test", "retest"})
@@ -257,6 +258,7 @@ class TestReaderCSV(TestCase):
     def test_read_subjects(self):
         subject_ids = self.dataset.get_subject_ids()
         self.assertEqual(set(subject_ids), {"003", "007", "005", "UNMC^001"})
+        self.assertEqual(set(subject_ids), set(self.dataset.get_subject_names()))
 
     def test_read_sessions(self):
         self.assertEqual(set(self.dataset.get_subject("003").get_session_names()), {"visit1", "visit2"})
@@ -297,9 +299,12 @@ class TestImageReader(TestCase):
     def test_overwrite_entities(self):
         image_path = os.path.join(get_unorganized_example_directory(), "fmri.nii.gz")
         image = read_image(image_path)
+        self.assertEqual(image_path, image.filename)
+        self.assertEqual(image.filename, image.get_path())
         self.assertIsNone(image.get_task_name())
         self.assertEqual(image.get_modality(), "fmri")
         custom_entities = {"modality": "bold", "task": "rest", "run": 2, "dir": "AP"}
         image = read_image(image_path, **custom_entities)
         for key, value in custom_entities.items():
             self.assertEqual(getattr(image, "get_" + key)(), value)
+        self.assertEqual(image.get_basename(), image.basename)

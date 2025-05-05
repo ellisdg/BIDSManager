@@ -19,7 +19,7 @@ class TestEPI(TestCase):
         epi_image.get_sidecar_metadata("IntendedFor")
 
     def test_inteded_for_with_session(self):
-        bids_dir = os.path.abspath("./NoseTests/example_bids_dir")
+        bids_dir = os.path.abspath("./Tests/example_bids_dir")
         dataset = read_dataset(bids_dir)
         intended_for_image = dataset.get_images(subject_id="01", session="test", modality="bold")[0]
         epi_image = intended_for_image.get_session().get_image(modality="epi", dir="AP", run="01")

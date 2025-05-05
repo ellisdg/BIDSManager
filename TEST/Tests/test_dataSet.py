@@ -10,7 +10,8 @@ class TestDataSet(TestCase):
         dataset.add_subject(Subject())
 
     def test_number_of_subjects(self):
-        dataset = DataSet(subjects=[Subject("001"), Subject("002")])
+        subjects = [Subject("001"), Subject("002")]
+        dataset = DataSet(subjects=subjects)
         self.assertEqual(dataset.get_number_of_subjects(), 2)
 
     def test_enforce_unique_ids(self):

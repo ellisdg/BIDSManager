@@ -7,10 +7,9 @@ from ..utils.utils import get_image
 
 
 class Session(BIDSFolder):
-    def __init__(self, name=None, groups=None, *inputs, **kwargs):
+    def __init__(self, *inputs, groups=None, **kwargs):
         super(Session, self).__init__(*inputs, **kwargs)
         self._groups = self._dict
-        self._name = name
         self._type = "Session"
         if groups:
             self.add_groups(groups)

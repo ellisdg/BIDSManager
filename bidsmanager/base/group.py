@@ -2,14 +2,13 @@ from .base import BIDSFolder
 
 
 class Group(BIDSFolder):
-    def __init__(self, name=None, images=None, *inputs, **kwargs):
+    def __init__(self, *inputs, images=None, **kwargs):
         self._flags = dict()
         super(Group, self).__init__(*inputs, **kwargs)
         self._images = self._dict
         self._type = "Group"
         if images:
             self.add_images(images)
-        self._name = name
 
     def add_image(self, image):
         image_key = image.get_image_key()
