@@ -5,11 +5,7 @@ import warnings
 from unittest import TestCase
 import unittest
 
-import nibabel as nib
-import numpy as np
-
-from bidsmanager.read import read_dicom_directory, read_dataset
-from bidsmanager.read.dicom_reader import dcm2niix, dcm2niix_dwi
+from bidsmanager.read.dicom_reader import  convert_dicom_directory, random_hash
 from bidsmanager.write.dataset_writer import write_dataset
 
 
@@ -17,111 +13,116 @@ class TestDcm2Niix(TestCase):
     @classmethod
     def setUpClass(cls):
         super(TestDcm2Niix, cls).setUpClass()
-        dicom_directory = os.path.abspath("TestDicoms")
-        cls.dataset = read_dicom_directory(dicom_directory, anonymize=True,
-                                           skip_image_descriptions=["SENSE", "FS", "Ax", "MC"])
+        cls._dicom_directory = os.path.abspath("TestDicoms")
+        # Create directory if it doesn't exist
+        if not os.path.exists(cls._dicom_directory):
+            os.makedirs(cls._dicom_directory)
 
-    def test_convert(self):
-        raise unittest.SkipTest("Skipping dicom tests")
-        in_dicom_file = os.path.join("TestDicoms", "brain_001.dcm")
-        nifti_file, sidecar_file = dcm2niix(in_dicom_file)
-        image = nib.load(nifti_file)
-        test_image = nib.load(os.path.join("TestNiftis", "brain0.nii.gz"))
-        self.assertEqual(image.header, test_image.header)
+        # create dicom files
+        import pydicom
+        import numpy as np
+        from pydicom.dataset import Dataset, FileDataset
+        import datetime
 
-    def test_convert_dwi(self):
-        raise unittest.SkipTest("Skipping dicom tests")
-        warnings.simplefilter("error")
-        from bidsmanager.read.dicom_reader import get_dicom_set
-        dwi_dicoms = get_dicom_set(os.path.join("TestDicoms", "DTI_0544"))
-        dwi_dicom_files = [dwi_dicom.get_path() for dwi_dicom in dwi_dicoms]
-        self.assertRaises(RuntimeWarning, dcm2niix, in_file=dwi_dicom_files)
-        dwi_files = dcm2niix_dwi(dwi_dicom_files)
-        for dwi_file in dwi_files:
-            self.assertFalse("ADC" in dwi_file)
-        warnings.simplefilter("default")
+        subject_id = "AAA-555"
 
-    def test_convert_dir_to_bids(self):
-        raise unittest.SkipTest("Skipping dicom tests")
-        self.assertEqual(self.dataset.get_number_of_subjects(), 4)
-        self.assertEqual(len(self.dataset.get_image_paths()), 7)
-        for subject in self.dataset.get_subjects():
-            for session in subject.get_sessions():
-                for group in session.get_groups():
-                    for image in group.get_images():
-                        self.assertEqual(image.get_extension(), ".nii.gz")
+        for series_description in ("__other__",
+                                   "3-Plane Loc",
+                                   "T1 MPRAGE",
+                                   "T2 Space_ND",
+                                   "T2 Space",
+                                   "GRE Field Mapping (L-R)",
+                                   "GRE Field Mapping (R-L)",
+                                   "rs-fMRI"):
+            file_meta = pydicom.Dataset()
+            filename = os.path.join(cls._dicom_directory, random_hash()) + ".dcm"
+            ds = FileDataset(filename, {}, preamble=b"\0" * 128, file_meta=file_meta)
+
+            # Set required file meta information for MRI images
+            file_meta.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.1.1.4'
+            file_meta.MediaStorageSOPInstanceUID = pydicom.uid.generate_uid()
+            file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
+
+            # Set essential DICOM attributes
+            ds.PatientName = subject_id
+            ds.PatientID = subject_id
+            ds.SeriesDescription = series_description
+
+            # Set date and time
+            dt = datetime.datetime.now()
+            ds.ContentDate = dt.strftime('%Y%m%d')
+            ds.ContentTime = dt.strftime('%H%M%S')
+
+            # Set other required attributes
+            ds.SOPClassUID = file_meta.MediaStorageSOPClassUID
+            ds.SOPInstanceUID = file_meta.MediaStorageSOPInstanceUID
+            ds.StudyInstanceUID = pydicom.uid.generate_uid()
+            ds.SeriesInstanceUID = pydicom.uid.generate_uid()
+
+            # Add some additional attributes
+            ds.InstitutionName = "Test Institution"
+            ds.StudyDate = dt.strftime('%Y%m%d')
+            ds.StudyTime = dt.strftime('%H%M%S')
+            ds.EchoTime = 0.03
+            ds.RepetitionTime = 2.0
+
+            # Create random pixel data (small 16x16 array)
+            pixel_array = np.random.randint(0, 1000, size=(16, 16), dtype=np.int16)
+            ds.Rows = pixel_array.shape[0]
+            ds.Columns = pixel_array.shape[1]
+            ds.BitsAllocated = 16
+            ds.BitsStored = 16
+            ds.HighBit = 15
+            ds.PixelRepresentation = 0
+            ds.SamplesPerPixel = 1
+            ds.PhotometricInterpretation = "MONOCHROME2"
+            ds.PixelData = pixel_array.tobytes()
+
+            # Save the file
+            ds.save_as(filename)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Clean up created files
+        if os.path.exists(cls._dicom_directory):
+            # shutil.rmtree(cls._dicom_directory)
+            pass
+        super(TestDcm2Niix, cls).tearDownClass()
+
+
 
     def test_convert_to_bids(self):
-        raise unittest.SkipTest("Skipping dicom tests")
-        out_bids_dataset = os.path.abspath("TestWriteBIDS")
-        orig_file = self.dataset.get_image_paths(modality="T1w")[0]
-        write_dataset(self.dataset, out_bids_dataset, move=True)
-        self.assertFalse(os.path.exists(orig_file))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-04", "ses-01", "dwi",
-                                       "sub-04_ses-01_dwi.nii.gz")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-04", "ses-01", "dwi",
-                                       "sub-04_ses-01_dwi.bval")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-04", "ses-01", "dwi",
-                                       "sub-04_ses-01_dwi.bvec")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-04", "ses-01", "dwi",
-                                       "sub-04_ses-01_dwi.json")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "func",
-                                                    "sub-03_ses-01_task-lefthandft_bold.nii.gz")))
-        # test moving an image
-        image = self.dataset.get_images(subject_id="03", session="01", task_name="lefthandft")[0]
-        # rename an image task name
-        image.set_task_name("lefthandfingertapping")
-        # test that the image does not yet exist
-        self.assertFalse(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "func",
-                                                     "sub-03_ses-01_task-lefthandfingertapping_bold.nii.gz")))
-        # update the data set
-        self.dataset.update(move=True)
-        # test that the image now exists with the new task name
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-03", "ses-01", "func",
-                                                    "sub-03_ses-01_task-lefthandfingertapping_bold.nii.gz")))
+        # create a heuristic for converting the dataset
+        heuristic = {"SeriesDescription": (("T1", {"modality": "T1w"}),
+                                           ("T2", {"modality": "T2w"}),
+                                           ("Field", {"modality": "epi"}),
+                                           ("fMRI", {"modality": "bold", "task": "rest"}),
+                                           ("L-R", {"dir": "LR"}),
+                                           ("R-L", {"dir": "RL"}),
+                                           ("Loc", None),
+                                           ("_ND", {"acq": "normalized"}))}
 
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-02", "anat",
-                                                    "sub-01_ses-02_FLAIR.nii.gz")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-01", "ses-02", "anat",
-                                                    "sub-01_ses-02_FLAIR.json")))
-        self.assertTrue(os.path.exists(os.path.join(out_bids_dataset, "sub-04", "ses-02", "anat",
-                                                    "sub-04_ses-02_acq-contrast_T1w.json")))
-        test_dicom = os.path.abspath("TestDicoms/brain_401.dcm")
-        test_nifti = os.path.abspath("TestNiftis/brain_401.nii.gz")
-        dcm2niix(test_dicom, test_nifti)
-        test_image = nib.load(test_nifti)
-        bids_image = nib.load(
-            self.dataset.get_image_paths(subject_id="02", session="01", acquisition="contrast")[0])
-        self.assertTrue(np.all(test_image.get_data() == bids_image.get_data()))
+        # use the heuristic to convert the directory
+        bids_directory = "TestDicomsBids"
 
-        # test that the dataset can then be read
-        final_bids_dataset = read_dataset(out_bids_dataset)
-        self.assertEqual(final_bids_dataset.get_images(subject_id="01", session="01",
-                                                       modality="FLAIR")[0].get_basename(),
-                         "sub-01_ses-01_FLAIR.nii.gz")
-        self.assertEqual(os.path.basename(final_bids_dataset.get_images(subject_id="04", session="01",
-                                                                        modality="dwi")[0]._bval_path),
-                         "sub-04_ses-01_dwi.bval")
-        self.assertEqual(os.path.basename(final_bids_dataset.get_images(subject_id="04", session="01",
-                                                                        modality="dwi")[0].sidecar_path),
-                         "sub-04_ses-01_dwi.json")
-        final_bids_dataset.update()
+        bids_dataset = convert_dicom_directory(self._dicom_directory,
+                                               anonymize=True,
+                                               heuristic=heuristic,
+                                               bids_directory=bids_directory,
+                                               delete_intermediates=True)
 
-        # test moving an image
-        image = final_bids_dataset.get_images(acquisition="contrast")[1]
-        # rename an image task name
-        image.set_acquisition("postcontrast")
-        # test that the image does not yet exist
-        self.assertEqual(len(glob.glob(os.path.join(out_bids_dataset, "*", "*", "anat", "*acq-postcontrast*.nii.gz"))),
-                         0)
-        # update the data set
-        final_bids_dataset.update(move=True)
-        # test that the image now exists with the contrast
-        self.assertTrue(os.path.exists(glob.glob(os.path.join(out_bids_dataset, "*", "*", "anat",
-                                                              "*acq-postcontrast*.nii.gz"))[0]))
+        # write the bids directory to file
 
-        shutil.rmtree(out_bids_dataset)
 
-    def test_invalid_key_modification(self):
-        raise unittest.SkipTest("Skipping dicom tests")
-        self.assertRaises(KeyError, self.dataset.modify_key, "01", "02")
+        # check that no sessions exist
+
+        # check that the modalities were assigned correctly
+
+        # check that multiple runs were handled correctly
+
+        # check that fmaps were handled correctly
+
+        # check that groups were assigned correctly based on the modality or just have the group assigned in the
+        # heuristic
+        shutil.rmtree("TestDicomsBids")
+
