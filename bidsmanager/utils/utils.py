@@ -3,7 +3,6 @@ import shutil
 import os
 import json
 
-import pandas as pd
 
 
 def update_file(old_file, new_file, move=False):
@@ -46,6 +45,7 @@ def read_tsv(in_file):
 
 
 def parse_input(string):
+    import pandas as pd
     try:
         datetime_ = pd.to_datetime(string)
         if datetime_.hour == 0 and datetime_.minute == 0 and datetime_.second == 0:

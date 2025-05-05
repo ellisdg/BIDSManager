@@ -19,6 +19,7 @@ class Image(BIDSObject):
         super(Image, self).__init__(*inputs, **kwargs)
         self.sidecar_path = sidecar_path
         self._sidecar_metadata = dict()
+        self.update_sidecar_metadata()
         self._modality = modality
         self._type = "Image"
         self._extension = extension
