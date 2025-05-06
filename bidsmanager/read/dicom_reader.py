@@ -67,11 +67,12 @@ def convert_dicom_directory(input_directory,
                             anonymize=True,
                             separator="---",
                             bids_directory=None,
-                            delete_intermediates=True):
+                            delete_intermediates=True,
+                            verbose=False):
     # TODO: add option to specify a subject name to subject ID mapping
     output_directory = random_tmp_directory()
     run_dcm2niix_on_directory(input_directory, output_directory, filename="%n{0}%t{0}%d{0}%p{0}".format(separator),
-                              anonymize=anonymize)
+                              anonymize=anonymize, verbose=verbose)
     output_niftis = sorted(glob.glob(os.path.join(output_directory, "*.nii.gz")))
     dataset = DataSet()
     for f in output_niftis:
@@ -129,14 +130,19 @@ def random_tmp_directory():
     return directory
 
 
-def run_dcm2niix_on_directory(input_directory, output_directory, filename="%t%d%n%p", anonymize=False):
-    command = ['dcm2niix', "-b", "y", "-ba", "-z", "y", "-o", output_directory, "-f", filename, input_directory]
+def run_dcm2niix_on_directory(input_directory, output_directory, filename="%t%d%n%p", anonymize=True,
+                              verbose=False, directory_depth=9):
+    command = ['dcm2niix', "-b", "y", "-ba", "-z", "y", "-d", str(directory_depth),
+               "-o", output_directory, "-f", filename, input_directory]
     if anonymize:
         command.insert(4, "y")
     else:
         command.insert(4, "n")
     process = Popen(command, stdout=PIPE, stderr=PIPE)
     output, err = process.communicate()
+    if verbose:
+        print("dcm2niix output: {}".format(output.decode()))
+        print("dcm2niix error: {}".format(err.decode()))
     parse_cmd_output(output)
 
 

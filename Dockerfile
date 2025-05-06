@@ -1,5 +1,4 @@
-FROM ubuntu:trusty
-MAINTAINER <alexcohen@gmail.com> # feel free to change/adopt
+FROM ubuntu:noble
 
 # Install Dependencies
 RUN apt-get update && apt-get upgrade -y && \
@@ -17,6 +16,11 @@ RUN cd /tmp && \
 RUN cd / && \
     git clone https://github.com/ellisdg/BIDSManager.git
 
+# Install Python and pip
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip && \
+    apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
+
 ENV PYTHONPATH /BIDSManager:$PYTHONPATH
 
-ENTRYPOINT ["python", "/BIDSManager/BIDSManager.py"]
+ENTRYPOINT ["python3", "/BIDSManager/convert.py"]

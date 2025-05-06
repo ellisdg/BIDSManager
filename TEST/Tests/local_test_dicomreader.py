@@ -35,7 +35,8 @@ class TestDcm2Niix(TestCase):
                                    "GRE Field Mapping (R-L)",
                                    "rs-fMRI"):
             file_meta = pydicom.Dataset()
-            filename = os.path.join(cls._dicom_directory, random_hash()) + ".dcm"
+            filename = os.path.join(cls._dicom_directory, random_hash(), random_hash()) + ".dcm"
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             ds = FileDataset(filename, {}, preamble=b"\0" * 128, file_meta=file_meta)
 
             # Set required file meta information for MRI images
@@ -85,8 +86,7 @@ class TestDcm2Niix(TestCase):
     def tearDownClass(cls):
         # Clean up created files
         if os.path.exists(cls._dicom_directory):
-            # shutil.rmtree(cls._dicom_directory)
-            pass
+            shutil.rmtree(cls._dicom_directory)
         super(TestDcm2Niix, cls).tearDownClass()
 
 
@@ -111,13 +111,11 @@ class TestDcm2Niix(TestCase):
                                                bids_directory=bids_directory,
                                                delete_intermediates=True)
 
-        # write the bids directory to file
 
-
-        # check that no sessions exist
-
-        # check that the modalities were assigned correctly
-
+        self.assertTrue(bids_dataset.has_subject_id("AAA-555"))
+        self.assertTrue(len(bids_dataset.get_subject("AAA-555").get_sessions()) == 1)
+        self.assertEqual(len(bids_dataset.get_images(modality="T2w")), 2)
+        self.assertEqual(len(bids_dataset.get_images(modality="epi")), 2)
         # check that multiple runs were handled correctly
 
         # check that fmaps were handled correctly

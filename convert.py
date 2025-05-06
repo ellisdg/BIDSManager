@@ -14,6 +14,7 @@ def parse_args():
         help="Path to the heuristic JSON file.",
         required=True
     )
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
     return parser.parse_args()
 
 
@@ -28,7 +29,8 @@ def main():
                              heuristic=heuristic,
                              anonymize=True,
                             bids_directory=os.path.abspath(args.output_dir),
-                             delete_intermediates=True)
+                             delete_intermediates=True,
+                            verbose=args.verbose)
 
 
 if __name__ == "__main__":
