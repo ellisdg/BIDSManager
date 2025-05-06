@@ -109,7 +109,8 @@ class TestDcm2Niix(TestCase):
                                                anonymize=True,
                                                heuristic=heuristic,
                                                bids_directory=bids_directory,
-                                               delete_intermediates=True)
+                                               delete_intermediates=True,
+                                               verbose=True)
 
 
         self.assertTrue(bids_dataset.has_subject_id("AAA-555"))
