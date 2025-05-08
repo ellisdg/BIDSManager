@@ -28,7 +28,10 @@ class BIDSObject(object):
         return self.get_path()
 
     def get_path(self):
-        return os.path.abspath(self._path)
+        if self._path:
+            return os.path.abspath(self._path)
+        else:
+            raise ValueError("Path not set for {0}".format(self.get_name()))
 
     def set_path(self, path):
         if self._path and os.path.exists(self._path):

@@ -25,7 +25,13 @@ class TestWrite(TestCase):
         self._dir = os.path.abspath("temp_dir")
 
     def tearDown(self):
-        shutil.rmtree(self._dir)
+        if os.path.exists(self._dir):
+            shutil.rmtree(self._dir)
+
+    def test_write_dataset_without_path_error(self):
+        dataset = DataSet("test_dataset")
+        with self.assertRaises(ValueError):
+            dataset.update(move=False)
 
     def test_write_dataset(self):
         self.bids_dataset = write_dataset(self.dataset, self._dir)

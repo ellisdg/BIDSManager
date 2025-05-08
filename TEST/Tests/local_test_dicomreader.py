@@ -87,6 +87,7 @@ class TestDcm2Niix(TestCase):
         # Clean up created files
         if os.path.exists(cls._dicom_directory):
             shutil.rmtree(cls._dicom_directory)
+            pass
         super(TestDcm2Niix, cls).tearDownClass()
 
 
