@@ -13,6 +13,10 @@ class DataSet(BIDSFolder):
         self._type = "Dataset"
         if subjects:
             self.add_subjects(subjects)
+        if "Name" not in self.get_metadata():
+            self._metadata["Name"] = self.get_name()
+        if "BIDSVersion" not in self.get_metadata():
+            self._metadata["BIDSVersion"] = "1.10.0"
 
     def add_subjects(self, subjects):
         for subject in subjects:

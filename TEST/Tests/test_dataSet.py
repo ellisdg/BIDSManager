@@ -22,6 +22,12 @@ class TestDataSet(TestCase):
         with self.assertRaises(KeyError):
             dataset.add_subject(subject_2)
 
+    def test_default_metadata(self):
+        dataset = DataSet("test_dataset")
+        metadata = dataset.get_metadata()
+        self.assertEqual(metadata["Name"], "test_dataset")
+        self.assertIsNotNone(metadata["BIDSVersion"])
+
 
 if __name__ == "__main__":
     unittest.main()
