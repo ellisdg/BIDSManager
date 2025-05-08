@@ -60,7 +60,9 @@ def main():
         heuristic = json.load(f)
     input_dir = os.path.abspath(args.input_dir)
     output_dir = os.path.abspath(args.output_dir)
+    verbose = args.verbose
     if args.debug:
+        verbose = True
         # Create a CSV file to store the DICOM files found
         output_file = os.path.join(output_dir, "source", "dicom_files.csv")
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
