@@ -18,13 +18,19 @@ RUN cd / && \
 
 # Install Python and pip
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip && \
+    apt-get install -y python3 python3-pip python3-venv && \
     apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
 
-# Install Python dependencies
-RUN pip3 install --no-cache-dir \
+# Create a virtual environment
+RUN python3 -m venv /opt/venv
+
+# Activate the virtual environment and install packages
+RUN /opt/venv/bin/pip install --no-cache-dir \
     pandas \
     pydicom
+
+# Set the virtual environment as the default Python environment
+ENV PATH="/opt/venv/bin:$PATH"
 
 ENV PYTHONPATH /BIDSManager:$PYTHONPATH
 
