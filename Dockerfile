@@ -21,6 +21,11 @@ RUN apt-get update && \
     apt-get install -y python3 python3-pip && \
     apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
 
+# Install Python dependencies
+RUN pip3 install --no-cache-dir \
+    pandas \
+    pydicom
+
 ENV PYTHONPATH /BIDSManager:$PYTHONPATH
 
 ENTRYPOINT ["python3", "/BIDSManager/convert.py"]
