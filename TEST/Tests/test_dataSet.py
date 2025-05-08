@@ -27,6 +27,9 @@ class TestDataSet(TestCase):
         metadata = dataset.get_metadata()
         self.assertEqual(metadata["Name"], "test_dataset")
         self.assertIsNotNone(metadata["BIDSVersion"])
+        self.assertTrue("GeneratedBy" in metadata)
+        self.assertTrue("BIDSManager" in metadata["GeneratedBy"]["Name"])
+
 
 
 if __name__ == "__main__":

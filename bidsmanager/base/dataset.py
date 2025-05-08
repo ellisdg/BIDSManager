@@ -17,6 +17,9 @@ class DataSet(BIDSFolder):
             self._metadata["Name"] = self.get_name()
         if "BIDSVersion" not in self.get_metadata():
             self._metadata["BIDSVersion"] = "1.10.0"
+        if "GeneratedBy" not in self.get_metadata():
+            self._metadata["GeneratedBy"] = dict()
+            self._metadata["GeneratedBy"]["Name"] = "BIDSManager"
 
     def add_subjects(self, subjects):
         for subject in subjects:
