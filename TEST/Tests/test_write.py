@@ -35,6 +35,8 @@ class TestWrite(TestCase):
 
     def test_write_dataset(self):
         self.bids_dataset = write_dataset(self.dataset, self._dir)
+        self.assertTrue(os.path.exists(os.path.join(self._dir, "dataset_description.json")))
+        self.assertTrue(os.path.exists(os.path.join(self._dir, "README.md")))
         subject_ids = {"sub-003", "sub-007", "sub-005", "sub-UNMC^001"}
         self.assertEqual(set([os.path.basename(f) for f in glob.glob(os.path.join(self._dir, "sub-*"))]),
                          subject_ids)
