@@ -46,7 +46,7 @@ def search_for_dicom_files(input_dir, output_file):
                 dicom_files.append([file, False])
     print("Found {} valid DICOM files.".format(valid_count))
     print("Found {} invalid DICOM files.".format(len(dicom_files) - valid_count))
-    print("Writing results to {}".format(output_file))
+    print("Writing DICOM validity results to {}".format(output_file))
     with open(output_file, "w") as f:
         for file, is_valid in dicom_files:
             f.write("{},{}\n".format(file, is_valid))
