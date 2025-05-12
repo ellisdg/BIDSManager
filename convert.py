@@ -20,11 +20,12 @@ def parse_args():
     return parser.parse_args()
 
 
-def search_for_dicom_files(input_dir, output_file):
+def search_for_dicom_files(input_dir, output_file, give_up_after=1000):
     """
     Search for DICOM files in the input directory and its subdirectories.
     :param input_dir:
     :param output_file: output csv file to save the results
+    :param give_up_after: number of files to check before giving up if no valid DICOM files are found
     :return:
     """
     import pydicom
@@ -33,6 +34,7 @@ def search_for_dicom_files(input_dir, output_file):
     print("Searching for DICOM files in directory: {}".format(input_dir))
     all_files = glob.glob(os.path.join(input_dir, "**", "*"), recursive=True)
     print("Found {} files and directories.".format(len(all_files)))
+    thrown_errors = set()
     dicom_files = []
     valid_count = 0
     print("Checking for valid DICOM files...")
@@ -40,10 +42,26 @@ def search_for_dicom_files(input_dir, output_file):
         if os.path.isfile(file):
             try:
                 dicom = pydicom.dcmread(file, stop_before_pixels=True)
-                dicom_files.append([file, True])
                 valid_count += 1
-            except pydicom.errors.InvalidDicomError:
-                dicom_files.append([file, False])
+            except pydicom.errors.InvalidDicomError as e:
+                dicom_files.append([file, e])
+                thrown_errors.add(e)
+            except IOError as e:
+                dicom_files.append([file, e])
+                thrown_errors.add(e)
+            except Exception as e:
+                dicom_files.append([file, e])
+                thrown_errors.add(e)
+            if len(dicom_files) >= give_up_after and valid_count == 0:
+                print("Could not find any valid DICOMS after checking {} files. Stopping.".format(give_up_after))
+                print("Errors thrown: {}".format(thrown_errors))
+                # force read the file to see what tags are present
+                print("Force reading file and checking DICOM tags: {}".format(file))
+                dicom = pydicom.dcmread(file, force=True)
+                # print the tags
+                print("DICOM tag keys found in file: {}".format([elem.keyword or elem.name for elem in dicom]))
+                break
+
     print("Found {} valid DICOM files.".format(valid_count))
     print("Found {} invalid DICOM files.".format(len(dicom_files) - valid_count))
     print("Writing DICOM validity results to {}".format(output_file))
