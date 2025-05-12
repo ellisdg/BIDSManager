@@ -34,7 +34,7 @@ def search_for_dicom_files(input_dir, output_file, give_up_after=1000):
     print("Searching for DICOM files in directory: {}".format(input_dir))
     all_files = glob.glob(os.path.join(input_dir, "**", "*"), recursive=True)
     print("Found {} files and directories.".format(len(all_files)))
-    thrown_errors = set()
+    thrown_errors = dict()
     dicom_files = []
     valid_count = 0
     print("Checking for valid DICOM files...")
@@ -45,16 +45,24 @@ def search_for_dicom_files(input_dir, output_file, give_up_after=1000):
                 valid_count += 1
             except pydicom.errors.InvalidDicomError as e:
                 dicom_files.append([file, e])
-                thrown_errors.add(e)
+                if e not in thrown_errors:
+                    thrown_errors[e] = 1
+                else:
+                    thrown_errors[e] += 1
             except IOError as e:
                 dicom_files.append([file, e])
-                thrown_errors.add(e)
+                if e not in thrown_errors:
+                    thrown_errors[e] = 1
+                else:
+                    thrown_errors[e] += 1
             except Exception as e:
                 dicom_files.append([file, e])
-                thrown_errors.add(e)
+                if e not in thrown_errors:
+                    thrown_errors[e] = 1
+                else:
+                    thrown_errors[e] += 1
             if len(dicom_files) >= give_up_after and valid_count == 0:
                 print("Could not find any valid DICOMS after checking {} files. Stopping.".format(give_up_after))
-                print("Errors thrown: {}".format(thrown_errors))
                 # force read the file to see what tags are present
                 print("Force reading file and checking DICOM tags: {}".format(file))
                 dicom = pydicom.dcmread(file, force=True)
@@ -64,6 +72,10 @@ def search_for_dicom_files(input_dir, output_file, give_up_after=1000):
 
     print("Found {} valid DICOM files.".format(valid_count))
     print("Found {} invalid DICOM files.".format(len(dicom_files) - valid_count))
+    if len(thrown_errors) > 0:
+        print("Found {} errors while reading DICOM files.".format(len(thrown_errors)))
+        for error, count in thrown_errors.items():
+            print("Error: {} - Count: {}".format(error, count))
     print("Writing DICOM validity results to {}".format(output_file))
     with open(output_file, "w") as f:
         for file, is_valid in dicom_files:
