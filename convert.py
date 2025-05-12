@@ -72,7 +72,7 @@ def main():
                             anonymize=True,
                             bids_directory=output_dir,
                             delete_intermediates=True,
-                            verbose=args.verbose)
+                            verbose=verbose)
 
 
 if __name__ == "__main__":
