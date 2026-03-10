@@ -1,37 +1,27 @@
 FROM ubuntu:noble
 
-# Install Dependencies
+ENV DEBIAN_FRONTEND=noninteractive
+ENV MAMBA_ROOT_PREFIX=/opt/mamba
+ENV PATH="${MAMBA_ROOT_PREFIX}/bin:${MAMBA_ROOT_PREFIX}/condabin:/usr/local/bin:${PATH}"
+
+# Install system utilities and micromamba bootstrap dependencies.
 RUN apt-get update && apt-get upgrade -y && \
-	apt-get install -y build-essential pkg-config cmake git pigz && \
-	apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
-
-# Get dcm2niix from github and compile
-RUN cd /tmp && \
-	git clone https://github.com/rordenlab/dcm2niix.git && \
-	cd dcm2niix && mkdir build && cd build && \
-	cmake -DBATCH_VERSION=ON -DUSE_OPENJPEG=ON .. && \
-	make && make install
-
-# Download BIDS Manager
-RUN cd / && \
-    git clone https://github.com/ellisdg/BIDSManager.git
-
-# Install Python and pip
-RUN apt-get update && \
-    apt-get install -y python3 python3-pip python3-venv && \
+    apt-get install -y ca-certificates curl bzip2 pigz && \
     apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y
 
-# Create a virtual environment
-RUN python3 -m venv /opt/venv
+# Install micromamba and use conda-forge packages for runtime dependencies.
+RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | \
+    tar -xj -C /usr/local/bin --strip-components=1 bin/micromamba && \
+    micromamba install -y -n base -c conda-forge python pip dcm2niix pandas pydicom && \
+    micromamba clean --all --yes
 
-# Activate the virtual environment and install packages
-RUN /opt/venv/bin/pip install --no-cache-dir \
-    pandas \
-    pydicom
+# Install BIDS Manager from the local build context.
+WORKDIR /BIDSManager
+COPY . /BIDSManager
+RUN pip install --no-cache-dir .
 
-# Set the virtual environment as the default Python environment
-ENV PATH="/opt/venv/bin:$PATH"
+# Smoke-test key tools and imports at build time.
+RUN python --version && \
+    python -c "import shutil, subprocess; assert shutil.which('dcm2niix'), 'dcm2niix not found in PATH'; subprocess.run(['dcm2niix', '--version'], check=False); import bidsmanager, pandas, pydicom; print('installation_ok')"
 
-ENV PYTHONPATH /BIDSManager:$PYTHONPATH
-
-ENTRYPOINT ["python3", "/BIDSManager/convert.py"]
+ENTRYPOINT ["python", "/BIDSManager/convert.py"]

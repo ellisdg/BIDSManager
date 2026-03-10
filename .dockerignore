@@ -1,0 +1,6 @@
+TEST/
+build/
+bidsmanager.egg-info/
+example_heuristics/
+__pycache__/
+*.pyc
