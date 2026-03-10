@@ -1,0 +1,6 @@
+include README.md
+include requirements.txt
+recursive-include bidsmanager *
+recursive-include example_heuristics *
+recursive-include TEST *
+

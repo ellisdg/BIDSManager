@@ -1,3 +1,5 @@
 .idea/
 *.pyc
 .DS_Store
+build/
+bidsmanager.egg-info

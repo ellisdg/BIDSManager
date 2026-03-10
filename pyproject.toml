@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bidsmanager"
+version = "0.1.0"
+description = "A BIDS management and conversion tool."
+authors = [
+  { name="Your Name", email="your.email@example.com" }
+]
+readme = "README.md"
+requires-python = ">=3.7"
+license = "MIT"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/bidsmanager"
+
+[tool.setuptools.packages.find]
+include = ["bidsmanager*"]
