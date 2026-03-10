@@ -88,6 +88,13 @@ def main():
     # Load heuristic from JSON file
     with open(args.heuristic, 'r') as f:
         heuristic = json.load(f)
+
+    # Optional conversion controls can be provided in the heuristic JSON.
+    subject_map_csv = heuristic.get("subject_map_csv")
+    subject_map_excel = heuristic.get("subject_map_excel")
+    use_session_dates = heuristic.get("use_session_dates", False)
+    combine_sessions = heuristic.get("combine_sessions", False)
+
     input_dir = os.path.abspath(args.input_dir)
     output_dir = os.path.abspath(args.output_dir)
     verbose = args.verbose
@@ -102,7 +109,11 @@ def main():
                             anonymize=True,
                             bids_directory=output_dir,
                             delete_intermediates=True,
-                            verbose=verbose)
+                            verbose=verbose,
+                            use_session_dates=use_session_dates,
+                            combine_sessions=combine_sessions,
+                            subject_map_csv=subject_map_csv,
+                            subject_map_excel=subject_map_excel)
 
 
 if __name__ == "__main__":

@@ -4,11 +4,13 @@ from subprocess import Popen, PIPE
 import random
 from warnings import warn
 import datetime
+import csv
 
 from ..base.subject import Subject
 from ..base.dataset import DataSet
 from ..base.session import Session
 from ..utils.image_utils import load_image
+from ..utils.session_utils import modality_to_group_name
 
 
 def parse_image_keys(in_file, description, heuristic, case_sensitive=False):
@@ -76,6 +78,99 @@ def get_image(in_file, separator, heuristic, case_sensitive=False):
                           path_to_sidecar=sidecar_path, **image_keys)
 
 
+def _normalize_mapping_value(value):
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if text.endswith(".0"):
+        try:
+            return str(int(float(text)))
+        except ValueError:
+            return text
+    return text
+
+
+def _read_mapping_rows(subject_map_csv=None, subject_map_excel=None):
+    rows = []
+    if subject_map_csv and os.path.exists(subject_map_csv):
+        with open(subject_map_csv, "r") as f:
+            reader = csv.DictReader(f)
+            rows.extend(list(reader))
+    if subject_map_excel and os.path.exists(subject_map_excel):
+        try:
+            import pandas as pd
+            frame = pd.read_excel(subject_map_excel)
+            rows.extend(frame.to_dict(orient="records"))
+        except Exception as exc:
+            warn(RuntimeWarning("Could not read subject mapping excel file {}: {}".format(subject_map_excel, exc)))
+            # Fallback for lightweight test environments: treat file as CSV-like text.
+            try:
+                with open(subject_map_excel, "r") as f:
+                    reader = csv.DictReader(f)
+                    rows.extend(list(reader))
+            except Exception:
+                pass
+    return rows
+
+
+def _build_subject_session_mapping(subject_map_csv=None, subject_map_excel=None):
+    subject_map = {}
+    session_map = {}
+    rows = _read_mapping_rows(subject_map_csv=subject_map_csv, subject_map_excel=subject_map_excel)
+    for row in rows:
+        source_subject = _normalize_mapping_value(row.get("source_subject") or row.get("source") or row.get("subject"))
+        bids_subject = _normalize_mapping_value(row.get("bids_subject") or row.get("subject_id") or row.get("bids_id"))
+        session_id = _normalize_mapping_value(row.get("session_id") or row.get("session") or row.get("ses"))
+        if not source_subject:
+            continue
+        if bids_subject:
+            subject_map[source_subject] = bids_subject
+        if session_id:
+            session_map[source_subject] = session_id
+    return subject_map, session_map
+
+
+def _session_from_time(time_value):
+    try:
+        acquisition_date = datetime.datetime.strptime(time_value, "%Y%m%d%H%M%S")
+        return acquisition_date.strftime("%Y%m%d")
+    except ValueError:
+        warn(RuntimeWarning("Invalid time format: {}. Using empty session name.".format(time_value)))
+        return ""
+
+
+def _path_exists_for_image(image, subject_name, session_name, bids_directory):
+    if not bids_directory:
+        return False
+    group_name = modality_to_group_name(image.get_modality())
+    parts = [bids_directory, "sub-{}".format(subject_name)]
+    if session_name:
+        parts.append("ses-{}".format(session_name))
+    parts.append(group_name)
+
+    # Image is not attached to a Session yet, so build the final BIDS basename explicitly.
+    basename_parts = ["sub-{}".format(subject_name)]
+    if session_name:
+        basename_parts.append("ses-{}".format(session_name))
+    basename_parts.append(image.get_image_key())
+    out_file = os.path.join(*parts, "_".join(basename_parts) + image.get_extension())
+    return os.path.exists(out_file)
+
+
+def _increment_run_until_unique(image, session, subject_name, session_name, bids_directory):
+    # Keep incrementing run until neither the in-memory session nor the output filesystem has a conflict.
+    run_number = image.get_run_number() if image.get_run_number() else 1
+    image.set_run_number(run_number)
+    while session.get_images(modality=image.get_modality(), task=image.get_task_name(),
+                             acq=image.get_acquisition(), ce=image.get_contrast(), dir=image.get_direction(),
+                             rec=image.get_reconstruction(), run=image.get_run_number()) or \
+            _path_exists_for_image(image, subject_name, session_name, bids_directory):
+        run_number += 1
+        image.set_run_number(run_number)
+
+
 def convert_dicom_directory(input_directory,
                             heuristic,
                             anonymize=True,
@@ -84,6 +179,9 @@ def convert_dicom_directory(input_directory,
                             delete_intermediates=True,
                             verbose=False,
                             use_session_dates=False,
+                            combine_sessions=False,
+                            subject_map_csv=None,
+                            subject_map_excel=None,
                             case_sensitive=False):
     """
     Convert a directory of DICOM files to BIDS format using dcm2niix.
@@ -95,57 +193,64 @@ def convert_dicom_directory(input_directory,
     :param delete_intermediates:
     :param verbose:
     :param use_session_dates: If True, use the acquisition date to create session names.
-    Default behavior is to put all the images in a single session. (default: False)
+    :param combine_sessions: If True, put all images for a subject in a single no-session directory.
+    :param subject_map_csv: CSV mapping file for source_subject -> bids_subject/session.
+    :param subject_map_excel: Excel mapping file for source_subject -> bids_subject/session.
     :param case_sensitive: If True, matching of SeriesDescription will be case sensitive. (default: False)
     :return:
     """
-    # TODO: add option to specify a subject name to subject ID mapping
     output_directory = random_tmp_directory()
     run_dcm2niix_on_directory(input_directory, output_directory, filename="%n{0}%t{0}%d{0}%p{0}".format(separator),
                               anonymize=anonymize, verbose=verbose)
     output_niftis = sorted(glob.glob(os.path.join(output_directory, "*.nii.gz")))
     dataset = DataSet()
+
+    # Heuristic-level mapping paths are supported for backwards compatibility.
+    if subject_map_csv is None:
+        subject_map_csv = heuristic.get("subject_map_csv")
+    if subject_map_excel is None:
+        subject_map_excel = heuristic.get("subject_map_excel")
+    subject_name_map, session_name_map = _build_subject_session_mapping(subject_map_csv=subject_map_csv,
+                                                                        subject_map_excel=subject_map_excel)
+
     for f in output_niftis:
-        subject_name, time, description, protocol, run = parse_output(f, separator)
-        # what subject
+        source_subject_name, time, description, protocol, run = parse_output(f, separator)
+        _ = (description, protocol, run)
+
+        # Apply optional source->BIDS subject mapping.
+        subject_name = subject_name_map.get(source_subject_name, source_subject_name)
+
         if dataset.has_subject_id(subject_name):
             subject = dataset.get_subject(subject_name)
         else:
             subject = Subject(subject_name)
             dataset.add_subject(subject)
 
-        # parse acquisition date if use_session_dates is True
-        if use_session_dates:
-            # the variable time is expected to be in the format YYYYMMDDHHMMSS
-            try:
-                acquisition_date = datetime.datetime.strptime(time, "%Y%m%d%H%M%S")
-                session_name = acquisition_date.strftime("%Y%m%d")
-            except ValueError:
-                warn(RuntimeWarning("Invalid time format: {}. Using empty session name.".format(time)))
-                session_name = ""
+        # session mapping precedence: explicit mapping > date-derived > combined/no-session
+        if combine_sessions:
+            session_name = ""
+        elif source_subject_name in session_name_map:
+            session_name = session_name_map[source_subject_name]
+        elif use_session_dates:
+            session_name = _session_from_time(time)
         else:
             session_name = ""
-        # TODO: keep track of date/times and sort sessions
-        #       by dates, then anonymize them into session numbers.
 
-        # what session
         if subject.has_session(session_name):
             session = subject.get_session(session_name)
         else:
             session = Session(session_name)
             subject.add_session(session)
 
-        # add image
         image = get_image(f, separator, heuristic=heuristic, case_sensitive=case_sensitive)
-        # TODO: Add SBRef images to a certain group
         if image:
+            # Ensure new conversions do not overwrite files in an existing destination session.
+            _increment_run_until_unique(image=image,
+                                        session=session,
+                                        subject_name=subject_name,
+                                        session_name=session_name,
+                                        bids_directory=bids_directory)
             session.add_image(image)
-
-        # TODO: add intendedfor metadata for epi images
-        #       this could simply be looking for the nearest bold or dwi image
-        #       and saying that the epi image was intended for that image
-
-    # TODO: squeeze sessions
 
     if bids_directory:
         print("Writing bids directory: {}".format(bids_directory))
@@ -189,4 +294,3 @@ def run_dcm2niix_on_directory(input_directory, output_directory, filename="%t%d%
 def parse_cmd_output(cmd_output):
     if "No valid DICOM files were found" in str(cmd_output):
         raise RuntimeError("No valid DICOM files were found")
-
