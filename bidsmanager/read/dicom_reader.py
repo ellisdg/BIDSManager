@@ -132,7 +132,14 @@ def _build_subject_session_mapping(subject_map=None):
     session_map_dict = {}
     rows = _read_mapping_rows(subject_map=subject_map)
     for row in rows:
-        source_subject = _normalize_mapping_value(row.get("source_subject") or row.get("source") or row.get("subject"))
+        source_subject = _normalize_mapping_value(
+            row.get("source_subject")
+            or row.get("source_mrn")
+            or row.get("mrn")
+            or row.get("patient_id")
+            or row.get("source")
+            or row.get("subject")
+        )
         bids_subject = _normalize_mapping_value(row.get("bids_subject") or row.get("subject_id") or row.get("bids_id"))
         session_id = _normalize_mapping_value(row.get("session_id") or row.get("session") or row.get("ses"))
         if not source_subject:
@@ -193,6 +200,7 @@ def convert_dicom_directory(input_directory,
                             use_session_dates=False,
                             combine_sessions=False,
                             subject_map=None,
+                            source_id_from_mrn=False,
                             case_sensitive=False):
     """
     Convert a directory of DICOM files to BIDS format using dcm2niix.
@@ -205,13 +213,20 @@ def convert_dicom_directory(input_directory,
     :param verbose:
     :param use_session_dates: If True, use the acquisition date to create session names.
     :param combine_sessions: If True, put all images for a subject in a single no-session directory.
-    :param subject_map: CSV/XLS/XLSX mapping file for source_subject -> bids_subject/session.
+    :param subject_map: CSV/XLS/XLSX mapping file for source_subject/source_mrn -> bids_subject/session.
+    :param source_id_from_mrn: If True, use DICOM PatientID (%i) as the dcm2niix source identifier token.
     :param case_sensitive: If True, matching of SeriesDescription will be case sensitive. (default: False)
     :return:
     """
     output_directory = random_tmp_directory()
-    run_dcm2niix_on_directory(input_directory, output_directory, filename="%n{0}%t{0}%d{0}%p{0}".format(separator),
-                              anonymize=anonymize, verbose=verbose)
+    subject_token = "%i" if source_id_from_mrn else "%n"
+    run_dcm2niix_on_directory(
+        input_directory,
+        output_directory,
+        filename="{0}{1}%t{1}%d{1}%p{1}".format(subject_token, separator),
+        anonymize=anonymize,
+        verbose=verbose,
+    )
     output_niftis = sorted(glob.glob(os.path.join(output_directory, "*.nii.gz")))
     dataset = DataSet()
 

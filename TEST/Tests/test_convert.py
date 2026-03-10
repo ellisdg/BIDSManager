@@ -17,7 +17,8 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def _write_test_dicom(path: Path, subject: str, series_description: str, when: dt.datetime) -> None:
+def _write_test_dicom(path: Path, subject: str, series_description: str, when: dt.datetime,
+                      mrn: str | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     file_meta = pydicom.Dataset()
     file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.4"
@@ -26,7 +27,7 @@ def _write_test_dicom(path: Path, subject: str, series_description: str, when: d
 
     ds = FileDataset(str(path), {}, preamble=b"\0" * 128, file_meta=file_meta)
     ds.PatientName = subject
-    ds.PatientID = subject
+    ds.PatientID = mrn if mrn is not None else subject
     ds.Modality = "MR"
     ds.SeriesDescription = series_description
     ds.StudyDate = when.strftime("%Y%m%d")
@@ -68,7 +69,8 @@ def basic_heuristic(tmp_path):
 def _run_main(monkeypatch, input_dir: Path, output_dir: Path, heuristic_file: Path,
               subject_map: Path | None = None,
               use_session_dates: bool | None = None,
-              combine_sessions: bool | None = None):
+              combine_sessions: bool | None = None,
+              source_id_from_mrn: bool = False):
     monkeypatch.setattr(
         convert,
         "parse_args",
@@ -79,6 +81,7 @@ def _run_main(monkeypatch, input_dir: Path, output_dir: Path, heuristic_file: Pa
             subject_map=str(subject_map) if subject_map else None,
             use_session_dates=use_session_dates,
             combine_sessions=combine_sessions,
+            source_id_from_mrn=source_id_from_mrn,
             verbose=False,
             debug=False,
         ),
@@ -281,3 +284,42 @@ def test_convert_uses_cli_subject_map_argument(tmp_path, monkeypatch, basic_heur
     _run_main(monkeypatch, input_dir, out_dir, basic_heuristic, subject_map=mapping_csv)
 
     assert (out_dir / "sub-201").is_dir()
+
+
+def test_convert_uses_mrn_subject_mapping(tmp_path, monkeypatch, basic_heuristic):
+    input_dir = tmp_path / "dicoms"
+    out_dir = tmp_path / "bids"
+
+    _write_test_dicom(
+        input_dir / "scan_mrn1.dcm",
+        "PATIENT_A",
+        "T1 MPRAGE",
+        dt.datetime(2024, 1, 5, 8, 0, 0),
+        mrn="MRN1001",
+    )
+    _write_test_dicom(
+        input_dir / "scan_mrn2.dcm",
+        "PATIENT_B",
+        "T1 MPRAGE",
+        dt.datetime(2024, 1, 5, 9, 0, 0),
+        mrn="MRN1002",
+    )
+
+    mapping_csv = tmp_path / "subject_map_mrn.csv"
+    with mapping_csv.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["source_mrn", "bids_subject"])
+        writer.writeheader()
+        writer.writerow({"source_mrn": "MRN1001", "bids_subject": "301"})
+        writer.writerow({"source_mrn": "MRN1002", "bids_subject": "302"})
+
+    _run_main(
+        monkeypatch,
+        input_dir,
+        out_dir,
+        basic_heuristic,
+        subject_map=mapping_csv,
+        source_id_from_mrn=True,
+    )
+
+    assert (out_dir / "sub-301").is_dir()
+    assert (out_dir / "sub-302").is_dir()

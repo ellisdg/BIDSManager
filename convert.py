@@ -33,6 +33,11 @@ def parse_args():
         default=None,
         help="Combine all scans into a single no-session directory per subject.",
     )
+    parser.add_argument(
+        "--source-id-from-mrn",
+        action="store_true",
+        help="Use DICOM PatientID (MRN) as the source identifier for subject mapping.",
+    )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
     parser.add_argument("--debug", action="store_true", help="Enable debug output.")
     return parser.parse_args()
@@ -121,6 +126,8 @@ def main():
     if combine_sessions is None:
         combine_sessions = heuristic.get("combine_sessions", False)
 
+    source_id_from_mrn = args.source_id_from_mrn or heuristic.get("source_id_from_mrn", False)
+
     input_dir = os.path.abspath(args.input_dir)
     output_dir = os.path.abspath(args.output_dir)
     verbose = args.verbose
@@ -138,7 +145,8 @@ def main():
                             verbose=verbose,
                             use_session_dates=use_session_dates,
                             combine_sessions=combine_sessions,
-                            subject_map=subject_map)
+                            subject_map=subject_map,
+                            source_id_from_mrn=source_id_from_mrn)
 
 
 if __name__ == "__main__":
