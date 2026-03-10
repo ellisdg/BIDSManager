@@ -2,64 +2,108 @@
 [![Build Status](https://travis-ci.org/ellisdg/BIDSManager.svg?branch=master)](https://travis-ci.org/ellisdg/BIDSManager)
 [![codecov](https://codecov.io/gh/ellisdg/BIDSManager/branch/master/graph/badge.svg)](https://codecov.io/gh/ellisdg/BIDSManager)
 
-Allows users to easily convert, organize, and manage neuroimaging data in Python.
+BIDSManager helps you convert, organize, and manage neuroimaging data in Python.
 
-Motivated by issues that have sprung from researchers wanting to store and share neuroimaging data, 
-[Gorgolewski, et al.](https://www.nature.com/articles/sdata201644)
-proposed a standard organization for storing, sharing, and describing brain imaging datasets, known as the 
-[brain imaging data structure (BIDS)](http://bids.neuroimaging.io/). 
-Since then, the standard has been gaining traction across neuroimaging researchers. 
-Several software tools have been developed to access, process, and convert to and from BIDS data sets. 
-Yet no tool has been proposed that allows users to actively organize and manage sets of data for ongoing studies.
+It is motivated by the BIDS standard described by
+[Gorgolewski et al.](https://www.nature.com/articles/sdata201644), and is designed for active studies where
+new data is continuously added and curated.
 
-BIDSManager serves as an all-in-one tool that allows users looking to quickly access, manage, change, and update their
-neuroimaging data sets. Users can quickly add new data to an existing BIDS data set. 
-A directory containing DICOMs can be easily sorted by subject and session and then converted to a format that complies 
-with BIDS.
+## Convert DICOM to BIDS with `convert.py`
 
-## Access an existing BIDS data set
-BIDSManager makes it easy to acces data from an existing data set saved to file:
+For most users, the main entry point is `convert.py`.
+
+### Basic usage
+
+```bash
+python convert.py /path/to/dicom_dir /path/to/bids_out --heuristic /path/to/heuristic.json
 ```
+
+### Command-line options
+
+- `--heuristic`: required JSON heuristic file describing how `SeriesDescription` maps to BIDS entities.
+- `--subject-map`: optional mapping file (`.csv`, `.xls`, or `.xlsx`) for subject/session mapping.
+- `--use-session-dates` / `--no-use-session-dates`: optionally derive session names from acquisition dates.
+- `--combine-sessions` / `--no-combine-sessions`: optionally place all scans for a subject into one no-session folder.
+- `--verbose`: show dcm2niix output.
+- `--debug`: run a DICOM validity scan and write diagnostics to `output_dir/source/dicom_files.csv`.
+
+Example with mapping and date-based sessions:
+
+```bash
+python convert.py /path/to/dicoms /path/to/bids \
+  --heuristic /path/to/heuristic.json \
+  --subject-map /path/to/subject_map.csv \
+  --use-session-dates \
+  --no-combine-sessions
+```
+
+### Subject map format
+
+`--subject-map` (or `"subject_map"` in heuristic JSON) can include these columns:
+
+- `source_subject` (required for mapping rows)
+- `bids_subject` (optional; defaults to source subject if omitted)
+- `session_id` (optional; when present, overrides date-derived session naming)
+
+Example CSV:
+
+```csv
+source_subject,bids_subject,session_id
+RAW001,001,baseline
+RAW002,002,followup
+```
+
+### Heuristic example
+
+```json
+{
+  "SeriesDescription": [
+    ["T1", {"modality": "T1w"}],
+    ["rest", {"modality": "bold", "task": "rest"}]
+  ],
+  "subject_map": "/path/to/subject_map.csv",
+  "use_session_dates": true,
+  "combine_sessions": false
+}
+```
+
+Notes:
+
+- CLI values override heuristic values when both are provided.
+- `subject_map` is selected by file extension (`.csv`, `.xls`, `.xlsx`).
+
+## Access an existing BIDS dataset
+
+```python
 from bidsmanager.read import read_dataset
+
 dataset = read_dataset("/path/to/dataset")
-```
-Image file paths from the data set can then be obtained:
-```
-t1_image_files = dataset.get_image_paths(modality=“T1w”)
+t1_image_files = dataset.get_image_paths(modality="T1w")
 ```
 
-## Modify a task name
-Here we iterate through all the images in the dataset that had the task name “finger”, change the task name to 
-“fingertapping”, and then update the image file paths on file.
-```
-for image in dataset.get_images(task_name=“finger”):
-    image.set_task_name(“fingertapping”)
+## Modify task names
+
+```python
+for image in dataset.get_images(task="finger"):
+    image.set_task_name("fingertapping")
 dataset.update(move=True)
 ```
 
-## Convert DICOM data
-BIDSManager can read in a dicom directory and convert it to a bids directory:
-```
-from bidsmanager.read.dicom_reader import read_dicom_directory
-from bidsmanager.write.dataset_writer import write_dataset
-dataset = read_dicom_directory(“/path/to/dicom/directory”)
-dataset.set_path(“/path/to/write/bids/directory”)
-dataset.update(move=True)
-```
+## Build a BIDS dataset from CSV metadata
 
-## Read CSV File
-BIDSManager can also read in a CSV file that contains information on a list of NIFTI file names. BIDS Manager will then
-sort those files into a BIDS formatted directory. Take the below information that could be encoded in a CSV file:
+BIDSManager can read a CSV describing NIfTI files and then write a BIDS directory.
+
+Example table:
 
 | subject | session | modality | file | task |
-| ------- | ------- | -------- | ---- | -------- |
-| 003 | Visit1 | T1w | /path/to/t1.nii.gz |  |
+| ------- | ------- | -------- | ---- | ---- |
+| 003 | Visit1 | T1w | /path/to/t1.nii.gz | |
 | 005 | Visit1 | bold | /path/to/fmri.nii.gz | Finger Tapping |
 
-We can read this CSV file as a data set using BIDSManager and then write the data into BIDS format:
-```
+```python
 from bidsmanager.read import read_csv
-dataset = read_csv(“/path/to/csv_file.csv”)
-dataset.set_path(“/path/to/write/bids/directory”)
+
+dataset = read_csv("/path/to/csv_file.csv")
+dataset.set_path("/path/to/write/bids/directory")
 dataset.update()
 ```

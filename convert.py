@@ -15,6 +15,24 @@ def parse_args():
         help="Path to the heuristic JSON file.",
         required=True
     )
+    parser.add_argument(
+        "--subject-map",
+        type=str,
+        default=None,
+        help="Optional CSV/XLS/XLSX mapping file for source_subject -> bids_subject/session_id.",
+    )
+    parser.add_argument(
+        "--use-session-dates",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Use acquisition dates for session names (ses-YYYYMMDD).",
+    )
+    parser.add_argument(
+        "--combine-sessions",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Combine all scans into a single no-session directory per subject.",
+    )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
     parser.add_argument("--debug", action="store_true", help="Enable debug output.")
     return parser.parse_args()
@@ -89,11 +107,19 @@ def main():
     with open(args.heuristic, 'r') as f:
         heuristic = json.load(f)
 
-    # Optional conversion controls can be provided in the heuristic JSON.
-    subject_map_csv = heuristic.get("subject_map_csv")
-    subject_map_excel = heuristic.get("subject_map_excel")
-    use_session_dates = heuristic.get("use_session_dates", False)
-    combine_sessions = heuristic.get("combine_sessions", False)
+    # CLI args override heuristic values when provided.
+    subject_map = args.subject_map if args.subject_map else heuristic.get("subject_map")
+    # Backward compatibility for existing heuristic files.
+    if not subject_map:
+        subject_map = heuristic.get("subject_map_csv") or heuristic.get("subject_map_excel")
+
+    use_session_dates = args.use_session_dates
+    if use_session_dates is None:
+        use_session_dates = heuristic.get("use_session_dates", False)
+
+    combine_sessions = args.combine_sessions
+    if combine_sessions is None:
+        combine_sessions = heuristic.get("combine_sessions", False)
 
     input_dir = os.path.abspath(args.input_dir)
     output_dir = os.path.abspath(args.output_dir)
@@ -112,8 +138,7 @@ def main():
                             verbose=verbose,
                             use_session_dates=use_session_dates,
                             combine_sessions=combine_sessions,
-                            subject_map_csv=subject_map_csv,
-                            subject_map_excel=subject_map_excel)
+                            subject_map=subject_map)
 
 
 if __name__ == "__main__":

@@ -92,33 +92,45 @@ def _normalize_mapping_value(value):
     return text
 
 
-def _read_mapping_rows(subject_map_csv=None, subject_map_excel=None):
+def _read_mapping_rows(subject_map=None):
     rows = []
-    if subject_map_csv and os.path.exists(subject_map_csv):
-        with open(subject_map_csv, "r") as f:
+    if not subject_map:
+        return rows
+    if not os.path.exists(subject_map):
+        warn(RuntimeWarning("Subject mapping file not found: {}".format(subject_map)))
+        return rows
+
+    extension = os.path.splitext(subject_map)[-1].lower()
+    if extension == ".csv":
+        with open(subject_map, "r") as f:
             reader = csv.DictReader(f)
             rows.extend(list(reader))
-    if subject_map_excel and os.path.exists(subject_map_excel):
+        return rows
+
+    if extension in (".xls", ".xlsx"):
         try:
             import pandas as pd
-            frame = pd.read_excel(subject_map_excel)
+            frame = pd.read_excel(subject_map)
             rows.extend(frame.to_dict(orient="records"))
         except Exception as exc:
-            warn(RuntimeWarning("Could not read subject mapping excel file {}: {}".format(subject_map_excel, exc)))
+            warn(RuntimeWarning("Could not read subject mapping excel file {}: {}".format(subject_map, exc)))
             # Fallback for lightweight test environments: treat file as CSV-like text.
             try:
-                with open(subject_map_excel, "r") as f:
+                with open(subject_map, "r") as f:
                     reader = csv.DictReader(f)
                     rows.extend(list(reader))
             except Exception:
                 pass
+        return rows
+
+    warn(RuntimeWarning("Unsupported subject mapping extension for {}. Expected .csv/.xls/.xlsx".format(subject_map)))
     return rows
 
 
-def _build_subject_session_mapping(subject_map_csv=None, subject_map_excel=None):
-    subject_map = {}
-    session_map = {}
-    rows = _read_mapping_rows(subject_map_csv=subject_map_csv, subject_map_excel=subject_map_excel)
+def _build_subject_session_mapping(subject_map=None):
+    subject_map_dict = {}
+    session_map_dict = {}
+    rows = _read_mapping_rows(subject_map=subject_map)
     for row in rows:
         source_subject = _normalize_mapping_value(row.get("source_subject") or row.get("source") or row.get("subject"))
         bids_subject = _normalize_mapping_value(row.get("bids_subject") or row.get("subject_id") or row.get("bids_id"))
@@ -126,10 +138,10 @@ def _build_subject_session_mapping(subject_map_csv=None, subject_map_excel=None)
         if not source_subject:
             continue
         if bids_subject:
-            subject_map[source_subject] = bids_subject
+            subject_map_dict[source_subject] = bids_subject
         if session_id:
-            session_map[source_subject] = session_id
-    return subject_map, session_map
+            session_map_dict[source_subject] = session_id
+    return subject_map_dict, session_map_dict
 
 
 def _session_from_time(time_value):
@@ -180,8 +192,7 @@ def convert_dicom_directory(input_directory,
                             verbose=False,
                             use_session_dates=False,
                             combine_sessions=False,
-                            subject_map_csv=None,
-                            subject_map_excel=None,
+                            subject_map=None,
                             case_sensitive=False):
     """
     Convert a directory of DICOM files to BIDS format using dcm2niix.
@@ -194,8 +205,7 @@ def convert_dicom_directory(input_directory,
     :param verbose:
     :param use_session_dates: If True, use the acquisition date to create session names.
     :param combine_sessions: If True, put all images for a subject in a single no-session directory.
-    :param subject_map_csv: CSV mapping file for source_subject -> bids_subject/session.
-    :param subject_map_excel: Excel mapping file for source_subject -> bids_subject/session.
+    :param subject_map: CSV/XLS/XLSX mapping file for source_subject -> bids_subject/session.
     :param case_sensitive: If True, matching of SeriesDescription will be case sensitive. (default: False)
     :return:
     """
@@ -206,12 +216,13 @@ def convert_dicom_directory(input_directory,
     dataset = DataSet()
 
     # Heuristic-level mapping paths are supported for backwards compatibility.
-    if subject_map_csv is None:
-        subject_map_csv = heuristic.get("subject_map_csv")
-    if subject_map_excel is None:
-        subject_map_excel = heuristic.get("subject_map_excel")
-    subject_name_map, session_name_map = _build_subject_session_mapping(subject_map_csv=subject_map_csv,
-                                                                        subject_map_excel=subject_map_excel)
+    if subject_map is None:
+        subject_map = heuristic.get("subject_map")
+    # Backward compatibility for older heuristic keys.
+    if subject_map is None:
+        subject_map = heuristic.get("subject_map_csv") or heuristic.get("subject_map_excel")
+
+    subject_name_map, session_name_map = _build_subject_session_mapping(subject_map=subject_map)
 
     for f in output_niftis:
         source_subject_name, time, description, protocol, run = parse_output(f, separator)
