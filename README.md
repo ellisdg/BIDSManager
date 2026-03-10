@@ -24,8 +24,10 @@ python convert.py /path/to/dicom_dir /path/to/bids_out --heuristic /path/to/heur
 - `--subject-map`: optional mapping file (`.csv`, `.xls`, or `.xlsx`) for subject/session mapping.
 - `--use-session-dates` / `--no-use-session-dates`: optionally derive session names from acquisition dates.
 - `--combine-sessions` / `--no-combine-sessions`: optionally place all scans for a subject into one no-session folder.
+- `--source-id-from-mrn`: use DICOM `PatientID` (MRN) instead of `PatientName` for source ID matching.
+- `--no-anonymize`: disable anonymization passed to dcm2niix.
 - `--verbose`: show dcm2niix output.
-- `--debug`: run a DICOM validity scan and write diagnostics to `output_dir/source/dicom_files.csv`.
+- `--debug`: run a DICOM validity scan, write diagnostics to `output_dir/source/dicom_files.csv`, and keep the temporary dcm2niix directory for inspection.
 
 Example with mapping and date-based sessions:
 
@@ -71,6 +73,7 @@ Notes:
 
 - CLI values override heuristic values when both are provided.
 - `subject_map` is selected by file extension (`.csv`, `.xls`, `.xlsx`).
+- Temporary dcm2niix output is deleted by default after conversion; use `--debug` to keep it.
 
 ## Access an existing BIDS dataset
 

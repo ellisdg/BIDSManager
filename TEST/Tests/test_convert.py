@@ -10,6 +10,7 @@ import pytest
 from pydicom.dataset import FileDataset
 
 import convert
+from bidsmanager.read import dicom_reader
 
 pytestmark = pytest.mark.skipif(
     shutil.which("dcm2niix") is None,
@@ -70,7 +71,8 @@ def _run_main(monkeypatch, input_dir: Path, output_dir: Path, heuristic_file: Pa
               subject_map: Path | None = None,
               use_session_dates: bool | None = None,
               combine_sessions: bool | None = None,
-              source_id_from_mrn: bool = False):
+              source_id_from_mrn: bool = False,
+              debug: bool = False):
     monkeypatch.setattr(
         convert,
         "parse_args",
@@ -82,8 +84,9 @@ def _run_main(monkeypatch, input_dir: Path, output_dir: Path, heuristic_file: Pa
             use_session_dates=use_session_dates,
             combine_sessions=combine_sessions,
             source_id_from_mrn=source_id_from_mrn,
+            no_anonymize=False,
             verbose=False,
-            debug=False,
+            debug=debug,
         ),
     )
     convert.main()
@@ -323,3 +326,67 @@ def test_convert_uses_mrn_subject_mapping(tmp_path, monkeypatch, basic_heuristic
 
     assert (out_dir / "sub-301").is_dir()
     assert (out_dir / "sub-302").is_dir()
+
+
+def test_main_enables_temp_cleanup_by_default(tmp_path, monkeypatch, basic_heuristic):
+    captured = {}
+
+    def _fake_convert_dicom_directory(**kwargs):
+        captured.update(kwargs)
+
+    monkeypatch.setattr("bidsmanager.read.dicom_reader.convert_dicom_directory", _fake_convert_dicom_directory)
+
+    _run_main(monkeypatch, tmp_path / "dicoms", tmp_path / "bids", basic_heuristic, debug=False)
+
+    assert captured["cleanup_temp_directory"] is True
+
+
+def test_main_disables_temp_cleanup_in_debug_mode(tmp_path, monkeypatch, basic_heuristic):
+    captured = {}
+
+    def _fake_convert_dicom_directory(**kwargs):
+        captured.update(kwargs)
+
+    monkeypatch.setattr("bidsmanager.read.dicom_reader.convert_dicom_directory", _fake_convert_dicom_directory)
+    monkeypatch.setattr(convert, "search_for_dicom_files", lambda *_args, **_kwargs: None)
+
+    _run_main(monkeypatch, tmp_path / "dicoms", tmp_path / "bids", basic_heuristic, debug=True)
+
+    assert captured["cleanup_temp_directory"] is False
+
+
+def test_convert_dicom_directory_cleans_temp_directory_by_default(tmp_path, monkeypatch):
+    temp_dir = tmp_path / "tmp_dcm2niix"
+
+    def _fake_random_tmp_directory():
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        return str(temp_dir)
+
+    monkeypatch.setattr(dicom_reader, "random_tmp_directory", _fake_random_tmp_directory)
+    monkeypatch.setattr(dicom_reader, "run_dcm2niix_on_directory", lambda *args, **kwargs: None)
+
+    dicom_reader.convert_dicom_directory(
+        input_directory=str(tmp_path / "dicoms"),
+        heuristic={"SeriesDescription": [["T1", {"modality": "T1w"}]]},
+    )
+
+    assert not temp_dir.exists()
+
+
+def test_convert_dicom_directory_keeps_temp_directory_when_requested(tmp_path, monkeypatch):
+    temp_dir = tmp_path / "tmp_dcm2niix_keep"
+
+    def _fake_random_tmp_directory():
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        return str(temp_dir)
+
+    monkeypatch.setattr(dicom_reader, "random_tmp_directory", _fake_random_tmp_directory)
+    monkeypatch.setattr(dicom_reader, "run_dcm2niix_on_directory", lambda *args, **kwargs: None)
+
+    dicom_reader.convert_dicom_directory(
+        input_directory=str(tmp_path / "dicoms"),
+        heuristic={"SeriesDescription": [["T1", {"modality": "T1w"}]]},
+        cleanup_temp_directory=False,
+    )
+
+    assert temp_dir.exists()

@@ -151,7 +151,8 @@ def main():
                             use_session_dates=use_session_dates,
                             combine_sessions=combine_sessions,
                             subject_map=subject_map,
-                            source_id_from_mrn=source_id_from_mrn)
+                            source_id_from_mrn=source_id_from_mrn,
+                            cleanup_temp_directory=not args.debug)
 
 
 if __name__ == "__main__":

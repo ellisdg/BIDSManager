@@ -5,6 +5,7 @@ import random
 from warnings import warn
 import datetime
 import csv
+import shutil
 
 from ..base.subject import Subject
 from ..base.dataset import DataSet
@@ -212,6 +213,7 @@ def convert_dicom_directory(input_directory,
                             separator="---",
                             bids_directory=None,
                             delete_intermediates=True,
+                            cleanup_temp_directory=True,
                             verbose=False,
                             use_session_dates=False,
                             combine_sessions=False,
@@ -226,6 +228,7 @@ def convert_dicom_directory(input_directory,
     :param separator:
     :param bids_directory:
     :param delete_intermediates:
+    :param cleanup_temp_directory: If True, delete the temporary dcm2niix output directory after conversion.
     :param verbose:
     :param use_session_dates: If True, use the acquisition date to create session names.
     :param combine_sessions: If True, put all images for a subject in a single no-session directory.
@@ -235,77 +238,81 @@ def convert_dicom_directory(input_directory,
     :return:
     """
     output_directory = random_tmp_directory()
-    subject_token = "%i" if source_id_from_mrn else "%n"
-    run_dcm2niix_on_directory(
-        input_directory,
-        output_directory,
-        filename="{0}{1}%t{1}%d{1}%p{1}".format(subject_token, separator),
-        anonymize=anonymize,
-        verbose=verbose,
-    )
-    output_niftis = sorted(glob.glob(os.path.join(output_directory, "*.nii.gz")))
     dataset = DataSet()
+    try:
+        subject_token = "%i" if source_id_from_mrn else "%n"
+        run_dcm2niix_on_directory(
+            input_directory,
+            output_directory,
+            filename="{0}{1}%t{1}%d{1}%p{1}".format(subject_token, separator),
+            anonymize=anonymize,
+            verbose=verbose,
+        )
+        output_niftis = sorted(glob.glob(os.path.join(output_directory, "*.nii.gz")))
 
-    # Heuristic-level mapping paths are supported for backwards compatibility.
-    if subject_map is None:
-        subject_map = heuristic.get("subject_map")
-    # Backward compatibility for older heuristic keys.
-    if subject_map is None:
-        subject_map = heuristic.get("subject_map_csv") or heuristic.get("subject_map_excel")
+        # Heuristic-level mapping paths are supported for backwards compatibility.
+        if subject_map is None:
+            subject_map = heuristic.get("subject_map")
+        # Backward compatibility for older heuristic keys.
+        if subject_map is None:
+            subject_map = heuristic.get("subject_map_csv") or heuristic.get("subject_map_excel")
 
-    subject_name_map, session_name_map = _build_subject_session_mapping(subject_map=subject_map)
+        subject_name_map, session_name_map = _build_subject_session_mapping(subject_map=subject_map)
 
-    for f in output_niftis:
-        source_subject_name, time, description, protocol, run = parse_output(f, separator)
-        _ = (description, protocol, run)
+        for f in output_niftis:
+            source_subject_name, time, description, protocol, run = parse_output(f, separator)
+            _ = (description, protocol, run)
 
-        source_subject_canonical = _canonical_source_id(source_subject_name)
+            source_subject_canonical = _canonical_source_id(source_subject_name)
 
-        # Apply optional source->BIDS subject mapping.
-        subject_name = subject_name_map.get(source_subject_name,
-                                            subject_name_map.get(source_subject_canonical, source_subject_name))
+            # Apply optional source->BIDS subject mapping.
+            subject_name = subject_name_map.get(source_subject_name,
+                                                subject_name_map.get(source_subject_canonical, source_subject_name))
 
-        if dataset.has_subject_id(subject_name):
-            subject = dataset.get_subject(subject_name)
-        else:
-            subject = Subject(subject_name)
-            dataset.add_subject(subject)
+            if dataset.has_subject_id(subject_name):
+                subject = dataset.get_subject(subject_name)
+            else:
+                subject = Subject(subject_name)
+                dataset.add_subject(subject)
 
-        # session mapping precedence: explicit mapping > date-derived > combined/no-session
-        if combine_sessions:
-            session_name = ""
-        elif source_subject_name in session_name_map:
-            session_name = session_name_map[source_subject_name]
-        elif source_subject_canonical in session_name_map:
-            session_name = session_name_map[source_subject_canonical]
-        elif use_session_dates:
-            session_name = _session_from_time(time)
-        else:
-            session_name = ""
+            # session mapping precedence: explicit mapping > date-derived > combined/no-session
+            if combine_sessions:
+                session_name = ""
+            elif source_subject_name in session_name_map:
+                session_name = session_name_map[source_subject_name]
+            elif source_subject_canonical in session_name_map:
+                session_name = session_name_map[source_subject_canonical]
+            elif use_session_dates:
+                session_name = _session_from_time(time)
+            else:
+                session_name = ""
 
-        if subject.has_session(session_name):
-            session = subject.get_session(session_name)
-        else:
-            session = Session(session_name)
-            subject.add_session(session)
+            if subject.has_session(session_name):
+                session = subject.get_session(session_name)
+            else:
+                session = Session(session_name)
+                subject.add_session(session)
 
-        image = get_image(f, separator, heuristic=heuristic, case_sensitive=case_sensitive)
-        if image:
-            # Ensure new conversions do not overwrite files in an existing destination session.
-            _increment_run_until_unique(image=image,
-                                        session=session,
-                                        subject_name=subject_name,
-                                        session_name=session_name,
-                                        bids_directory=bids_directory)
-            session.add_image(image)
+            image = get_image(f, separator, heuristic=heuristic, case_sensitive=case_sensitive)
+            if image:
+                # Ensure new conversions do not overwrite files in an existing destination session.
+                _increment_run_until_unique(image=image,
+                                            session=session,
+                                            subject_name=subject_name,
+                                            session_name=session_name,
+                                            bids_directory=bids_directory)
+                session.add_image(image)
 
-    if bids_directory:
-        print("Writing bids directory: {}".format(bids_directory))
-        dataset.set_path(bids_directory)
-        if delete_intermediates:
-            dataset.update(move=True)
-        else:
-            dataset.update(move=False)
+        if bids_directory:
+            print("Writing bids directory: {}".format(bids_directory))
+            dataset.set_path(bids_directory)
+            if delete_intermediates:
+                dataset.update(move=True)
+            else:
+                dataset.update(move=False)
+    finally:
+        if cleanup_temp_directory and os.path.exists(output_directory):
+            shutil.rmtree(output_directory)
 
     return dataset
 
