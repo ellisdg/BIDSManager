@@ -38,6 +38,11 @@ def parse_args():
         action="store_true",
         help="Use DICOM PatientID (MRN) as the source identifier for subject mapping.",
     )
+    parser.add_argument(
+        "--no-anonymize",
+        action="store_true",
+        help="Disable anonymization of sensitive patient data during conversion (not recommended).",
+    )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
     parser.add_argument("--debug", action="store_true", help="Enable debug output.")
     return parser.parse_args()
@@ -139,7 +144,7 @@ def main():
         search_for_dicom_files(input_dir, output_file)
     convert_dicom_directory(input_directory=input_dir,
                             heuristic=heuristic,
-                            anonymize=True,
+                            anonymize=not args.no_anonymize,
                             bids_directory=output_dir,
                             delete_intermediates=True,
                             verbose=verbose,

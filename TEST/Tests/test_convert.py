@@ -302,7 +302,7 @@ def test_convert_uses_mrn_subject_mapping(tmp_path, monkeypatch, basic_heuristic
         "PATIENT_B",
         "T1 MPRAGE",
         dt.datetime(2024, 1, 5, 9, 0, 0),
-        mrn="MRN1002",
+        mrn="001002",
     )
 
     mapping_csv = tmp_path / "subject_map_mrn.csv"
@@ -310,7 +310,7 @@ def test_convert_uses_mrn_subject_mapping(tmp_path, monkeypatch, basic_heuristic
         writer = csv.DictWriter(f, fieldnames=["source_mrn", "bids_subject"])
         writer.writeheader()
         writer.writerow({"source_mrn": "MRN1001", "bids_subject": "301"})
-        writer.writerow({"source_mrn": "MRN1002", "bids_subject": "302"})
+        writer.writerow({"source_mrn": "1002", "bids_subject": "302"})
 
     _run_main(
         monkeypatch,

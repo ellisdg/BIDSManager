@@ -127,6 +127,16 @@ def _read_mapping_rows(subject_map=None):
     return rows
 
 
+def _canonical_source_id(value):
+    normalized = _normalize_mapping_value(value)
+    if normalized is None:
+        return None
+    # Excel often drops leading zeros for numeric-like IDs; canonicalize to numeric string.
+    if normalized.isdigit():
+        return str(int(normalized))
+    return normalized
+
+
 def _build_subject_session_mapping(subject_map=None):
     subject_map_dict = {}
     session_map_dict = {}
@@ -144,10 +154,16 @@ def _build_subject_session_mapping(subject_map=None):
         session_id = _normalize_mapping_value(row.get("session_id") or row.get("session") or row.get("ses"))
         if not source_subject:
             continue
+
+        canonical_source = _canonical_source_id(source_subject)
         if bids_subject:
             subject_map_dict[source_subject] = bids_subject
+            if canonical_source and canonical_source != source_subject:
+                subject_map_dict[canonical_source] = bids_subject
         if session_id:
             session_map_dict[source_subject] = session_id
+            if canonical_source and canonical_source != source_subject:
+                session_map_dict[canonical_source] = session_id
     return subject_map_dict, session_map_dict
 
 
@@ -243,8 +259,11 @@ def convert_dicom_directory(input_directory,
         source_subject_name, time, description, protocol, run = parse_output(f, separator)
         _ = (description, protocol, run)
 
+        source_subject_canonical = _canonical_source_id(source_subject_name)
+
         # Apply optional source->BIDS subject mapping.
-        subject_name = subject_name_map.get(source_subject_name, source_subject_name)
+        subject_name = subject_name_map.get(source_subject_name,
+                                            subject_name_map.get(source_subject_canonical, source_subject_name))
 
         if dataset.has_subject_id(subject_name):
             subject = dataset.get_subject(subject_name)
@@ -257,6 +276,8 @@ def convert_dicom_directory(input_directory,
             session_name = ""
         elif source_subject_name in session_name_map:
             session_name = session_name_map[source_subject_name]
+        elif source_subject_canonical in session_name_map:
+            session_name = session_name_map[source_subject_canonical]
         elif use_session_dates:
             session_name = _session_from_time(time)
         else:
