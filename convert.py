@@ -19,7 +19,7 @@ def parse_args():
         "--subject-map",
         type=str,
         default=None,
-        help="Optional CSV/XLS/XLSX mapping file for source_subject -> bids_subject/session_id.",
+        help="Optional CSV/XLS/XLSX mapping file for source identifiers -> bids_subject/session_id.",
     )
     parser.add_argument(
         "--use-session-dates",
@@ -34,9 +34,15 @@ def parse_args():
         help="Combine all scans into a single no-session directory per subject.",
     )
     parser.add_argument(
-        "--source-id-from-mrn",
-        action="store_true",
-        help="Use DICOM PatientID (MRN) as the source identifier for subject mapping.",
+        "--source-id",
+        action="append",
+        choices=["patient_name", "patient_id"],
+        default=None,
+        help=(
+            "Repeatable source identifier(s) used to match rows in --subject-map. "
+            "patient_id is DICOM PatientID (0010,0020; same concept as dcm2niix %i) and is not guaranteed to be MRN. "
+            "patient_name uses DICOM PatientName (0010,0010) with exact string matching."
+        ),
     )
     parser.add_argument(
         "--no-anonymize",
@@ -131,7 +137,9 @@ def main():
     if combine_sessions is None:
         combine_sessions = heuristic.get("combine_sessions", False)
 
-    source_id_from_mrn = args.source_id_from_mrn or heuristic.get("source_id_from_mrn", False)
+    source_ids = args.source_id if args.source_id else heuristic.get("source_id")
+    if isinstance(source_ids, str):
+        source_ids = [source_ids]
 
     input_dir = os.path.abspath(args.input_dir)
     output_dir = os.path.abspath(args.output_dir)
@@ -151,7 +159,7 @@ def main():
                             use_session_dates=use_session_dates,
                             combine_sessions=combine_sessions,
                             subject_map=subject_map,
-                            source_id_from_mrn=source_id_from_mrn,
+                            source_ids=source_ids,
                             cleanup_temp_directory=not args.debug)
 
 

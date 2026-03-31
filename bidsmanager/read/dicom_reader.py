@@ -138,34 +138,103 @@ def _canonical_source_id(value):
     return normalized
 
 
-def _build_subject_session_mapping(subject_map=None):
+_SOURCE_ID_TO_COLUMN = {
+    "patient_name": "source_patient_name",
+    "patient_id": "source_patient_id",
+}
+
+
+def _normalize_source_ids(source_ids):
+    if source_ids is None:
+        return []
+    normalized = []
+    for source_id in source_ids:
+        if source_id not in _SOURCE_ID_TO_COLUMN:
+            raise ValueError("Unsupported source-id '{}'. Expected one of {}".format(
+                source_id,
+                sorted(_SOURCE_ID_TO_COLUMN.keys()),
+            ))
+        normalized.append(source_id)
+    return normalized
+
+
+def _source_id_candidates(value):
+    normalized = _normalize_mapping_value(value)
+    if normalized is None:
+        return []
+    canonical = _canonical_source_id(normalized)
+    if canonical and canonical != normalized:
+        return [normalized, canonical]
+    return [normalized]
+
+
+def _index_dicom_metadata(input_directory):
+    metadata_by_series_uid = {}
+    try:
+        import pydicom
+    except Exception:
+        return metadata_by_series_uid
+
+    all_files = glob.glob(os.path.join(input_directory, "**", "*"), recursive=True)
+    for file_path in all_files:
+        if not os.path.isfile(file_path):
+            continue
+        try:
+            dicom = pydicom.dcmread(file_path, stop_before_pixels=True)
+        except Exception:
+            continue
+        series_uid = _normalize_mapping_value(getattr(dicom, "SeriesInstanceUID", None))
+        if not series_uid:
+            continue
+        if series_uid in metadata_by_series_uid:
+            continue
+        metadata_by_series_uid[series_uid] = {
+            "patient_name": _normalize_mapping_value(getattr(dicom, "PatientName", None)),
+            "patient_id": _normalize_mapping_value(getattr(dicom, "PatientID", None)),
+        }
+    return metadata_by_series_uid
+
+
+def _build_subject_session_mapping(subject_map=None, source_ids=None):
     subject_map_dict = {}
     session_map_dict = {}
+    normalized_source_ids = _normalize_source_ids(source_ids)
     rows = _read_mapping_rows(subject_map=subject_map)
+    if rows and not normalized_source_ids:
+        raise ValueError("subject_map was provided but no --source-id values were supplied.")
+
     for row in rows:
-        source_subject = _normalize_mapping_value(
-            row.get("source_subject")
-            or row.get("source_mrn")
-            or row.get("mrn")
-            or row.get("patient_id")
-            or row.get("source")
-            or row.get("subject")
-        )
         bids_subject = _normalize_mapping_value(row.get("bids_subject") or row.get("subject_id") or row.get("bids_id"))
         session_id = _normalize_mapping_value(row.get("session_id") or row.get("session") or row.get("ses"))
-        if not source_subject:
-            continue
-
-        canonical_source = _canonical_source_id(source_subject)
-        if bids_subject:
-            subject_map_dict[source_subject] = bids_subject
-            if canonical_source and canonical_source != source_subject:
-                subject_map_dict[canonical_source] = bids_subject
-        if session_id:
-            session_map_dict[source_subject] = session_id
-            if canonical_source and canonical_source != source_subject:
-                session_map_dict[canonical_source] = session_id
+        for source_id in normalized_source_ids:
+            source_column = _SOURCE_ID_TO_COLUMN[source_id]
+            source_value = _normalize_mapping_value(row.get(source_column))
+            if source_id == "patient_name" and source_value is None:
+                source_value = _normalize_mapping_value(row.get("source_subject"))
+            for source_candidate in _source_id_candidates(source_value):
+                key = (source_id, source_candidate)
+                if bids_subject:
+                    subject_map_dict[key] = bids_subject
+                if session_id:
+                    session_map_dict[key] = session_id
     return subject_map_dict, session_map_dict
+
+
+def _write_unmatched_source_ids(unmatched_rows, bids_directory, input_directory):
+    source_dir = os.path.join(bids_directory if bids_directory else input_directory, "source")
+    os.makedirs(source_dir, exist_ok=True)
+    output_csv = os.path.join(source_dir, "unmatched_source_ids.csv")
+    fieldnames = ["nifti_file", "series_instance_uid", "patient_name", "patient_id", "requested_source_ids"]
+    with open(output_csv, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in unmatched_rows:
+            writer.writerow(row)
+    print("Unmatched source IDs ({} rows):".format(len(unmatched_rows)))
+    for row in unmatched_rows:
+        print(row)
+    print("Wrote unmatched source IDs to {}".format(output_csv))
+    return output_csv
 
 
 def _session_from_time(time_value):
@@ -218,7 +287,7 @@ def convert_dicom_directory(input_directory,
                             use_session_dates=False,
                             combine_sessions=False,
                             subject_map=None,
-                            source_id_from_mrn=False,
+                            source_ids=None,
                             case_sensitive=False):
     """
     Convert a directory of DICOM files to BIDS format using dcm2niix.
@@ -232,19 +301,22 @@ def convert_dicom_directory(input_directory,
     :param verbose:
     :param use_session_dates: If True, use the acquisition date to create session names.
     :param combine_sessions: If True, put all images for a subject in a single no-session directory.
-    :param subject_map: CSV/XLS/XLSX mapping file for source_subject/source_mrn -> bids_subject/session.
-    :param source_id_from_mrn: If True, use DICOM PatientID (%i) as the dcm2niix source identifier token.
+    :param subject_map: CSV/XLS/XLSX mapping file for source identifiers -> bids_subject/session.
+    :param source_ids: Ordered source identifier list (e.g., ["patient_id", "patient_name"]).
+        - patient_id maps to DICOM PatientID (0010,0020), same conceptual field as dcm2niix %i.
+          This value is site-defined and is not guaranteed to be MRN.
+        - patient_name maps to DICOM PatientName (0010,0010) and is matched as an exact string.
     :param case_sensitive: If True, matching of SeriesDescription will be case sensitive. (default: False)
     :return:
     """
     output_directory = random_tmp_directory()
     dataset = DataSet()
     try:
-        subject_token = "%i" if source_id_from_mrn else "%n"
+        dicom_metadata_by_series_uid = _index_dicom_metadata(input_directory)
         run_dcm2niix_on_directory(
             input_directory,
             output_directory,
-            filename="{0}{1}%t{1}%d{1}%p{1}".format(subject_token, separator),
+            filename="%j{0}%t{0}%d{0}%p{0}".format(separator),
             anonymize=anonymize,
             verbose=verbose,
         )
@@ -257,17 +329,53 @@ def convert_dicom_directory(input_directory,
         if subject_map is None:
             subject_map = heuristic.get("subject_map_csv") or heuristic.get("subject_map_excel")
 
-        subject_name_map, session_name_map = _build_subject_session_mapping(subject_map=subject_map)
+        if source_ids is None:
+            source_ids = heuristic.get("source_id")
+        if isinstance(source_ids, str):
+            source_ids = [source_ids]
+        source_ids = _normalize_source_ids(source_ids)
+
+        subject_name_map, session_name_map = _build_subject_session_mapping(
+            subject_map=subject_map,
+            source_ids=source_ids,
+        )
+        unmatched_rows = []
 
         for f in output_niftis:
-            source_subject_name, time, description, protocol, run = parse_output(f, separator)
+            source_series_uid, time, description, protocol, run = parse_output(f, separator)
             _ = (description, protocol, run)
 
-            source_subject_canonical = _canonical_source_id(source_subject_name)
+            metadata = dicom_metadata_by_series_uid.get(source_series_uid, {})
+            source_values = {
+                "patient_name": _normalize_mapping_value(metadata.get("patient_name") or source_series_uid),
+                "patient_id": _normalize_mapping_value(metadata.get("patient_id")),
+            }
 
-            # Apply optional source->BIDS subject mapping.
-            subject_name = subject_name_map.get(source_subject_name,
-                                                subject_name_map.get(source_subject_canonical, source_subject_name))
+            subject_name = source_values.get("patient_name") or source_series_uid
+            explicit_session_name = None
+            matched = not bool(subject_name_map)
+            if subject_name_map:
+                matched = False
+                for source_id in source_ids:
+                    for source_candidate in _source_id_candidates(source_values.get(source_id)):
+                        key = (source_id, source_candidate)
+                        if key in subject_name_map:
+                            subject_name = subject_name_map[key]
+                            explicit_session_name = session_name_map.get(key)
+                            matched = True
+                            break
+                    if matched:
+                        break
+
+                if not matched:
+                    unmatched_rows.append({
+                        "nifti_file": os.path.basename(f),
+                        "series_instance_uid": source_series_uid,
+                        "patient_name": source_values.get("patient_name") or "",
+                        "patient_id": source_values.get("patient_id") or "",
+                        "requested_source_ids": ";".join(source_ids),
+                    })
+                    continue
 
             if dataset.has_subject_id(subject_name):
                 subject = dataset.get_subject(subject_name)
@@ -278,10 +386,8 @@ def convert_dicom_directory(input_directory,
             # session mapping precedence: explicit mapping > date-derived > combined/no-session
             if combine_sessions:
                 session_name = ""
-            elif source_subject_name in session_name_map:
-                session_name = session_name_map[source_subject_name]
-            elif source_subject_canonical in session_name_map:
-                session_name = session_name_map[source_subject_canonical]
+            elif explicit_session_name:
+                session_name = explicit_session_name
             elif use_session_dates:
                 session_name = _session_from_time(time)
             else:
@@ -310,6 +416,18 @@ def convert_dicom_directory(input_directory,
                 dataset.update(move=True)
             else:
                 dataset.update(move=False)
+
+        if unmatched_rows:
+            unmatched_csv = _write_unmatched_source_ids(
+                unmatched_rows=unmatched_rows,
+                bids_directory=bids_directory,
+                input_directory=input_directory,
+            )
+            raise RuntimeError(
+                "Found unmatched conversion rows for subject mapping. See {} and add matching rows before rerun.".format(
+                    unmatched_csv
+                )
+            )
     finally:
         if cleanup_temp_directory and os.path.exists(output_directory):
             shutil.rmtree(output_directory)

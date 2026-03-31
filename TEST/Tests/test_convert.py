@@ -71,7 +71,7 @@ def _run_main(monkeypatch, input_dir: Path, output_dir: Path, heuristic_file: Pa
               subject_map: Path | None = None,
               use_session_dates: bool | None = None,
               combine_sessions: bool | None = None,
-              source_id_from_mrn: bool = False,
+              source_ids: list[str] | None = None,
               debug: bool = False):
     monkeypatch.setattr(
         convert,
@@ -83,7 +83,7 @@ def _run_main(monkeypatch, input_dir: Path, output_dir: Path, heuristic_file: Pa
             subject_map=str(subject_map) if subject_map else None,
             use_session_dates=use_session_dates,
             combine_sessions=combine_sessions,
-            source_id_from_mrn=source_id_from_mrn,
+            source_id=source_ids,
             no_anonymize=False,
             verbose=False,
             debug=debug,
@@ -116,17 +116,17 @@ def test_convert_uses_csv_subject_mapping(tmp_path, monkeypatch, basic_heuristic
 
     mapping_csv = tmp_path / "subject_map.csv"
     with mapping_csv.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["source_subject", "bids_subject"])
+        writer = csv.DictWriter(f, fieldnames=["source_patient_name", "bids_subject"])
         writer.writeheader()
-        writer.writerow({"source_subject": "ALPHA", "bids_subject": "001"})
-        writer.writerow({"source_subject": "BETA", "bids_subject": "002"})
+        writer.writerow({"source_patient_name": "ALPHA", "bids_subject": "001"})
+        writer.writerow({"source_patient_name": "BETA", "bids_subject": "002"})
 
     heuristic = json.loads(basic_heuristic.read_text(encoding="utf-8"))
     heuristic["subject_map"] = str(mapping_csv)
     heuristic_path = tmp_path / "heuristic_with_subject_map.json"
     heuristic_path.write_text(json.dumps(heuristic), encoding="utf-8")
 
-    _run_main(monkeypatch, input_dir, out_dir, heuristic_path)
+    _run_main(monkeypatch, input_dir, out_dir, heuristic_path, source_ids=["patient_name"])
 
     assert (out_dir / "sub-001").is_dir()
     assert (out_dir / "sub-002").is_dir()
@@ -144,13 +144,13 @@ def test_convert_uses_excel_subject_mapping(tmp_path, monkeypatch, basic_heurist
         import pandas as pd
 
         pd.DataFrame([
-            {"source_subject": "GAMMA", "bids_subject": "101"},
-            {"source_subject": "DELTA", "bids_subject": "102"},
+            {"source_patient_name": "GAMMA", "bids_subject": "101"},
+            {"source_patient_name": "DELTA", "bids_subject": "102"},
         ]).to_excel(mapping_xlsx, index=False)
     except Exception:
         # Fallback to CSV-formatted text when Excel writer deps are unavailable.
         mapping_xlsx.write_text(
-            "source_subject,bids_subject\nGAMMA,101\nDELTA,102\n",
+            "source_patient_name,bids_subject\nGAMMA,101\nDELTA,102\n",
             encoding="utf-8",
         )
 
@@ -159,7 +159,7 @@ def test_convert_uses_excel_subject_mapping(tmp_path, monkeypatch, basic_heurist
     heuristic_path = tmp_path / "heuristic_with_subject_map_excel.json"
     heuristic_path.write_text(json.dumps(heuristic), encoding="utf-8")
 
-    _run_main(monkeypatch, input_dir, out_dir, heuristic_path)
+    _run_main(monkeypatch, input_dir, out_dir, heuristic_path, source_ids=["patient_name"])
 
     assert (out_dir / "sub-101").is_dir()
     assert (out_dir / "sub-102").is_dir()
@@ -234,16 +234,16 @@ def test_convert_merges_new_dicoms_into_preexisting_session_by_explicit_mapping(
 
     mapping_csv = tmp_path / "subject_session_map.csv"
     with mapping_csv.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["source_subject", "bids_subject", "session_id"])
+        writer = csv.DictWriter(f, fieldnames=["source_patient_name", "bids_subject", "session_id"])
         writer.writeheader()
-        writer.writerow({"source_subject": "RAW777", "bids_subject": "777", "session_id": "baseline"})
+        writer.writerow({"source_patient_name": "RAW777", "bids_subject": "777", "session_id": "baseline"})
 
     heuristic = json.loads(basic_heuristic.read_text(encoding="utf-8"))
     heuristic["subject_map"] = str(mapping_csv)
     heuristic_path = tmp_path / "heuristic_with_subject_session_map.json"
     heuristic_path.write_text(json.dumps(heuristic), encoding="utf-8")
 
-    _run_main(monkeypatch, input_dir, out_dir, heuristic_path)
+    _run_main(monkeypatch, input_dir, out_dir, heuristic_path, source_ids=["patient_name"])
 
     session_files = list((out_dir / "sub-777" / "ses-baseline").rglob("*.nii.gz"))
     assert len(session_files) >= 2
@@ -280,16 +280,23 @@ def test_convert_uses_cli_subject_map_argument(tmp_path, monkeypatch, basic_heur
 
     mapping_csv = tmp_path / "subject_map_cli.csv"
     with mapping_csv.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["source_subject", "bids_subject"])
+        writer = csv.DictWriter(f, fieldnames=["source_patient_name", "bids_subject"])
         writer.writeheader()
-        writer.writerow({"source_subject": "EPSILON", "bids_subject": "201"})
+        writer.writerow({"source_patient_name": "EPSILON", "bids_subject": "201"})
 
-    _run_main(monkeypatch, input_dir, out_dir, basic_heuristic, subject_map=mapping_csv)
+    _run_main(
+        monkeypatch,
+        input_dir,
+        out_dir,
+        basic_heuristic,
+        subject_map=mapping_csv,
+        source_ids=["patient_name"],
+    )
 
     assert (out_dir / "sub-201").is_dir()
 
 
-def test_convert_uses_mrn_subject_mapping(tmp_path, monkeypatch, basic_heuristic):
+def test_convert_uses_patient_id_subject_mapping(tmp_path, monkeypatch, basic_heuristic):
     input_dir = tmp_path / "dicoms"
     out_dir = tmp_path / "bids"
 
@@ -310,10 +317,10 @@ def test_convert_uses_mrn_subject_mapping(tmp_path, monkeypatch, basic_heuristic
 
     mapping_csv = tmp_path / "subject_map_mrn.csv"
     with mapping_csv.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["source_mrn", "bids_subject"])
+        writer = csv.DictWriter(f, fieldnames=["source_patient_id", "bids_subject"])
         writer.writeheader()
-        writer.writerow({"source_mrn": "MRN1001", "bids_subject": "301"})
-        writer.writerow({"source_mrn": "1002", "bids_subject": "302"})
+        writer.writerow({"source_patient_id": "MRN1001", "bids_subject": "301"})
+        writer.writerow({"source_patient_id": "1002", "bids_subject": "302"})
 
     _run_main(
         monkeypatch,
@@ -321,11 +328,60 @@ def test_convert_uses_mrn_subject_mapping(tmp_path, monkeypatch, basic_heuristic
         out_dir,
         basic_heuristic,
         subject_map=mapping_csv,
-        source_id_from_mrn=True,
+        source_ids=["patient_id"],
     )
 
     assert (out_dir / "sub-301").is_dir()
     assert (out_dir / "sub-302").is_dir()
+
+
+def test_convert_requires_source_ids_when_using_subject_map(tmp_path, monkeypatch, basic_heuristic):
+    input_dir = tmp_path / "dicoms"
+    out_dir = tmp_path / "bids"
+
+    _write_test_dicom(input_dir / "scan_a.dcm", "NOIDS", "T1 MPRAGE", dt.datetime(2024, 1, 6, 8, 0, 0))
+
+    mapping_csv = tmp_path / "subject_map_missing_ids.csv"
+    with mapping_csv.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["source_patient_name", "bids_subject"])
+        writer.writeheader()
+        writer.writerow({"source_patient_name": "NOIDS", "bids_subject": "901"})
+
+    with pytest.raises(ValueError, match="source-id"):
+        _run_main(monkeypatch, input_dir, out_dir, basic_heuristic, subject_map=mapping_csv)
+
+
+def test_convert_fails_after_writing_matched_rows_and_dumps_unmatched(tmp_path, monkeypatch, basic_heuristic, capsys):
+    input_dir = tmp_path / "dicoms"
+    out_dir = tmp_path / "bids"
+
+    _write_test_dicom(input_dir / "scan_match.dcm", "MATCHED", "T1 MPRAGE", dt.datetime(2024, 1, 7, 8, 0, 0))
+    _write_test_dicom(input_dir / "scan_miss.dcm", "MISSING", "T1 MPRAGE", dt.datetime(2024, 1, 7, 9, 0, 0))
+
+    mapping_csv = tmp_path / "subject_map_partial.csv"
+    with mapping_csv.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["source_patient_name", "bids_subject"])
+        writer.writeheader()
+        writer.writerow({"source_patient_name": "MATCHED", "bids_subject": "777"})
+
+    with pytest.raises(RuntimeError, match="unmatched"):
+        _run_main(
+            monkeypatch,
+            input_dir,
+            out_dir,
+            basic_heuristic,
+            subject_map=mapping_csv,
+            source_ids=["patient_name"],
+        )
+
+    assert (out_dir / "sub-777").is_dir()
+    unmatched_csv = out_dir / "source" / "unmatched_source_ids.csv"
+    assert unmatched_csv.exists()
+    csv_text = unmatched_csv.read_text(encoding="utf-8")
+    assert "MISSING" in csv_text
+
+    stdout = capsys.readouterr().out
+    assert "MISSING" in stdout
 
 
 def test_main_enables_temp_cleanup_by_default(tmp_path, monkeypatch, basic_heuristic):
