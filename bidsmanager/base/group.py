@@ -51,7 +51,7 @@ class Group(BIDSFolder):
     def normalize_runs_for_write(self):
         # Build runless buckets; singleton buckets should not carry a run label in the final filename.
         images_by_signature = {}
-        for image in list(self._images.values()):
+        for index, image in enumerate(list(self._images.values())):
             signature = (
                 image.get_task_name(),
                 image.get_acquisition(),
@@ -61,11 +61,24 @@ class Group(BIDSFolder):
                 image.get_entity("echo"),
                 image.get_modality(),
             )
-            images_by_signature.setdefault(signature, []).append(image)
+            images_by_signature.setdefault(signature, []).append((index, image))
 
-        for images in images_by_signature.values():
-            if len(images) == 1 and images[0].get_run_number() is not None:
-                images[0].set_run_number(None)
+        normalized_images = []
+        for bucket in images_by_signature.values():
+            if len(bucket) == 1:
+                image = bucket[0][1]
+                image._run = None
+                normalized_images.append(image)
+                continue
+            for run_number, (_, image) in enumerate(bucket, start=1):
+                image._run = run_number
+                normalized_images.append(image)
+
+        normalized_dict = {}
+        for image in normalized_images:
+            normalized_dict[image.get_image_key()] = image
+        self._dict = normalized_dict
+        self._images = self._dict
 
     def _assign_run_numbers_for_write(self):
         reserved_paths = set()

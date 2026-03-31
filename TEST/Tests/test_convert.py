@@ -19,7 +19,8 @@ pytestmark = pytest.mark.skipif(
 
 
 def _write_test_dicom(path: Path, subject: str, series_description: str, when: dt.datetime,
-                      mrn: str | None = None, series_number: int | None = None) -> None:
+                      mrn: str | None = None, series_number: int | None = None,
+                      series_instance_uid: str | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     file_meta = pydicom.Dataset()
     file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.4"
@@ -40,7 +41,7 @@ def _write_test_dicom(path: Path, subject: str, series_description: str, when: d
     ds.SOPClassUID = file_meta.MediaStorageSOPClassUID
     ds.SOPInstanceUID = file_meta.MediaStorageSOPInstanceUID
     ds.StudyInstanceUID = pydicom.uid.generate_uid()
-    ds.SeriesInstanceUID = pydicom.uid.generate_uid()
+    ds.SeriesInstanceUID = series_instance_uid if series_instance_uid is not None else pydicom.uid.generate_uid()
     ds.Rows = 2
     ds.Columns = 2
     ds.BitsAllocated = 16
@@ -542,3 +543,85 @@ def test_convert_dicom_directory_keeps_temp_directory_when_requested(tmp_path, m
     )
 
     assert temp_dir.exists()
+
+
+def test_parse_acquisition_time_handles_valid_missing_and_invalid_tokens():
+    assert dicom_reader._parse_acquisition_time("20240101123456") is not None
+    assert dicom_reader._parse_acquisition_time("") is None
+    assert dicom_reader._parse_acquisition_time("not-a-time") is None
+
+
+def test_convert_handles_missing_acquisition_time_without_breaking(tmp_path, monkeypatch, basic_heuristic):
+    input_dir = tmp_path / "dicoms"
+    out_dir = tmp_path / "bids"
+
+    _write_test_dicom(input_dir / "scan1.dcm", "SUBJ001", "T1 MPRAGE", dt.datetime(2024, 1, 1, 8, 0, 0), series_instance_uid="1.1.1")
+    _write_test_dicom(input_dir / "scan2.dcm", "SUBJ001", "T1 MPRAGE", dt.datetime(2024, 1, 1, 9, 0, 0), series_instance_uid="2.2.2")
+
+    output_dir = tmp_path / "dcm2niix_out"
+
+    def _fake_run_dcm2niix_on_directory(input_directory, output_directory, **kwargs):
+        Path(output_directory).mkdir(parents=True, exist_ok=True)
+        (Path(output_directory) / "1.1.1---20240101080000---T1 MPRAGE---MPRAGE---101---.nii.gz").write_bytes(b"")
+        (Path(output_directory) / "2.2.2------T1 MPRAGE---MPRAGE---101---.nii.gz").write_bytes(b"")
+
+    monkeypatch.setattr(dicom_reader, "random_tmp_directory", lambda: str(output_dir))
+    monkeypatch.setattr(dicom_reader, "run_dcm2niix_on_directory", _fake_run_dcm2niix_on_directory)
+
+    dataset = dicom_reader.convert_dicom_directory(
+        input_directory=str(input_dir),
+        heuristic=json.loads(basic_heuristic.read_text(encoding="utf-8")),
+        bids_directory=str(out_dir),
+        delete_intermediates=True,
+        cleanup_temp_directory=True,
+    )
+
+    images = dataset.get_images(modality="T1w")
+    assert len(images) == 2
+    assert {image.get_run_number() for image in images} == {1, 2}
+
+
+def test_convert_orders_runs_by_acquisition_time(tmp_path, monkeypatch, basic_heuristic):
+    input_dir = tmp_path / "dicoms"
+    out_dir = tmp_path / "bids"
+
+    _write_test_dicom(
+        input_dir / "scan1.dcm",
+        "SUBJ001",
+        "T1 MPRAGE",
+        dt.datetime(2024, 1, 1, 8, 0, 0),
+        series_instance_uid="2.2.2",
+    )
+    _write_test_dicom(
+        input_dir / "scan2.dcm",
+        "SUBJ001",
+        "T1 MPRAGE",
+        dt.datetime(2024, 1, 1, 9, 0, 0),
+        series_instance_uid="1.1.1",
+    )
+
+    output_dir = tmp_path / "dcm2niix_out"
+
+    def _fake_run_dcm2niix_on_directory(input_directory, output_directory, **kwargs):
+        Path(output_directory).mkdir(parents=True, exist_ok=True)
+        (Path(output_directory) / "1.1.1---20240101090000---T1 MPRAGE---MPRAGE---101---.nii.gz").write_bytes(b"")
+        (Path(output_directory) / "2.2.2---20240101080000---T1 MPRAGE---MPRAGE---101---.nii.gz").write_bytes(b"")
+
+    monkeypatch.setattr(dicom_reader, "random_tmp_directory", lambda: str(output_dir))
+    monkeypatch.setattr(dicom_reader, "run_dcm2niix_on_directory", _fake_run_dcm2niix_on_directory)
+
+    dataset = dicom_reader.convert_dicom_directory(
+        input_directory=str(input_dir),
+        heuristic=json.loads(basic_heuristic.read_text(encoding="utf-8")),
+        bids_directory=str(out_dir),
+        delete_intermediates=True,
+        cleanup_temp_directory=True,
+    )
+
+    images = dataset.get_images(modality="T1w")
+    assert len(images) == 2
+    images_by_time = {image.get_metadata("AcquisitionTime"): image for image in images}
+    assert images_by_time[dt.datetime(2024, 1, 1, 8, 0, 0)].get_run_number() == 1
+    assert images_by_time[dt.datetime(2024, 1, 1, 9, 0, 0)].get_run_number() == 2
+
+

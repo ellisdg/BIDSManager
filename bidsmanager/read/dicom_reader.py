@@ -81,6 +81,21 @@ def parse_output(in_file, separator):
     return os.path.basename(in_file).split(separator)
 
 
+def _parse_acquisition_time(time_value):
+    if not time_value:
+        return None
+    try:
+        return datetime.datetime.strptime(time_value, "%Y%m%d%H%M%S")
+    except ValueError:
+        return None
+
+
+def _output_acquisition_time(in_file, separator):
+    parts = parse_output(in_file, separator)
+    time_value = parts[1] if len(parts) > 1 else None
+    return _parse_acquisition_time(time_value)
+
+
 def get_image(in_file, separator, heuristic, case_sensitive=False):
     """
     Get the image from the dcm2niix output file in BIDSManager format.
@@ -104,8 +119,14 @@ def get_image(in_file, separator, heuristic, case_sensitive=False):
         bval_path = get_secondary_output(in_file, ".nii.gz", ".bval")
         bvec_path = get_secondary_output(in_file, ".nii.gz", ".bvec")
         sidecar_path = get_secondary_output(in_file, ".nii.gz", ".json")
-        return load_image(path_to_image=in_file, bval_path=bval_path, bvec_path=bvec_path,
-                          path_to_sidecar=sidecar_path, **image_keys)
+        return load_image(
+            path_to_image=in_file,
+            bval_path=bval_path,
+            bvec_path=bvec_path,
+            path_to_sidecar=sidecar_path,
+            metadata={"AcquisitionTime": _parse_acquisition_time(time)},
+            **image_keys,
+        )
 
 
 def _normalize_mapping_value(value):
@@ -350,6 +371,14 @@ def convert_dicom_directory(input_directory,
             verbose=verbose,
         )
         output_niftis = sorted(glob.glob(os.path.join(output_directory, "*.nii.gz")))
+        output_niftis = sorted(
+            output_niftis,
+            key=lambda f: (
+                _output_acquisition_time(f, separator) is None,
+                _output_acquisition_time(f, separator) or datetime.datetime.min,
+                os.path.basename(f),
+            ),
+        )
 
         # Heuristic-level mapping paths are supported for backwards compatibility.
         if subject_map is None:
@@ -430,12 +459,6 @@ def convert_dicom_directory(input_directory,
 
             image = get_image(f, separator, heuristic=heuristic, case_sensitive=case_sensitive)
             if image:
-                # Ensure new conversions do not overwrite files in an existing destination session.
-                _increment_run_until_unique(image=image,
-                                            session=session,
-                                            subject_name=subject_name,
-                                            session_name=session_name,
-                                            bids_directory=bids_directory)
                 session.add_image(image)
 
         if bids_directory:
