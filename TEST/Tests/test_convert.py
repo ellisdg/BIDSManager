@@ -19,7 +19,7 @@ pytestmark = pytest.mark.skipif(
 
 
 def _write_test_dicom(path: Path, subject: str, series_description: str, when: dt.datetime,
-                      mrn: str | None = None) -> None:
+                      mrn: str | None = None, series_number: int | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     file_meta = pydicom.Dataset()
     file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.4"
@@ -31,6 +31,8 @@ def _write_test_dicom(path: Path, subject: str, series_description: str, when: d
     ds.PatientID = mrn if mrn is not None else subject
     ds.Modality = "MR"
     ds.SeriesDescription = series_description
+    if series_number is not None:
+        ds.SeriesNumber = series_number
     ds.StudyDate = when.strftime("%Y%m%d")
     ds.StudyTime = when.strftime("%H%M%S")
     ds.ContentDate = when.strftime("%Y%m%d")
@@ -65,6 +67,88 @@ def basic_heuristic(tmp_path):
     path = tmp_path / "heuristic.json"
     path.write_text(json.dumps(heuristic), encoding="utf-8")
     return path
+
+
+def test_parse_image_keys_can_skip_derivative_series_numbers():
+    heuristic = {
+        "SeriesDescription": [["T1", {"modality": "T1w"}]],
+        "SeriesNumber": [[r"0[2-9]$", None]],
+    }
+
+    for series_number in ("102", "202", "303", "1207", "1102"):
+        assert dicom_reader.parse_image_keys(
+            in_file=f"sub-001---20240101080000---T1 MPRAGE---MPRAGE---{series_number}---.nii.gz",
+            description="T1 MPRAGE",
+            series_number=series_number,
+            heuristic=heuristic,
+        ) is None
+
+
+def test_parse_image_keys_keeps_non_derivative_series_numbers():
+    heuristic = {
+        "SeriesDescription": [["T1", {"modality": "T1w"}]],
+        "SeriesNumber": [[r"0[2-9]$", None]],
+    }
+
+    assert dicom_reader.parse_image_keys(
+        in_file="sub-001---20240101080000---T1 MPRAGE---MPRAGE---101---.nii.gz",
+        description="T1 MPRAGE",
+        series_number="101",
+        heuristic=heuristic,
+    ) == {"modality": "T1w"}
+
+
+def test_convert_excludes_derivative_series_by_series_number(tmp_path, monkeypatch):
+    input_dir = tmp_path / "dicoms"
+    out_dir = tmp_path / "bids"
+
+    _write_test_dicom(
+        input_dir / "scan_101.dcm",
+        "SUBJ900",
+        "T1 MPRAGE",
+        dt.datetime(2024, 7, 1, 8, 0, 0),
+        series_number=101,
+    )
+    _write_test_dicom(
+        input_dir / "scan_202.dcm",
+        "SUBJ900",
+        "T1 MPRAGE",
+        dt.datetime(2024, 7, 1, 8, 5, 0),
+        series_number=202,
+    )
+
+    heuristic = {
+        "SeriesDescription": [["T1", {"modality": "T1w"}]],
+        "SeriesNumber": [[r"0[2-9]$", None]],
+    }
+    heuristic_path = tmp_path / "heuristic_series_number.json"
+    heuristic_path.write_text(json.dumps(heuristic), encoding="utf-8")
+
+    output_dir = tmp_path / "dcm2niix_out"
+
+    def _fake_run_dcm2niix_on_directory(input_directory, output_directory, **kwargs):
+        Path(output_directory).mkdir(parents=True, exist_ok=True)
+        for dicom_path in sorted(Path(input_directory).rglob("*.dcm")):
+            ds = pydicom.dcmread(str(dicom_path), stop_before_pixels=True)
+            series_uid = str(ds.SeriesInstanceUID)
+            series_number = str(ds.SeriesNumber)
+            (Path(output_directory) / f"{series_uid}---{ds.ContentTime}---{ds.SeriesDescription}---MPRAGE---{series_number}---.nii.gz").write_bytes(b"")
+
+    monkeypatch.setattr(dicom_reader, "random_tmp_directory", lambda: str(output_dir))
+    monkeypatch.setattr(dicom_reader, "run_dcm2niix_on_directory", _fake_run_dcm2niix_on_directory)
+
+    dataset = dicom_reader.convert_dicom_directory(
+        input_directory=str(input_dir),
+        heuristic=heuristic,
+        bids_directory=str(out_dir),
+        delete_intermediates=True,
+        cleanup_temp_directory=True,
+    )
+
+    assert dataset.has_subject_id("SUBJ900")
+    assert len(dataset.get_images(modality="T1w")) == 1
+    assert list(out_dir.rglob("*.nii.gz"))
+    assert not any(path.name.endswith("---202---.nii.gz") for path in out_dir.rglob("*.nii.gz"))
 
 
 def _run_main(monkeypatch, input_dir: Path, output_dir: Path, heuristic_file: Path,

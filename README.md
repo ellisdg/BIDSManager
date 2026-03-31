@@ -89,6 +89,9 @@ DOE^JANE,011
     ["T1", {"modality": "T1w"}],
     ["rest", {"modality": "bold", "task": "rest"}]
   ],
+  "SeriesNumber": [
+    ["0[2-9]$", null]
+  ],
   "subject_map": "/path/to/subject_map.csv",
   "source_id": ["patient_id", "patient_name"],
   "use_session_dates": true,
@@ -101,6 +104,7 @@ Notes:
 - CLI values override heuristic values when both are provided.
 - `subject_map` is selected by file extension (`.csv`, `.xls`, `.xlsx`).
 - When using `subject_map`, provide one or more `--source-id` values (or `"source_id"` in heuristic JSON).
+- Add `"SeriesNumber"` entries to skip derivative acquisitions by series number; use `null` as the value to exclude matching files. For example, `"0[2-9]$"` excludes `102`, `203`, `307`, `1209`, and any other series number ending in `02` through `09`.
 - If your intent is MRN-based matching, first verify that your MRN is actually stored in DICOM `PatientID` (`0010,0020`).
 - If any converted scans are unmatched, matched rows are still written, then conversion fails and writes full details to `output_dir/source/unmatched_source_ids.csv`.
 - Temporary dcm2niix output is deleted by default after conversion; use `--debug` to keep it.

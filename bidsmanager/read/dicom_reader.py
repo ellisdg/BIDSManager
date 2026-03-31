@@ -1,5 +1,6 @@
 import os
 import glob
+import re
 from subprocess import Popen, PIPE
 import random
 from warnings import warn
@@ -14,26 +15,47 @@ from ..utils.image_utils import load_image
 from ..utils.session_utils import modality_to_group_name
 
 
-def parse_image_keys(in_file, description, heuristic, case_sensitive=False):
+def _matches_series_description(pattern, description, case_sensitive=False):
+    if description is None:
+        return False
+    if not case_sensitive:
+        pattern = pattern.lower()
+        description = description.lower()
+    return pattern in description
+
+
+def _matches_series_number(pattern, series_number):
+    if series_number is None:
+        return False
+    return re.search(pattern, str(series_number)) is not None
+
+
+def parse_image_keys(in_file, description, series_number, heuristic, case_sensitive=False):
     """
     Parse the image description (and in the future other image information) to
     determine the bids keys based on a heuristic provided by the user.
     :param in_file: nifti file output from dcm2niix
     :param description: Series Description provided in the filename from dcm2niix
+    :param series_number: Series Number provided in the filename from dcm2niix
     :param heuristic: user provided heuristic to get the keys from the image information
     :param case_sensitive: If True, matching of SeriesDescription will be case sensitive.
     :return: image_keys in dictionary format (will be None if image should be skipped)
     """
     image_keys = dict()
-    if not case_sensitive:
-        description = description.lower()
-    for test_heuristic, test_keys in heuristic["SeriesDescription"]:
-        if not case_sensitive:
-            test_heuristic = test_heuristic.lower()
-        if test_heuristic in description:
+    for test_heuristic, test_keys in heuristic.get("SeriesDescription", []):
+        if _matches_series_description(test_heuristic, description, case_sensitive=case_sensitive):
             if test_keys is None:
                 print("{} found in {}. Skipping: {}".format(test_heuristic,
                                                             description,
+                                                            in_file))
+                return None
+            image_keys.update(test_keys)
+
+    for test_heuristic, test_keys in heuristic.get("SeriesNumber", []):
+        if _matches_series_number(test_heuristic, series_number):
+            if test_keys is None:
+                print("{} found in {}. Skipping: {}".format(test_heuristic,
+                                                            series_number,
                                                             in_file))
                 return None
             image_keys.update(test_keys)
@@ -68,8 +90,15 @@ def get_image(in_file, separator, heuristic, case_sensitive=False):
     :param case_sensitive: If True, matching of SeriesDescription will be case sensitive.
     :return:
     """
-    subject_name, time, description, protocol, run = parse_output(in_file, separator)
-    image_keys = parse_image_keys(in_file, description, heuristic=heuristic, case_sensitive=case_sensitive)
+    subject_name, time, description, protocol, series_number, run = parse_output(in_file, separator)
+    _ = (subject_name, protocol, run)
+    image_keys = parse_image_keys(
+        in_file,
+        description,
+        series_number,
+        heuristic=heuristic,
+        case_sensitive=case_sensitive,
+    )
     # returns None if no image modality is found or image is to be skipped
     if image_keys:
         bval_path = get_secondary_output(in_file, ".nii.gz", ".bval")
@@ -316,7 +345,7 @@ def convert_dicom_directory(input_directory,
         run_dcm2niix_on_directory(
             input_directory,
             output_directory,
-            filename="%j{0}%t{0}%d{0}%p{0}".format(separator),
+                filename="%j{0}%t{0}%d{0}%p{0}%s{0}".format(separator),
             anonymize=anonymize,
             verbose=verbose,
         )
@@ -342,8 +371,8 @@ def convert_dicom_directory(input_directory,
         unmatched_rows = []
 
         for f in output_niftis:
-            source_series_uid, time, description, protocol, run = parse_output(f, separator)
-            _ = (description, protocol, run)
+            source_series_uid, time, description, protocol, series_number, run = parse_output(f, separator)
+            _ = (description, protocol, series_number, run)
 
             metadata = dicom_metadata_by_series_uid.get(source_series_uid, {})
             source_values = {
