@@ -191,6 +191,19 @@ def test_convert_multiple_subjects_into_bids_dataset(tmp_path, monkeypatch, basi
     assert list((out_dir / "sub-SUBJ002").rglob("*.nii.gz"))
 
 
+def test_convert_omits_run_number_for_single_image(tmp_path, monkeypatch, basic_heuristic):
+    input_dir = tmp_path / "dicoms"
+    out_dir = tmp_path / "bids"
+
+    _write_test_dicom(input_dir / "scan1.dcm", "SUBJ001", "T1 MPRAGE", dt.datetime(2024, 1, 1, 8, 0, 0))
+
+    _run_main(monkeypatch, input_dir, out_dir, basic_heuristic)
+
+    expected = out_dir / "sub-SUBJ001" / "anat" / "sub-SUBJ001_T1w.nii.gz"
+    assert expected.exists()
+    assert not any("run-" in path.name for path in (out_dir / "sub-SUBJ001").rglob("*.nii.gz"))
+
+
 def test_convert_uses_csv_subject_mapping(tmp_path, monkeypatch, basic_heuristic):
     input_dir = tmp_path / "dicoms"
     out_dir = tmp_path / "bids"

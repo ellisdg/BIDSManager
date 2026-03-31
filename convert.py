@@ -2,7 +2,6 @@
 import argparse
 import json
 import os
-import glob
 
 
 def parse_args():
@@ -40,7 +39,7 @@ def parse_args():
         default=None,
         help=(
             "Repeatable source identifier(s) used to match rows in --subject-map. "
-            "patient_id is DICOM PatientID (0010,0020; same concept as dcm2niix %i) and is not guaranteed to be MRN. "
+            "patient_id is DICOM PatientID (0010,0020; same concept as dcm2niix %%i) and is not guaranteed to be MRN. "
             "patient_name uses DICOM PatientName (0010,0010) with exact string matching."
         ),
     )

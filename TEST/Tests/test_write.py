@@ -7,7 +7,7 @@ import csv
 
 from bidsmanager.write.dataset_writer import write_dataset
 from bidsmanager.read import read_csv, read_dataset
-from bidsmanager.utils.utils import read_json, read_tsv
+from bidsmanager.utils.utils import read_json
 from bidsmanager.base import DataSet, Subject, Session, Image
 
 
@@ -59,6 +59,58 @@ class TestWrite(TestCase):
         self.assertEqual(set(["sub-" + sid for sid in reread_dataset.get_subject_ids()]), subject_ids)
         self.assertEqual(len(reread_dataset.get_images(task="fingertapping")), 0)
         self.assertEqual(len(reread_dataset.get_images(task="ft")), len(fingertapping_images))
+
+    def test_write_dataset_omits_run_number_for_single_image(self):
+        source_dir = os.path.join(self._dir, "source")
+        output_dir = os.path.join(self._dir, "output")
+        os.makedirs(source_dir, exist_ok=True)
+
+        source_file = os.path.join(source_dir, "single.nii.gz")
+        with open(source_file, "wb") as f:
+            f.write(b"single")
+
+        dataset = DataSet(path=output_dir)
+        subject = Subject("001")
+        session = Session("baseline")
+        image = Image(path=source_file, modality="T1w")
+        image.set_run_number(1)
+        session.add_image(image)
+        subject.add_session(session)
+        dataset.add_subject(subject)
+
+        written_dataset = write_dataset(dataset, output_dir)
+
+        expected_file = os.path.join(output_dir, "sub-001", "ses-baseline", "anat", "sub-001_ses-baseline_T1w.nii.gz")
+        self.assertTrue(os.path.exists(expected_file))
+        self.assertFalse(any("run-" in os.path.basename(path) for path in glob.glob(os.path.join(output_dir, "**", "*.nii.gz"), recursive=True)))
+        self.assertTrue(written_dataset.has_subject_id("001"))
+
+    def test_write_dataset_assigns_run_number_when_runless_file_exists(self):
+        source_dir = os.path.join(self._dir, "source_conflict")
+        output_dir = os.path.join(self._dir, "output_conflict")
+        os.makedirs(source_dir, exist_ok=True)
+        os.makedirs(os.path.join(output_dir, "sub-001", "ses-baseline", "anat"), exist_ok=True)
+
+        source_file = os.path.join(source_dir, "single.nii.gz")
+        with open(source_file, "wb") as f:
+            f.write(b"single")
+
+        existing_file = os.path.join(output_dir, "sub-001", "ses-baseline", "anat", "sub-001_ses-baseline_T1w.nii.gz")
+        with open(existing_file, "wb") as f:
+            f.write(b"existing")
+
+        dataset = DataSet(path=output_dir)
+        subject = Subject("001")
+        session = Session("baseline")
+        image = Image(path=source_file, modality="T1w")
+        session.add_image(image)
+        subject.add_session(session)
+        dataset.add_subject(subject)
+
+        write_dataset(dataset, output_dir)
+
+        self.assertTrue(os.path.exists(existing_file))
+        self.assertTrue(os.path.exists(os.path.join(output_dir, "sub-001", "ses-baseline", "anat", "sub-001_ses-baseline_run-01_T1w.nii.gz")))
 
     def test_create_linked_dataset(self):
         new_dataset = DataSet(path=self._dir)
