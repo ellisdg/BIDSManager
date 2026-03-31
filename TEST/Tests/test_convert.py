@@ -404,7 +404,6 @@ def test_main_disables_temp_cleanup_in_debug_mode(tmp_path, monkeypatch, basic_h
         captured.update(kwargs)
 
     monkeypatch.setattr("bidsmanager.read.dicom_reader.convert_dicom_directory", _fake_convert_dicom_directory)
-    monkeypatch.setattr(convert, "search_for_dicom_files", lambda *_args, **_kwargs: None)
 
     _run_main(monkeypatch, tmp_path / "dicoms", tmp_path / "bids", basic_heuristic, debug=True)
 
